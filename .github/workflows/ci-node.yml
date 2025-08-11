@@ -1,0 +1,73 @@
+name: ci-node
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  node-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.11.0 --activate
+
+      - name: Install dependencies (frozen if lockfile present)
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            pnpm install
+          fi
+
+      - name: Lint/Typecheck/Test/Build (turbo)
+        run: |
+          pnpm turbo run lint typecheck test build --filter=...[origin/main]
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update && sudo apt-get install -y wget gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb stable main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install -y trivy
+
+      - name: Install OSV-Scanner
+        run: |
+          curl -fsSL -o /usr/local/bin/osv-scanner "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64"
+          chmod +x /usr/local/bin/osv-scanner
+
+      - name: Security scan (Trivy filesystem)
+        run: |
+          trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --skip-dirs node_modules . || (echo "Trivy detected HIGH/CRITICAL vulns" && exit 1)
+
+      - name: Security scan (OSV-Scanner)
+        run: |
+          osv-scanner --recursive . || (echo "OSV-Scanner found issues" && exit 1)
+
+      - name: Axe Playwright a11y (noop if no config)
+        run: |
+          if ls **/playwright.config.* 1> /dev/null 2>&1; then \
+            pnpm dlx @playwright/test install-deps; \
+            pnpm dlx @playwright/test --version; \
+            pnpm test:a11y || pnpm dlx @playwright/test; \
+          else \
+            echo "No Playwright config found. Skipping a11y tests."; \
+          fi
+
+      - name: Route/CTA guard
+        run: node scripts/route-cta-guard.mjs

@@ -1,0 +1,53 @@
+name: contracts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.11.0 --activate
+
+      - name: Install contract tooling
+        run: pnpm add -Dw @redocly/cli@latest openapi-typescript@latest
+
+      - name: Validate OpenAPI files (if any)
+        run: |
+          if ls **/*.openapi.yml **/*.openapi.yaml **/*.openapi.json 1> /dev/null 2>&1; then \
+            pnpm exec redocly lint $(git ls-files "**/*.openapi.*"); \
+          else \
+            echo "No OpenAPI files found. Skipping."; \
+          fi
+
+      - name: Generate TypeScript SDKs (noop if none)
+        run: |
+          if ls **/*.openapi.yml **/*.openapi.yaml **/*.openapi.json 1> /dev/null 2>&1; then \
+            for f in $(git ls-files "**/*.openapi.*"); do \
+              echo "Generate SDK for $f"; \
+              pnpm exec openapi-typescript $f -o ${f%.*}.d.ts; \
+            done; \
+          else \
+            echo "No OpenAPI files found. Skipping."; \
+          fi
+
+      - name: Pact verification (noop)
+        run: echo "No Pact setup yet."
