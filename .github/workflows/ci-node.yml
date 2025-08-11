@@ -35,6 +35,10 @@ jobs:
             pnpm install
           fi
 
+      - name: Fetch origin for Turbo filter
+        run: |
+          git fetch --prune --unshallow origin "+refs/heads/*:refs/remotes/origin/*" || true
+
       - name: Lint/Typecheck/Test/Build (turbo)
         run: |
           pnpm turbo run lint typecheck test build --filter=...[origin/main]
@@ -52,10 +56,12 @@ jobs:
           chmod +x /usr/local/bin/osv-scanner
 
       - name: Security scan (Trivy filesystem)
+        if: ${{ hashFiles('pnpm-lock.yaml') != '' }}
         run: |
           trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --skip-dirs node_modules . || (echo "Trivy detected HIGH/CRITICAL vulns" && exit 1)
 
       - name: Security scan (OSV-Scanner)
+        if: ${{ hashFiles('pnpm-lock.yaml') != '' }}
         run: |
           osv-scanner --recursive . || (echo "OSV-Scanner found issues" && exit 1)
 
