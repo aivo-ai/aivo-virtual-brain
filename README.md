@@ -47,7 +47,25 @@ pnpm run deps:outdated
 
 ## Conventional Commits
 
-Use Commitizen: run `git cz` (wired as a git alias to `pnpm commit`). Commitlint enforces conventional commit messages.
+Use standard git commits following [Conventional Commits](https://www.conventionalcommits.org/) format. Commitlint enforces conventional commit messages.
+
+```bash
+git commit -m "feat(scope): add new feature"
+git commit -m "fix(scope): resolve issue"
+git commit -m "chore(deps): update dependencies"
+```
+
+## Dependency Management
+
+Automated dependency updates via [Renovate](https://docs.renovatebot.com/):
+
+- **Security updates**: High priority, any-time scheduling
+- **Patch/Minor**: Automated PRs, manual merge required
+- **Major**: Dependency Dashboard approval required
+- **Rate limited**: 2 PRs/hour, weekday mornings
+- **Protected packages**: turbo, prettier, husky, commitlint (no majors)
+
+See [ADR-0001](./docs/adr/adr-0001-dependency-policy.md) for full policy.
 
 ## Security
 
