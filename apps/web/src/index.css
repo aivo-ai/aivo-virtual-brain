@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: system-ui, sans-serif;
+  }
+
+  body {
+    @apply antialiased;
+  }
+
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-600;
+  }
+
+  /* Skip link for screen readers */
+  .skip-link {
+    @apply absolute top-0 left-0 z-50 px-4 py-2 text-white bg-primary-600 transform -translate-y-full focus:translate-y-0 transition-transform;
+  }
+}
