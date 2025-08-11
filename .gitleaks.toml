@@ -1,0 +1,8 @@
+title = "aivo-virtual-brains gitleaks"
+
+[extend]
+# You can extend built-in rules; using default for now
+
+[allowlist]
+# Allow test keys or placeholder patterns if needed
+# regexes = ["(?i)fake|example|dummy"]

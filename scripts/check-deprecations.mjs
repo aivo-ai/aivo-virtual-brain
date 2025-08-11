@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const root = process.cwd();
 const lockfile = `${root}/pnpm-lock.yaml`;
@@ -10,39 +9,29 @@ if (!existsSync(lockfile)) {
   process.exit(0);
 }
 
-function run(cmd, args) {
-  return spawnSync(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: true, encoding: 'utf-8' });
-}
-
-let foundDeprecated = false;
-
-// Try pnpm list JSON and scan for deprecation markers in text (pnpm 9 removed --deprecated flag)
 try {
-  const res = run('pnpm', ['ls', '--depth', '100', '--json']);
-  const output = `${res.stdout || ''}\n${res.stderr || ''}`;
-  if (/deprecated/i.test(output)) {
-    foundDeprecated = true;
-    console.error('\n[deprecations] Deprecated packages detected (from pnpm ls output). Please review and update:');
-    console.error(output);
-  }
-} catch {}
-
-// Fallback: npm ls which often prints deprecation notices
-if (!foundDeprecated) {
-  try {
-    const resNpm = run('npm', ['ls', '--depth=9999']);
-    const outNpm = `${resNpm.stdout || ''}\n${resNpm.stderr || ''}`;
-    if (/deprecated/i.test(outNpm)) {
-      foundDeprecated = true;
-      console.error('\n[deprecations] Deprecated packages detected (from npm ls output). Please review and update:');
-      console.error(outNpm);
+  const text = readFileSync(lockfile, 'utf8');
+  // Simple, robust scan: any key named 'deprecated' in the lockfile signals a deprecated package
+  const matches = text.match(/\n\s*deprecated\s*:/gi) || [];
+  if (matches.length > 0) {
+    console.error(`[deprecations] ${matches.length} deprecated entries found in pnpm-lock.yaml. Failing.`);
+    // Optionally print offending sections for debugging (first few lines around each occurrence)
+    const preview = text.split('\n');
+    let shown = 0;
+    for (let i = 0; i < preview.length; i++) {
+      if (/^\s*deprecated\s*:/i.test(preview[i])) {
+        const start = Math.max(0, i - 3);
+        const end = Math.min(preview.length, i + 4);
+        console.error('---');
+        console.error(preview.slice(start, end).join('\n'));
+        shown++;
+        if (shown >= 5) break; // cap output
+      }
     }
-  } catch {}
+    process.exit(1);
+  }
+  console.log('[deprecations] No deprecated packages detected in lockfile.');
+} catch (e) {
+  console.warn('[deprecations] Error reading lockfile, skipping strict check:', e?.message || e);
+  process.exit(0);
 }
-
-if (foundDeprecated) {
-  // Non-zero to make it visible in CI pipelines if enabled via verify-all chaining
-  process.exit(1);
-}
-
-console.log('[deprecations] No deprecated packages detected or scanner unsupported.');
