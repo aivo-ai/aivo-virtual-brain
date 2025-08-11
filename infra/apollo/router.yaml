@@ -1,0 +1,16 @@
+# Apollo Router configuration for aivo-virtual-brains
+# Basic configuration for health checks
+
+supergraph:
+  listen: 0.0.0.0:4000
+
+health_check:
+  enabled: true
+  path: /health
+
+cors:
+  origins:
+    - "http://localhost:3000"
+    - "http://localhost:3001"
+  allow_any_origin: false
+  allow_credentials: true

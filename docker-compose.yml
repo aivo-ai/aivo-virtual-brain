@@ -1,0 +1,338 @@
+# aivo-virtual-brains local development infrastructure
+
+services:
+  # PostgreSQL 16 - Primary database
+  postgres:
+    image: postgres:16-alpine
+    container_name: aivo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aivo_dev
+      POSTGRES_USER: aivo
+      POSTGRES_PASSWORD: dev123
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aivo -d aivo_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+
+  # Redis 7 - Cache and session store
+  redis:
+    image: redis:7-alpine
+    container_name: aivo-redis
+    restart: unless-stopped
+    command: redis-server --requirepass dev123 --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "dev123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+
+  # MinIO - S3-compatible object storage
+  minio:
+    image: minio/minio:latest
+    container_name: aivo-minio
+    restart: unless-stopped
+    user: "1000:1000" # non-root user
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: dev123456
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aivo-network
+
+  # Redpanda - Kafka-compatible streaming platform
+  redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: aivo-redpanda
+    restart: unless-stopped
+    user: "101:101" # redpanda user
+    command:
+      - redpanda
+      - start
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr
+      - internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr
+      - internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr
+      - internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr
+      - redpanda:33145
+      - --advertise-rpc-addr
+      - redpanda:33145
+      - --smp
+      - "1"
+      - --memory
+      - "1G"
+      - --mode dev-container
+    ports:
+      - "18081:18081" # Schema Registry
+      - "18082:18082" # HTTP Proxy
+      - "19092:19092" # Kafka API
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health --brokers redpanda:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - aivo-network
+
+  # OpenSearch 2.x - Search and analytics engine
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    container_name: aivo-opensearch
+    restart: unless-stopped
+    user: "1000:1000" # opensearch user
+    environment:
+      - cluster.name=aivo-cluster
+      - node.name=aivo-node
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - DISABLE_SECURITY_PLUGIN=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - aivo-network
+
+  # Kong - API Gateway
+  kong:
+    image: kong:3.7
+    container_name: aivo-kong
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /opt/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_LISTEN: 0.0.0.0:8002
+    ports:
+      - "8003:8000" # Proxy
+      - "8443:8443" # Proxy SSL
+      - "8001:8001" # Admin API
+      - "8002:8002" # Admin GUI
+    volumes:
+      - ./infra/kong/kong.yml:/opt/kong/kong.yml:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aivo-network
+
+  # Apollo Router - GraphQL Federation
+  apollo-router:
+    image: ghcr.io/apollographql/router:v1.52.1
+    container_name: aivo-apollo-router
+    restart: unless-stopped
+    user: "1000:1000" # non-root user
+    environment:
+      APOLLO_ROUTER_CONFIG_PATH: /etc/router/router.yaml
+      APOLLO_ROUTER_SUPERGRAPH_PATH: /etc/router/supergraph.graphql
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./infra/apollo/router.yaml:/etc/router/router.yaml:ro
+      - ./infra/apollo/supergraph.graphql:/etc/router/supergraph.graphql:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:4000/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aivo-network
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.105.0
+    container_name: aivo-otel-collector
+    restart: unless-stopped
+    user: "10001:10001" # non-root user
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - "8888:8888" # Prometheus metrics
+      - "8889:8889" # Prometheus exporter metrics
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+    volumes:
+      - ./infra/otel/collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8888/",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aivo-network
+
+  # Jaeger - Distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:1.59
+    container_name: aivo-jaeger
+    restart: unless-stopped
+    user: "10001:10001" # non-root user
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "14268:14268" # Jaeger collector
+    networks:
+      - aivo-network
+
+  # Prometheus - Metrics collection
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    container_name: aivo-prometheus
+    restart: unless-stopped
+    user: "65534:65534" # nobody user
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9090/-/healthy",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aivo-network
+
+  # Loki - Log aggregation
+  loki:
+    image: grafana/loki:3.1.0
+    container_name: aivo-loki
+    restart: unless-stopped
+    user: "10001:10001" # non-root user
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./infra/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - aivo-network
+
+  # Grafana - Observability dashboards
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: aivo-grafana
+    restart: unless-stopped
+    user: "472:0" # grafana user
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: dev123
+      GF_USERS_ALLOW_SIGN_UP: false
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - aivo-network
+
+networks:
+  aivo-network:
+    driver: bridge
+    name: aivo-network
+
+volumes:
+  postgres_data:
+    name: aivo-postgres-data
+  redis_data:
+    name: aivo-redis-data
+  minio_data:
+    name: aivo-minio-data
+  redpanda_data:
+    name: aivo-redpanda-data
+  opensearch_data:
+    name: aivo-opensearch-data
+  prometheus_data:
+    name: aivo-prometheus-data
+  grafana_data:
+    name: aivo-grafana-data

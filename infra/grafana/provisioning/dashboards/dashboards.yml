@@ -1,0 +1,15 @@
+# Grafana dashboard provisioning for aivo-virtual-brains
+
+apiVersion: 1
+
+providers:
+  - name: "aivo-dashboards"
+    orgId: 1
+    folder: "AIVO Development"
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

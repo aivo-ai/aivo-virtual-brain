@@ -1,0 +1,50 @@
+# Kong declarative configuration for aivo-virtual-brains
+# This is a minimal configuration to get Kong running
+
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: apollo-router
+    url: http://apollo-router:4000
+    routes:
+      - name: graphql
+        paths:
+          - /graphql
+        methods:
+          - GET
+          - POST
+        strip_path: false
+
+  - name: health-check
+    url: http://kong:8001/status
+    routes:
+      - name: kong-health
+        paths:
+          - /health/kong
+        methods:
+          - GET
+        strip_path: true
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "http://localhost:3000"
+        - "http://localhost:3001"
+        - "http://localhost:4000"
+      methods:
+        - GET
+        - POST
+        - OPTIONS
+      headers:
+        - Content-Type
+        - Authorization
+      exposed_headers:
+        - X-Custom-Header
+      credentials: true
+      max_age: 3600
+
+  - name: prometheus
+    config:
+      per_consumer: false
