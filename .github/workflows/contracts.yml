@@ -27,13 +27,10 @@ jobs:
           corepack enable
           corepack prepare pnpm@9.11.0 --activate
 
-      - name: Install contract tooling
-        run: pnpm add -Dw @redocly/cli@latest openapi-typescript@latest
-
       - name: Validate OpenAPI files (if any)
         run: |
           if ls **/*.openapi.yml **/*.openapi.yaml **/*.openapi.json 1> /dev/null 2>&1; then \
-            pnpm exec redocly lint $(git ls-files "**/*.openapi.*"); \
+            pnpm dlx @redocly/cli@latest lint $(git ls-files "**/*.openapi.*"); \
           else \
             echo "No OpenAPI files found. Skipping."; \
           fi
@@ -43,7 +40,7 @@ jobs:
           if ls **/*.openapi.yml **/*.openapi.yaml **/*.openapi.json 1> /dev/null 2>&1; then \
             for f in $(git ls-files "**/*.openapi.*"); do \
               echo "Generate SDK for $f"; \
-              pnpm exec openapi-typescript $f -o ${f%.*}.d.ts; \
+              pnpm dlx openapi-typescript@latest $f -o ${f%.*}.d.ts; \
             done; \
           else \
             echo "No OpenAPI files found. Skipping."; \
