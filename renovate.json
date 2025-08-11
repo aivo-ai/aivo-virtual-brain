@@ -1,0 +1,91 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate config for aivo-virtual-brains monorepo",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticPrefixFixDepsChoreOthers",
+    ":separateMajorReleases",
+    ":separateMultipleMajorReleases"
+  ],
+  "timezone": "UTC",
+  "schedule": ["before 6am on weekday"],
+  "prConcurrentLimit": 2,
+  "prHourlyLimit": 2,
+  "rebaseWhen": "conflicted",
+  "assigneesFromCodeOwners": true,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"]
+  },
+  "major": {
+    "dependencyDashboardApproval": true,
+    "automerge": false
+  },
+  "minor": {
+    "automerge": false,
+    "dependencyDashboardApproval": false
+  },
+  "patch": {
+    "automerge": false,
+    "dependencyDashboardApproval": false
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Block majors for critical security tools",
+      "matchPackageNames": [
+        "turbo",
+        "prettier",
+        "husky",
+        "@commitlint/cli",
+        "@commitlint/config-conventional"
+      ],
+      "major": {
+        "enabled": false
+      }
+    },
+    {
+      "description": "High priority security updates",
+      "matchCategories": ["security"],
+      "schedule": ["at any time"],
+      "prPriority": 10
+    },
+    {
+      "description": "Group Node.js ecosystem updates",
+      "matchCategories": ["node"],
+      "groupName": "Node.js ecosystem"
+    },
+    {
+      "description": "Pin Node.js version updates (manual only)",
+      "matchDepNames": ["node"],
+      "enabled": false
+    },
+    {
+      "description": "Python ecosystem grouping",
+      "matchLanguages": ["python"],
+      "groupName": "Python ecosystem"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update Node version in .nvmrc",
+      "fileMatch": ["\\.nvmrc$"],
+      "matchStrings": ["(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node"
+    }
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.tools/**"
+  ]
+}
