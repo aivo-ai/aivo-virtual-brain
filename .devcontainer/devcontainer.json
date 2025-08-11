@@ -1,0 +1,37 @@
+{
+  "name": "aivo-virtual-brains",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".",
+    "args": {
+      "NODE_VERSION": "20.19.4",
+      "PNPM_VERSION": "9.11.0",
+      "PYTHON_VERSION": "3.11",
+      "POETRY_VERSION": "1.8.3"
+    }
+  },
+  "workspaceFolder": "/workspaces/aivo-virtual-brains",
+  "postCreateCommand": "pnpm i",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "installDockerCLI": true,
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "github.vscode-github-actions"
+      ]
+    }
+  },
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "runArgs": ["--init", "--privileged"]
+}
