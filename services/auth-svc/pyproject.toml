@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "aivo-auth-svc"
+version = "1.0.0"
+description = "AIVO Authentication Service"
+authors = ["AIVO Team"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "*"
+uvicorn = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
