@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
+    "@pact-foundation/pact": "^15.0.1",
     "@playwright/test": "^1.54.2",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.0",
@@ -45,6 +46,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.12",
     "jsdom": "^25.0.0",
+    "msw": "^2.10.4",
     "playwright": "^1.47.0",
     "postcss": "^8.4.0",
     "prettier": "^3.3.0",
