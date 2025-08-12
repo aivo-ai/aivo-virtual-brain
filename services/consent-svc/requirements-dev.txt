@@ -1,0 +1,13 @@
+﻿# Development dependencies for Consent Service
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.14.0
+pytest-cov==4.1.0
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+httpx==0.25.2
+pact-python==2.0.1
+responses==0.24.1
+factory-boy==3.3.0
+testcontainers==3.7.1

@@ -1,0 +1,221 @@
+# Supergraph schema for aivo-virtual-brains GraphQL Federation
+# S0-08 API Edge Gateway with placeholder subgraphs
+
+schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
+{
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+directive @join__enumValue(graph: join__Graph!) on ENUM_VALUE
+
+directive @join__field(graph: join__Graph!, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+directive @join__implements(graph: join__Graph!, interface: String!) on OBJECT | INTERFACE
+
+directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean, resolvable: Boolean, isInterfaceObject: Boolean) on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+directive @join__unionMember(graph: join__Graph!, member: String!) on UNION
+
+directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+
+directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+scalar join__FieldSet
+
+enum join__Graph {
+  IEP_SVC @join__graph(name: "iep-svc", url: "http://iep-service:4001/graphql")
+  USER_SVC @join__graph(name: "user-svc", url: "http://user-service:4002/graphql")
+  AUTH_SVC @join__graph(name: "auth-svc", url: "http://auth-service:4003/graphql")
+}
+
+scalar link__Import
+
+enum link__Purpose {
+  """
+  `SECURITY` features provide metadata necessary to securely resolve fields.
+  """
+  SECURITY
+
+  """
+  `EXECUTION` features provide metadata necessary for operation execution.
+  """
+  EXECUTION
+}
+
+# Root Types
+type Query
+  @join__type(graph: IEP_SVC)
+  @join__type(graph: USER_SVC)  
+  @join__type(graph: AUTH_SVC)
+{
+  # IEP Service - Intelligent Educational Platform
+  iep: IEPQuery @join__field(graph: IEP_SVC)
+  
+  # User Service  
+  user(id: ID!): User @join__field(graph: USER_SVC)
+  users(first: Int, after: String): UserConnection @join__field(graph: USER_SVC)
+  
+  # Auth Service
+  me: User @join__field(graph: AUTH_SVC)
+  
+  # Health checks
+  _service: _Service! @join__field(graph: IEP_SVC) @join__field(graph: USER_SVC) @join__field(graph: AUTH_SVC)
+}
+
+type Mutation
+  @join__type(graph: IEP_SVC)
+  @join__type(graph: USER_SVC)
+  @join__type(graph: AUTH_SVC)
+{
+  # IEP Service mutations
+  createLearningPath(input: CreateLearningPathInput!): LearningPath @join__field(graph: IEP_SVC)
+  
+  # User Service mutations
+  updateUser(id: ID!, input: UpdateUserInput!): User @join__field(graph: USER_SVC)
+  
+  # Auth Service mutations
+  login(input: LoginInput!): AuthPayload @join__field(graph: AUTH_SVC)
+  logout: Boolean @join__field(graph: AUTH_SVC)
+}
+
+type Subscription
+  @join__type(graph: IEP_SVC)
+{
+  # Real-time learning progress updates
+  learningProgressUpdated(userId: ID!): LearningProgress @join__field(graph: IEP_SVC)
+}
+
+# IEP Service Types (Placeholder)
+type IEPQuery
+  @join__type(graph: IEP_SVC, key: "id")
+{
+  id: ID!
+  learningPaths: [LearningPath!]!
+  progress(userId: ID!): LearningProgress
+}
+
+type LearningPath
+  @join__type(graph: IEP_SVC, key: "id")
+{
+  id: ID! 
+  title: String!
+  description: String
+  modules: [LearningModule!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type LearningModule
+  @join__type(graph: IEP_SVC, key: "id")
+{
+  id: ID!
+  title: String!
+  content: String!
+  order: Int!
+}
+
+type LearningProgress
+  @join__type(graph: IEP_SVC, key: "userId")
+{
+  userId: ID!
+  completedModules: [ID!]!
+  currentModule: ID
+  progressPercentage: Float!
+  lastAccessedAt: String!
+}
+
+input CreateLearningPathInput {
+  title: String!
+  description: String
+  modules: [LearningModuleInput!]!
+}
+
+input LearningModuleInput {
+  title: String!
+  content: String!
+  order: Int!
+}
+
+# User Service Types (Placeholder)
+type User
+  @join__type(graph: USER_SVC, key: "id")
+  @join__type(graph: AUTH_SVC, key: "id")
+{
+  id: ID!
+  email: String! @join__field(graph: USER_SVC) @join__field(graph: AUTH_SVC)
+  username: String @join__field(graph: USER_SVC)
+  displayName: String @join__field(graph: USER_SVC)
+  role: UserRole! @join__field(graph: USER_SVC) @join__field(graph: AUTH_SVC)
+  learnerScope: String @join__field(graph: USER_SVC) @join__field(graph: AUTH_SVC)
+  createdAt: String! @join__field(graph: USER_SVC)
+  updatedAt: String! @join__field(graph: USER_SVC)
+}
+
+type UserConnection
+  @join__type(graph: USER_SVC)
+{
+  edges: [UserEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type UserEdge
+  @join__type(graph: USER_SVC)
+{
+  node: User!
+  cursor: String!
+}
+
+type PageInfo
+  @join__type(graph: USER_SVC)
+{
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+enum UserRole
+  @join__type(graph: USER_SVC)
+  @join__type(graph: AUTH_SVC)
+{
+  LEARNER @join__enumValue(graph: USER_SVC) @join__enumValue(graph: AUTH_SVC)
+  INSTRUCTOR @join__enumValue(graph: USER_SVC) @join__enumValue(graph: AUTH_SVC)  
+  ADMIN @join__enumValue(graph: USER_SVC) @join__enumValue(graph: AUTH_SVC)
+}
+
+input UpdateUserInput {
+  username: String
+  displayName: String
+  role: UserRole
+  learnerScope: String
+}
+
+# Auth Service Types (Placeholder)
+type AuthPayload
+  @join__type(graph: AUTH_SVC)
+{
+  token: String!
+  user: User!
+  expiresAt: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+# Federation Service Info
+type _Service
+  @join__type(graph: IEP_SVC)
+  @join__type(graph: USER_SVC)
+  @join__type(graph: AUTH_SVC)
+{
+  sdl: String
+}

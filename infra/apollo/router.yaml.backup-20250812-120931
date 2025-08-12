@@ -1,0 +1,76 @@
+# Apollo Router configuration for aivo-virtual-brains
+# S0-08 API Edge Gateway with GraphQL Federation
+
+# Supergraph configuration
+supergraph:
+  listen: 0.0.0.0:4000
+  path: /supergraph.graphql
+
+# Health check configuration
+health_check:
+  enabled: true
+  path: /health
+
+# CORS configuration for GraphQL endpoint
+cors:
+  origins:
+    - "http://localhost:3000"
+    - "http://localhost:3001"
+    - "https://*.aivo.ai"
+  allow_any_origin: false
+  allow_credentials: true
+  allow_headers:
+    - Content-Type
+    - Authorization
+    - X-Correlation-ID
+    - X-Learner-Scope
+    - X-Dashboard-Context
+  expose_headers:
+    - X-Correlation-ID
+    - X-Request-ID
+  max_age: 3600
+
+# Telemetry and monitoring
+telemetry:
+  apollo:
+    schema_reporting:
+      enabled: false
+  metrics:
+    prometheus:
+      enabled: true
+      listen: 0.0.0.0:9090
+      path: /metrics
+
+# Security headers
+headers:
+  all:
+    request:
+      - insert:
+          name: "X-Router-Version"
+          value: "1.0.0"
+    response:
+      - insert:
+          name: "X-Content-Type-Options"
+          value: "nosniff"
+      - insert:
+          name: "X-Frame-Options"
+          value: "DENY"
+      - insert:
+          name: "X-XSS-Protection"
+          value: "1; mode=block"
+
+# Subgraph error handling
+include_subgraph_errors:
+  all: true
+
+# Request limits
+limits:
+  max_depth: 100
+  max_height: 30
+  max_aliases: 30
+
+# Development mode (disable in production)
+sandbox:
+  enabled: true
+  listen: 0.0.0.0:4000
+  endpoint: /

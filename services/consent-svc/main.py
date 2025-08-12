@@ -1,0 +1,422 @@
+﻿"""
+Consent Service FastAPI Application
+Main application with routes for consent state management and gateway integration
+"""
+
+import structlog
+from datetime import datetime
+from typing import List, Optional, Dict, Any
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Depends, Query, Path, Request, status
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
+from app.config import settings
+from app.service import consent_service
+from app.schemas import (
+    ConsentUpdateRequest, ConsentStateResponse, ConsentLogEntry,
+    ConsentGateCheckRequest, ConsentGateCheckResponse,
+    ConsentBulkRequest, ConsentBulkResponse,
+    ErrorResponse, HealthCheckResponse
+)
+
+logger = structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.JSONRenderer()
+    ],
+    wrapper_class=structlog.stdlib.BoundLogger,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    cache_logger_on_first_use=True,
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifecycle management"""
+    logger.info("Starting consent service", version=settings.app_version)
+    
+    try:
+        # Initialize database tables
+        await consent_service.db.create_tables()
+        logger.info("Database initialization complete")
+        
+        # Verify connections
+        health = await consent_service.health_check()
+        if not health["overall"]:
+            logger.error("Health check failed during startup", **health)
+            raise RuntimeError("Service health check failed")
+        
+        logger.info("Consent service started successfully")
+        yield
+        
+    except Exception as e:
+        logger.error("Failed to start consent service", error=str(e))
+        raise
+    finally:
+        logger.info("Shutting down consent service")
+        try:
+            await consent_service.cache.close()
+            logger.info("Consent service shutdown complete")
+        except Exception as e:
+            logger.error("Error during shutdown", error=str(e))
+
+
+# FastAPI application
+app = FastAPI(
+    title="Consent & Policy Service",
+    description="AIVO consent management with immutable audit log and gateway integration",
+    version=settings.app_version,
+    lifespan=lifespan,
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None
+)
+
+# Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+if settings.trusted_hosts:
+    app.add_middleware(
+        TrustedHostMiddleware, 
+        allowed_hosts=settings.trusted_hosts
+    )
+
+
+# Dependency to extract client info
+def get_client_info(request: Request) -> Dict[str, Optional[str]]:
+    """Extract client information from request"""
+    return {
+        "ip_address": request.client.host if request.client else None,
+        "user_agent": request.headers.get("user-agent"),
+        "x_forwarded_for": request.headers.get("x-forwarded-for"),
+        "x_real_ip": request.headers.get("x-real-ip")
+    }
+
+
+# Health check endpoint
+@app.get(
+    "/health",
+    response_model=HealthCheckResponse,
+    tags=["Health"],
+    summary="Service health check"
+)
+async def health_check():
+    """Check service health status"""
+    try:
+        health_status = await consent_service.health_check()
+        
+        if health_status["overall"]:
+            return HealthCheckResponse(
+                status="healthy",
+                timestamp=datetime.utcnow(),
+                version=settings.app_version,
+                details=health_status
+            )
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content=HealthCheckResponse(
+                    status="unhealthy",
+                    timestamp=datetime.utcnow(),
+                    version=settings.app_version,
+                    details=health_status
+                ).model_dump()
+            )
+            
+    except Exception as e:
+        logger.error("Health check failed", error=str(e))
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=ErrorResponse(
+                error="health_check_failed",
+                message="Service health check failed",
+                details={"error": str(e)}
+            ).model_dump()
+        )
+
+
+# Get consent state
+@app.get(
+    "/consent/{learner_id}",
+    response_model=ConsentStateResponse,
+    tags=["Consent State"],
+    summary="Get learner consent state"
+)
+async def get_consent_state(
+    learner_id: str = Path(..., description="Learner ID"),
+    use_cache: bool = Query(True, description="Use cache if available")
+):
+    """Get current consent state for a learner"""
+    try:
+        consent_state = await consent_service.get_consent_state(
+            learner_id=learner_id,
+            use_cache=use_cache
+        )
+        
+        if not consent_state:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Consent state not found for learner: {learner_id}"
+            )
+        
+        return consent_state
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get consent state", learner_id=learner_id, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve consent state"
+        )
+
+
+# Update consent state
+@app.post(
+    "/consent/{learner_id}",
+    response_model=ConsentStateResponse,
+    tags=["Consent State"],
+    summary="Update learner consent state"
+)
+async def update_consent_state(
+    learner_id: str,
+    request: ConsentUpdateRequest,
+    client_info: Dict[str, Optional[str]] = Depends(get_client_info)
+):
+    """Update consent state for a learner with audit logging"""
+    try:
+        # Extract client IP (prefer X-Real-IP, fallback to X-Forwarded-For, then direct IP)
+        ip_address = (
+            client_info.get("x_real_ip") or
+            client_info.get("x_forwarded_for", "").split(",")[0].strip() or
+            client_info.get("ip_address")
+        )
+        
+        consent_state = await consent_service.update_consent_state(
+            learner_id=learner_id,
+            consents=request.consents,
+            actor_user_id=request.actor_user_id,
+            metadata=request.metadata,
+            ip_address=ip_address,
+            user_agent=client_info.get("user_agent")
+        )
+        
+        return consent_state
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error("Failed to update consent state", learner_id=learner_id, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update consent state"
+        )
+
+
+# Get consent audit log
+@app.get(
+    "/consent/{learner_id}/log",
+    response_model=List[ConsentLogEntry],
+    tags=["Audit Log"],
+    summary="Get consent audit log"
+)
+async def get_consent_log(
+    learner_id: str,
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of entries"),
+    offset: int = Query(0, ge=0, description="Number of entries to skip")
+):
+    """Get consent audit log history for a learner"""
+    try:
+        log_entries, total_count = await consent_service.get_consent_log(
+            learner_id=learner_id,
+            limit=limit,
+            offset=offset
+        )
+        
+        # Add pagination headers
+        from fastapi import Response
+        response = Response()
+        response.headers["X-Total-Count"] = str(total_count)
+        response.headers["X-Limit"] = str(limit)
+        response.headers["X-Offset"] = str(offset)
+        
+        return log_entries
+        
+    except Exception as e:
+        logger.error("Failed to get consent log", learner_id=learner_id, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve consent log"
+        )
+
+
+# Gateway consent check
+@app.post(
+    "/gateway/consent-check",
+    response_model=ConsentGateCheckResponse,
+    tags=["Gateway"],
+    summary="Check consent for gateway filtering"
+)
+async def gateway_consent_check(request: ConsentGateCheckRequest):
+    """Check consent state for gateway request filtering"""
+    try:
+        response = await consent_service.check_consent_gate(request)
+        return response
+        
+    except Exception as e:
+        logger.error(
+            "Gateway consent check failed",
+            learner_id=request.learner_id,
+            consent_type=request.consent_type,
+            error=str(e)
+        )
+        
+        # Return denied on error for security
+        return ConsentGateCheckResponse(
+            learner_id=request.learner_id,
+            consent_type=request.consent_type,
+            allowed=False,
+            source="error"
+        )
+
+
+# Bulk consent state retrieval
+@app.post(
+    "/consent/bulk",
+    response_model=ConsentBulkResponse,
+    tags=["Consent State"],
+    summary="Get multiple consent states"
+)
+async def bulk_get_consent_states(request: ConsentBulkRequest):
+    """Get consent states for multiple learners"""
+    try:
+        if len(request.learner_ids) > 1000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Maximum 1000 learner IDs allowed per bulk request"
+            )
+        
+        consent_states = await consent_service.bulk_get_consent_states(
+            learner_ids=request.learner_ids,
+            use_cache=request.use_cache
+        )
+        
+        return ConsentBulkResponse(consent_states=consent_states)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Bulk consent retrieval failed", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve bulk consent states"
+        )
+
+
+# Admin endpoints
+@app.get(
+    "/admin/statistics",
+    tags=["Admin"],
+    summary="Get consent statistics"
+)
+async def get_consent_statistics():
+    """Get consent usage statistics for monitoring"""
+    try:
+        stats = await consent_service.get_consent_statistics()
+        return stats
+        
+    except Exception as e:
+        logger.error("Failed to get consent statistics", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve consent statistics"
+        )
+
+
+@app.post(
+    "/admin/cleanup-logs",
+    tags=["Admin"],
+    summary="Cleanup old audit logs"
+)
+async def cleanup_old_logs(
+    retention_days: Optional[int] = Query(None, description="Retention period in days")
+):
+    """Clean up old consent audit logs beyond retention period"""
+    try:
+        deleted_count = await consent_service.cleanup_old_logs(retention_days)
+        
+        return {
+            "deleted_count": deleted_count,
+            "retention_days": retention_days or settings.audit_retention_days
+        }
+        
+    except Exception as e:
+        logger.error("Failed to cleanup old logs", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to cleanup old logs"
+        )
+
+
+@app.delete(
+    "/admin/cache/{learner_id}",
+    tags=["Admin"],
+    summary="Invalidate learner cache"
+)
+async def invalidate_learner_cache(learner_id: str):
+    """Invalidate all cache entries for a specific learner"""
+    try:
+        success = await consent_service.invalidate_learner_cache(learner_id)
+        
+        return {
+            "learner_id": learner_id,
+            "cache_invalidated": success
+        }
+        
+    except Exception as e:
+        logger.error("Failed to invalidate cache", learner_id=learner_id, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to invalidate cache"
+        )
+
+
+# Root endpoint
+@app.get("/", include_in_schema=False)
+async def root():
+    """Root endpoint"""
+    return {
+        "service": "Consent & Policy Service",
+        "version": settings.app_version,
+        "status": "running",
+        "docs": "/docs" if settings.debug else "disabled"
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    
+    logger.info("Starting consent service directly")
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.debug,
+        log_level="info"
+    )
