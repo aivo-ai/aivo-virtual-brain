@@ -1,0 +1,24 @@
+﻿{
+  "name": "@aivo/mocks",
+  "version": "1.0.0",
+  "description": "Mock servers for Aivo Virtual Brains API",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm:prism\" \"npm:apollo\"",
+    "prism": "prism mock ../docs/api/rest/auth.yaml -p 4010",
+    "apollo": "node apollo-mock.js",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.10.4",
+    "@graphql-tools/mock": "^9.0.1",
+    "@graphql-tools/schema": "^10.0.4",
+    "@prismicio/mock": "^0.3.8",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "graphql": "^16.9.0"
+  },
+  "devDependencies": {
+    "@stoplight/prism-cli": "^5.8.2"
+  }
+}
