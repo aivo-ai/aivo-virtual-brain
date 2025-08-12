@@ -1,0 +1,19 @@
+{
+  "name": "kong-policies-tests",
+  "version": "1.0.0",
+  "description": "JSON Schema validation tests for Kong security policies",
+  "main": "validate-policies.js",
+  "scripts": {
+    "test": "jest",
+    "validate": "node validate-policies.js"
+  },
+  "dependencies": {
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1",
+    "jsonwebtoken": "^9.0.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
