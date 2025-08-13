@@ -56,6 +56,9 @@ class LearnerService:
         )
         publish_event("LEARNER_CREATED", event_payload.dict())
 
+        # Create default model bindings for private brain
+        self._create_default_model_bindings(db_learner.id)
+
         return LearnerResponse.from_orm(db_learner)
 
     def get_learner(self, learner_id: str, current_user_id: str, tenant_id: Optional[str] = None) -> Optional[LearnerResponse]:
@@ -139,3 +142,19 @@ class LearnerService:
         ).first()
 
         return teacher is not None
+
+    def _create_default_model_bindings(self, learner_id: uuid.UUID) -> None:
+        """Create default AI model bindings for a new learner."""
+        from .private_brain_service import PrivateBrainService
+        
+        private_brain_service = PrivateBrainService(self.db)
+        event_data = {"learner_id": str(learner_id)}
+        private_brain_service.handle_learner_created_event(event_data)
+
+    def _create_default_model_bindings(self, learner_id: uuid.UUID) -> None:
+        """Create default model bindings for a new learner."""
+        from .private_brain_service import PrivateBrainService
+        
+        private_brain_service = PrivateBrainService(self.db)
+        event_data = {"learner_id": str(learner_id)}
+        private_brain_service.handle_learner_created_event(event_data)
