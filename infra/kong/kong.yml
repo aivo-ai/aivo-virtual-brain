@@ -148,6 +148,58 @@ services:
           credentials: true
           max_age: 3600
       - name: correlation-id
+
+  # Learner Service - S1-09 Custom Plugins
+  - name: learner-svc
+    url: http://learner-service:8080
+    connect_timeout: 30000
+    write_timeout: 30000
+    read_timeout: 30000
+    routes:
+      - name: learner-routes
+        paths:
+          - /learners
+          - /api/learners
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - token
+          cookie_names:
+            - jwt
+          header_names:
+            - Authorization
+          key_claim_name: iss
+          secret_is_base64: false
+          run_on_preflight: false
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:3001"
+            - "https://*.aivo.ai"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Correlation-ID
+            - X-Dashboard-Context
+          credentials: true
+          max_age: 3600
+      - name: correlation-id
         config:
           header_name: X-Correlation-ID
           generator: uuid#counter
@@ -158,18 +210,38 @@ services:
           hour: 2000
           policy: local
           hide_client_headers: false
-      # Custom plugin stub: Learner Scope Validation
-      - name: request-transformer
+      # S1-09 Custom Plugins
+      - name: dash_context
         config:
-          add:
-            headers:
-              - "X-Plugin-Learner-Scope: enabled"
-      - name: acl
-        config:
-          allow:
+          header_prefix: "X-Dash-"
+          context_header: "X-Dashboard-Context"
+          required_context: true
+          allowed_contexts:
             - learner
+            - teacher
+            - guardian
             - admin
-            - instructor
+      - name: learner_scope
+        config:
+          learner_param_name: "learnerId"
+          jwt_learner_claim: "learner_uid"
+          enforce_scope: true
+          bypass_roles:
+            - admin
+            - teacher
+      - name: consent_gate
+        config:
+          redis_host: "redis"
+          redis_port: 6379
+          consent_key_prefix: "consent:"
+          enforce_consent: true
+          require_consent_for_paths:
+            - "/learners/"
+            - "/persona/"
+            - "/private-brain/"
+          bypass_roles:
+            - admin
+          default_consent_status: false
 
   # Gateway Health Check
   - name: gateway-health

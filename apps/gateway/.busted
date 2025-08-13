@@ -1,0 +1,10 @@
+return {
+  default = {
+    verbose = true,
+    output = "spec/formatters/aivo",
+    pattern = ".*_spec%.lua$",
+    ROOT = { "spec/" },
+    lpath = "spec/?.lua;spec/?/?.lua;spec/?/init.lua",
+    exclude = { "spec/fixtures/", "spec/support/" }
+  }
+}
