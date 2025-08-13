@@ -1,0 +1,30 @@
+# AIVO Orchestrator Service Dependencies
+# S1-14 Implementation
+
+# Core framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Event processing
+redis[hiredis]>=5.0.1
+asyncio-mqtt>=0.13.0
+
+# Service communication  
+httpx>=0.25.0
+pydantic>=2.4.0
+
+# Data handling
+python-multipart>=0.0.6
+python-json-logger>=2.0.7
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+
+# Monitoring and logging
+structlog>=23.1.0
+prometheus-client>=0.17.0
+
+# Optional dependencies for production
+gunicorn>=21.2.0
