@@ -1,0 +1,676 @@
+# AIVO IEP Service - GraphQL Schema Documentation
+# S1-11 Implementation - Complete GraphQL SDL
+
+"""
+IEP GraphQL Service Schema Definition Language (SDL)
+Individual Education Program Management API
+
+Version: 1.0.0
+Generated: 2025-01-15
+Description: Comprehensive GraphQL API for IEP document management with 
+            real-time collaboration and electronic signature workflows.
+"""
+
+type Query {
+  """Retrieve a specific IEP by ID"""
+  iep(id: ID!): IEP
+  
+  """Retrieve IEPs with filtering and pagination"""
+  ieps(
+    filters: IEPFilterInput
+    pagination: PaginationInput
+  ): IEPConnection!
+  
+  """Get version history for a student's IEPs"""
+  iepVersions(
+    studentId: String!
+    tenantId: String!
+  ): [IEP!]!
+}
+
+type Mutation {
+  """Create a new IEP document"""
+  createIep(input: IEPCreateInput!): IEPCreateResponse!
+  
+  """Create or update an IEP section with CRDT support"""
+  upsertSection(input: IEPSectionUpsertInput!): IEPSectionResponse!
+  
+  """Update IEP status (draft -> review -> active -> archived)"""
+  setIepStatus(
+    iepId: String!
+    status: IEPStatus!
+  ): IEPStatusResponse!
+  
+  """Attach evidence document to an IEP"""
+  attachEvidence(input: EvidenceAttachmentInput!): EvidenceAttachmentResponse!
+  
+  """Request electronic signature for IEP approval"""
+  requestSignature(input: SignatureRequestInput!): SignatureResponse!
+  
+  """Process electronic signature submission"""
+  submitSignature(input: SignatureSubmissionInput!): SignatureResponse!
+}
+
+type Subscription {
+  """Real-time updates for IEP changes"""
+  iepUpdated(iepId: String!): IEPUpdateEvent!
+}
+
+# Core IEP Types
+type IEP {
+  """Unique identifier"""
+  id: ID!
+  
+  """Student this IEP belongs to"""
+  studentId: String!
+  
+  """Tenant/organization identifier"""
+  tenantId: String!
+  
+  """School district name"""
+  schoolDistrict: String!
+  
+  """School name"""
+  schoolName: String!
+  
+  """IEP document title"""
+  title: String!
+  
+  """Academic year (e.g., "2024-2025")"""
+  academicYear: String!
+  
+  """Student's grade level"""
+  gradeLevel: String!
+  
+  """Current document status"""
+  status: IEPStatus!
+  
+  """Document version number"""
+  version: Int!
+  
+  """Whether this is the current active version"""
+  isCurrent: Boolean!
+  
+  """When this IEP becomes effective"""
+  effectiveDate: DateTime
+  
+  """When this IEP expires"""
+  expirationDate: DateTime
+  
+  """CRDT state for collaborative editing"""
+  crdtState: JSON!
+  
+  """Roles required to sign this IEP"""
+  signatureRequiredRoles: [String!]!
+  
+  """User who created the IEP"""
+  createdBy: String!
+  
+  """Creation timestamp"""
+  createdAt: DateTime!
+  
+  """User who last updated the IEP"""
+  updatedBy: String!
+  
+  """Last update timestamp"""
+  updatedAt: DateTime!
+  
+  """IEP content sections"""
+  sections: [IEPSection!]!
+  
+  """Electronic signatures"""
+  signatures: [ESignature!]!
+  
+  """Attached evidence documents"""
+  evidenceAttachments: [EvidenceAttachment!]!
+}
+
+type IEPSection {
+  """Unique identifier"""
+  id: ID!
+  
+  """Type/category of this section"""
+  sectionType: IEPSectionType!
+  
+  """Section title"""
+  title: String!
+  
+  """Display order within the IEP"""
+  orderIndex: Int!
+  
+  """Section content (rich text/markdown)"""
+  content: String!
+  
+  """CRDT operation counter for conflict resolution"""
+  operationCounter: Int!
+  
+  """Whether this section is required"""
+  isRequired: Boolean!
+  
+  """Whether this section is locked for editing"""
+  isLocked: Boolean!
+  
+  """Validation rules for section content"""
+  validationRules: JSON!
+  
+  """Creation timestamp"""
+  createdAt: DateTime!
+  
+  """Last update timestamp"""
+  updatedAt: DateTime!
+}
+
+type ESignature {
+  """Unique identifier"""
+  id: ID!
+  
+  """Signer's user identifier"""
+  signerUserId: String!
+  
+  """Signer's role in the IEP process"""
+  signerRole: String!
+  
+  """Signer's full name"""
+  signerName: String!
+  
+  """Signer's email address"""
+  signerEmail: String!
+  
+  """Current signature status"""
+  status: ESignatureStatus!
+  
+  """When signature was requested"""
+  requestedAt: DateTime!
+  
+  """When signature was completed (if applicable)"""
+  signedAt: DateTime
+  
+  """Digital signature data"""
+  signatureData: String
+  
+  """IP address where signature was made"""
+  signatureIpAddress: String
+  
+  """User agent of signing device"""
+  signatureUserAgent: String
+  
+  """Additional metadata"""
+  metadata: JSON!
+}
+
+type EvidenceAttachment {
+  """Unique identifier"""
+  id: ID!
+  
+  """Current filename"""
+  filename: String!
+  
+  """Original uploaded filename"""
+  originalFilename: String!
+  
+  """MIME content type"""
+  contentType: String!
+  
+  """File size in bytes"""
+  fileSize: Int!
+  
+  """Type of evidence this represents"""
+  evidenceType: String!
+  
+  """Description of the evidence"""
+  description: String
+  
+  """Searchable tags"""
+  tags: [String!]!
+  
+  """Whether this document contains confidential information"""
+  isConfidential: Boolean!
+  
+  """Access level for this document"""
+  accessLevel: String!
+  
+  """User who uploaded the file"""
+  uploadedBy: String!
+  
+  """Upload timestamp"""
+  uploadedAt: DateTime!
+}
+
+# Enums
+enum IEPStatus {
+  """Initial draft state"""
+  DRAFT
+  
+  """Under review by team"""
+  IN_REVIEW
+  
+  """Currently active and in effect"""
+  ACTIVE
+  
+  """No longer active, archived"""
+  ARCHIVED
+  
+  """Marked for deletion"""
+  DELETED
+}
+
+enum IEPSectionType {
+  """Student demographic and contact information"""
+  STUDENT_INFO
+  
+  """Current levels of academic and functional performance"""
+  PRESENT_LEVELS
+  
+  """Annual goals and short-term objectives"""
+  ANNUAL_GOALS
+  
+  """Special education and related services"""
+  SERVICES
+  
+  """Supplementary aids and services"""
+  SUPPLEMENTARY_AIDS
+  
+  """Program modifications and supports"""
+  PROGRAM_MODIFICATIONS
+  
+  """Assessment accommodations"""
+  ASSESSMENT_ACCOMMODATIONS
+  
+  """Transition services (age 16+)"""
+  TRANSITION_SERVICES
+  
+  """Behavior intervention plan"""
+  BEHAVIOR_PLAN
+  
+  """Extended school year services"""
+  ESY_SERVICES
+  
+  """Additional considerations"""
+  ADDITIONAL_CONSIDERATIONS
+}
+
+enum ESignatureStatus {
+  """Signature has been requested"""
+  PENDING
+  
+  """Signer has been notified"""
+  SENT
+  
+  """Signer has viewed the document"""
+  VIEWED
+  
+  """Successfully signed"""
+  COMPLETED
+  
+  """Signature was declined"""
+  DECLINED
+  
+  """Signature request expired"""
+  EXPIRED
+  
+  """Signature was cancelled"""
+  CANCELLED
+}
+
+# Input Types
+input IEPCreateInput {
+  """Student this IEP belongs to"""
+  studentId: String!
+  
+  """Tenant/organization identifier"""
+  tenantId: String!
+  
+  """School district name"""
+  schoolDistrict: String!
+  
+  """School name"""
+  schoolName: String!
+  
+  """IEP document title"""
+  title: String!
+  
+  """Academic year"""
+  academicYear: String!
+  
+  """Student's grade level"""
+  gradeLevel: String!
+  
+  """When this IEP becomes effective"""
+  effectiveDate: DateTime
+  
+  """When this IEP expires"""
+  expirationDate: DateTime
+  
+  """Roles required to sign this IEP"""
+  signatureRequiredRoles: [String!]!
+}
+
+input IEPSectionUpsertInput {
+  """IEP this section belongs to"""
+  iepId: String!
+  
+  """Existing section ID (for updates)"""
+  sectionId: String
+  
+  """Type/category of this section"""
+  sectionType: IEPSectionType!
+  
+  """Section title"""
+  title: String!
+  
+  """Section content"""
+  content: String!
+  
+  """Display order within the IEP"""
+  orderIndex: Int
+  
+  """Whether this section is required"""
+  isRequired: Boolean
+  
+  """Validation rules for section content"""
+  validationRules: JSON
+  
+  """CRDT operations for collaborative editing"""
+  crdtOperations: [CRDTOperationInput!]
+}
+
+input CRDTOperationInput {
+  """Operation type"""
+  operationType: CRDTOperationType!
+  
+  """Position in the text"""
+  position: Int!
+  
+  """Content for insert operations"""
+  content: String
+  
+  """Length for delete operations"""
+  length: Int
+  
+  """Vector clock for ordering"""
+  vectorClock: JSON!
+  
+  """Client identifier"""
+  clientId: String!
+  
+  """Operation timestamp"""
+  timestamp: DateTime!
+}
+
+input EvidenceAttachmentInput {
+  """IEP to attach evidence to"""
+  iepId: String!
+  
+  """Filename for the upload"""
+  filename: String!
+  
+  """MIME content type"""
+  contentType: String!
+  
+  """File size in bytes"""
+  fileSize: Int!
+  
+  """Type of evidence"""
+  evidenceType: String!
+  
+  """Description of the evidence"""
+  description: String
+  
+  """Searchable tags"""
+  tags: [String!]
+  
+  """Whether this document is confidential"""
+  isConfidential: Boolean
+}
+
+input SignatureRequestInput {
+  """IEP to request signatures for"""
+  iepId: String!
+  
+  """Email addresses to send signature requests to"""
+  signerEmails: [String!]!
+  
+  """Custom message for signature request"""
+  customMessage: String
+  
+  """Expiration date for signature requests"""
+  expiresAt: DateTime
+}
+
+input SignatureSubmissionInput {
+  """Electronic signature ID"""
+  signatureId: String!
+  
+  """Signature token from email"""
+  signatureToken: String!
+  
+  """Digital signature data"""
+  signatureData: String!
+}
+
+input IEPFilterInput {
+  """Filter by student ID"""
+  studentId: String
+  
+  """Filter by tenant ID"""
+  tenantId: String
+  
+  """Filter by status"""
+  status: IEPStatus
+  
+  """Filter by academic year"""
+  academicYear: String
+  
+  """Filter by school district"""
+  schoolDistrict: String
+  
+  """Only show current versions"""
+  currentOnly: Boolean
+}
+
+input PaginationInput {
+  """Number of items to return"""
+  limit: Int = 20
+  
+  """Number of items to skip"""
+  offset: Int = 0
+  
+  """Cursor for cursor-based pagination"""
+  cursor: String
+}
+
+# Response Types
+type IEPCreateResponse {
+  """Whether the operation succeeded"""
+  success: Boolean!
+  
+  """Human-readable message"""
+  message: String!
+  
+  """Created IEP (if successful)"""
+  iep: IEP
+  
+  """Error messages (if any)"""
+  errors: [String!]!
+}
+
+type IEPSectionResponse {
+  """Whether the operation succeeded"""
+  success: Boolean!
+  
+  """Human-readable message"""
+  message: String!
+  
+  """Created/updated section (if successful)"""
+  section: IEPSection
+  
+  """Error messages (if any)"""
+  errors: [String!]!
+}
+
+type IEPStatusResponse {
+  """Whether the operation succeeded"""
+  success: Boolean!
+  
+  """Human-readable message"""
+  message: String!
+  
+  """Updated IEP (if successful)"""
+  iep: IEP
+  
+  """Error messages (if any)"""
+  errors: [String!]!
+}
+
+type EvidenceAttachmentResponse {
+  """Whether the operation succeeded"""
+  success: Boolean!
+  
+  """Human-readable message"""
+  message: String!
+  
+  """Created attachment (if successful)"""
+  attachment: EvidenceAttachment
+  
+  """Pre-signed upload URL"""
+  uploadUrl: String
+  
+  """Error messages (if any)"""
+  errors: [String!]!
+}
+
+type SignatureResponse {
+  """Whether the operation succeeded"""
+  success: Boolean!
+  
+  """Human-readable message"""
+  message: String!
+  
+  """Electronic signature record"""
+  signature: ESignature
+  
+  """Error messages (if any)"""
+  errors: [String!]!
+}
+
+type IEPConnection {
+  """IEP items"""
+  items: [IEP!]!
+  
+  """Total count of items"""
+  totalCount: Int!
+  
+  """Whether there are more items"""
+  hasNextPage: Boolean!
+  
+  """Whether there are previous items"""
+  hasPreviousPage: Boolean!
+  
+  """Cursor for next page"""
+  nextCursor: String
+  
+  """Cursor for previous page"""
+  previousCursor: String
+}
+
+# Subscription Types
+type IEPUpdateEvent {
+  """IEP that was updated"""
+  iepId: String!
+  
+  """Type of update event"""
+  eventType: IEPUpdateEventType!
+  
+  """Section that was updated (if applicable)"""
+  sectionId: String
+  
+  """Signature that was updated (if applicable)"""
+  signatureId: String
+  
+  """User who made the change"""
+  updatedBy: String!
+  
+  """When the change occurred"""
+  timestamp: DateTime!
+  
+  """Additional event metadata"""
+  metadata: JSON
+}
+
+enum IEPUpdateEventType {
+  """IEP was created"""
+  IEP_CREATED
+  
+  """IEP status changed"""
+  STATUS_CHANGED
+  
+  """Section was added"""
+  SECTION_ADDED
+  
+  """Section was updated"""
+  SECTION_UPDATED
+  
+  """Section was deleted"""
+  SECTION_DELETED
+  
+  """Evidence was attached"""
+  EVIDENCE_ATTACHED
+  
+  """Signature was requested"""
+  SIGNATURE_REQUESTED
+  
+  """Signature was completed"""
+  SIGNATURE_COMPLETED
+  
+  """User joined collaborative session"""
+  USER_JOINED
+  
+  """User left collaborative session"""
+  USER_LEFT
+}
+
+enum CRDTOperationType {
+  """Insert text at position"""
+  INSERT
+  
+  """Delete text at position"""
+  DELETE
+  
+  """Update text at position"""
+  UPDATE
+  
+  """Retain text (no change)"""
+  RETAIN
+}
+
+# Scalar Types
+"""ISO 8601 date-time string"""
+scalar DateTime
+
+"""JSON object or value"""
+scalar JSON
+
+# Schema Directives
+"""Marks a field as deprecated with an optional reason"""
+directive @deprecated(
+  reason: String = "No longer supported"
+) on FIELD_DEFINITION | ENUM_VALUE
+
+"""Specifies caching behavior"""
+directive @cacheControl(
+  maxAge: Int
+  scope: CacheControlScope
+  inheritMaxAge: Boolean
+) on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
+
+enum CacheControlScope {
+  PUBLIC
+  PRIVATE
+}
+
+# Schema Definition
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
