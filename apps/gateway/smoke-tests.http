@@ -1,0 +1,174 @@
+# S1-16 Gateway Route Wiring & Policies Smoke Tests
+# httpyac test file for Kong gateway endpoints with OTEL tracing
+#
+# Test Structure:
+# - Authentication endpoints (200/401)
+# - Service routing with JWT auth (200/401/403) 
+# - Security policy enforcement (dash_context, learner_scope, consent_gate)
+# - OpenTelemetry trace validation
+
+@gateway_base_url = http://localhost:8000
+@test_jwt_token = eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ3ZWItYXBwLWtleSIsImV4cCI6MTY5MjU2NDgwMCwiaWF0IjoxNjkyNDc4NDAwLCJsZWFybmVyX3VpZCI6ImxlYXJuZXItMTIzIiwicm9sZSI6ImxlYXJuZXIifQ.example
+@correlation_id = {{$uuid}}
+@dashboard_context = learner
+@learner_id = learner-123
+
+###
+###
+# Gateway Health Check - Should return 200
+GET {{gateway_base_url}}/gateway/health
+X-Correlation-ID: {{correlation_id}}
+
+### 
+# Auth Service - Login endpoint (no JWT required) - Should return 200
+POST {{gateway_base_url}}/api/v1/auth/login
+Content-Type: application/json
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+
+{
+  "username": "test-learner@aivo.ai",
+  "password": "test123"
+}
+
+###
+# User Service - JWT required - Should return 401 without token
+GET {{gateway_base_url}}/api/v1/users/profile
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+
+###
+# User Service - JWT provided - Should return 200
+GET {{gateway_base_url}}/api/v1/users/profile
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+
+###
+# Assessment Service - JWT + learner scope - Should return 200
+GET {{gateway_base_url}}/api/v1/assessments?learnerId={{learner_id}}
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+
+###
+# Assessment Service - Wrong learner scope - Should return 403
+GET {{gateway_base_url}}/api/v1/assessments?learnerId=learner-999
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+
+###
+# Learner Service - JWT + consent gate - Should return 200
+GET {{gateway_base_url}}/api/v1/learners/{{learner_id}}/profile
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+
+###
+# Orchestrator Service - JWT + dashboard context - Should return 200
+POST {{gateway_base_url}}/api/v1/orchestrator/workflows
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+Content-Type: application/json
+
+{
+  "workflowType": "assessment",
+  "learnerId": "{{learner_id}}"
+}
+
+###
+# Orchestrator Service - Wrong dashboard context - Should return 403
+POST {{gateway_base_url}}/api/v1/orchestrator/workflows
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: admin
+Content-Type: application/json
+
+{
+  "workflowType": "assessment",
+  "learnerId": "{{learner_id}}"
+}
+
+###
+# Notification Service - JWT + multiple policies - Should return 200
+GET {{gateway_base_url}}/api/v1/notifications?learnerId={{learner_id}}
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+
+###
+# Search Service - JWT + consent gate - Should return 200
+POST {{gateway_base_url}}/api/v1/search/query
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+Content-Type: application/json
+
+{
+  "query": "learning materials",
+  "learnerId": "{{learner_id}}",
+  "filters": {
+    "category": "math"
+  }
+}
+
+###
+# GraphQL Endpoint - Apollo Router - Should return 200
+POST {{gateway_base_url}}/graphql
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}
+X-Dashboard-Context: {{dashboard_context}}
+Content-Type: application/json
+
+{
+  "query": "query { __typename }"
+}
+
+###
+# Rate Limiting Test - Multiple rapid requests to trigger rate limit
+@name multiple_requests
+GET {{gateway_base_url}}/api/v1/users/profile
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}-1
+X-Dashboard-Context: {{dashboard_context}}
+
+###
+GET {{gateway_base_url}}/api/v1/users/profile
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}-2
+X-Dashboard-Context: {{dashboard_context}}
+
+###
+GET {{gateway_base_url}}/api/v1/users/profile
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}-3
+X-Dashboard-Context: {{dashboard_context}}
+
+### 
+# CORS Preflight Test - Should return 200
+OPTIONS {{gateway_base_url}}/api/v1/users/profile
+Origin: http://localhost:3000
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Authorization,X-Dashboard-Context
+
+###
+# Prometheus Metrics - Should return metrics
+GET {{gateway_base_url}}/metrics
+X-Correlation-ID: {{correlation_id}}
+
+###
+# OpenTelemetry Trace Validation Test
+# This should generate trace data that can be validated in Jaeger/OTEL
+POST {{gateway_base_url}}/api/v1/assessments
+Authorization: Bearer {{test_jwt_token}}
+X-Correlation-ID: {{correlation_id}}-trace-test
+X-Dashboard-Context: {{dashboard_context}}
+Content-Type: application/json
+
+{
+  "title": "Math Assessment",
+  "learnerId": "{{learner_id}}",
+  "type": "quiz"
+}

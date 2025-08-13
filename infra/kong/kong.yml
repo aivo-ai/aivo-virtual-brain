@@ -148,18 +148,133 @@ services:
           credentials: true
           max_age: 3600
       - name: correlation-id
+        config:
+          header_name: X-Correlation-ID
+          generator: uuid#counter
+          echo_downstream: true
+      - name: rate-limiting
+        config:
+          minute: 200
+          hour: 2000
+          policy: local
+          hide_client_headers: false
+      # Custom plugin stub: Learner Scope Validation
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - "X-Plugin-Learner-Scope: enabled"
+      - name: acl
+        config:
+          allow:
+            - learner
+            - admin
+            - instructor
 
-  # Learner Service - S1-09 Custom Plugins
-  - name: learner-svc
-    url: http://learner-service:8080
+  # Assessment Service - S1-16 NEW
+  - name: assessment-svc
+    url: http://assessment-service:8010
     connect_timeout: 30000
     write_timeout: 30000
     read_timeout: 30000
     routes:
-      - name: learner-routes
+      - name: assessment-routes
         paths:
-          - /learners
-          - /api/learners
+          - /assessments
+          - /api/v1/assessments
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - token
+          cookie_names:
+            - jwt
+          header_names:
+            - Authorization
+          key_claim_name: iss
+          secret_is_base64: false
+          run_on_preflight: false
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:3001"
+            - "https://*.aivo.ai"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Correlation-ID
+            - X-Learner-Scope
+            - X-Dashboard-Context
+          credentials: true
+          max_age: 3600
+      - name: correlation-id
+        config:
+          header_name: X-Correlation-ID
+          generator: uuid#counter
+          echo_downstream: true
+      - name: rate-limiting
+        config:
+          minute: 200
+          hour: 2000
+          policy: local
+          hide_client_headers: false
+      - name: dash_context
+        config:
+          header_prefix: "X-Dash-"
+          context_header: "X-Dashboard-Context"
+          required_context: true
+          allowed_contexts:
+            - learner
+            - teacher
+            - guardian
+            - admin
+      - name: learner_scope
+        config:
+          learner_param_name: "learnerId"
+          jwt_learner_claim: "learner_uid"
+          enforce_scope: true
+          bypass_roles:
+            - admin
+            - teacher
+      - name: consent_gate
+        config:
+          redis_host: "redis"
+          redis_port: 6379
+          consent_key_prefix: "consent:"
+          enforce_consent: true
+          require_consent_for_paths:
+            - "/assessments/"
+            - "/api/v1/assessments/"
+          bypass_roles:
+            - admin
+          default_consent_status: false
+
+  # Orchestrator Service - S1-16 NEW
+  - name: orchestrator-svc
+    url: http://orchestrator-service:8080
+    connect_timeout: 30000
+    write_timeout: 30000
+    read_timeout: 30000
+    routes:
+      - name: orchestrator-routes
+        paths:
+          - /orchestrator
+          - /api/v1/orchestrator
         methods:
           - GET
           - POST
@@ -197,6 +312,7 @@ services:
             - Authorization
             - X-Correlation-ID
             - X-Dashboard-Context
+            - X-Learner-Scope
           credentials: true
           max_age: 3600
       - name: correlation-id
@@ -206,11 +322,91 @@ services:
           echo_downstream: true
       - name: rate-limiting
         config:
-          minute: 200
-          hour: 2000
+          minute: 250
+          hour: 2500
           policy: local
           hide_client_headers: false
-      # S1-09 Custom Plugins
+      - name: dash_context
+        config:
+          header_prefix: "X-Dash-"
+          context_header: "X-Dashboard-Context"
+          required_context: true
+          allowed_contexts:
+            - learner
+            - teacher
+            - guardian
+            - admin
+      - name: learner_scope
+        config:
+          learner_param_name: "learnerId"
+          jwt_learner_claim: "learner_uid"
+          enforce_scope: true
+          bypass_roles:
+            - admin
+            - teacher
+
+  # Learner Service - S1-16 Enhanced
+  - name: learner-svc
+    url: http://learner-service:8001
+    connect_timeout: 30000
+    write_timeout: 30000
+    read_timeout: 30000
+    routes:
+      - name: learner-routes
+        paths:
+          - /learners
+          - /api/v1/learners
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - token
+          cookie_names:
+            - jwt
+          header_names:
+            - Authorization
+          key_claim_name: iss
+          secret_is_base64: false
+          run_on_preflight: false
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:3001"
+            - "https://*.aivo.ai"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Correlation-ID
+            - X-Dashboard-Context
+            - X-Learner-Scope
+          credentials: true
+          max_age: 3600
+      - name: correlation-id
+        config:
+          header_name: X-Correlation-ID
+          generator: uuid#counter
+          echo_downstream: true
+      - name: rate-limiting
+        config:
+          minute: 300
+          hour: 3000
+          policy: local
+          hide_client_headers: false
       - name: dash_context
         config:
           header_prefix: "X-Dash-"
@@ -237,8 +433,195 @@ services:
           enforce_consent: true
           require_consent_for_paths:
             - "/learners/"
+            - "/api/v1/learners/"
             - "/persona/"
             - "/private-brain/"
+          bypass_roles:
+            - admin
+          default_consent_status: false
+
+  # Notification Service - S1-16 NEW
+  - name: notification-svc
+    url: http://notification-service:8002
+    connect_timeout: 30000
+    write_timeout: 30000
+    read_timeout: 30000
+    routes:
+      - name: notification-routes
+        paths:
+          - /notifications
+          - /api/v1/notifications
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - token
+          cookie_names:
+            - jwt
+          header_names:
+            - Authorization
+          key_claim_name: iss
+          secret_is_base64: false
+          run_on_preflight: false
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:3001"
+            - "https://*.aivo.ai"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Correlation-ID
+            - X-Dashboard-Context
+            - X-Learner-Scope
+          credentials: true
+          max_age: 3600
+      - name: correlation-id
+        config:
+          header_name: X-Correlation-ID
+          generator: uuid#counter
+          echo_downstream: true
+      - name: rate-limiting
+        config:
+          minute: 500
+          hour: 5000
+          policy: local
+          hide_client_headers: false
+      - name: dash_context
+        config:
+          header_prefix: "X-Dash-"
+          context_header: "X-Dashboard-Context"
+          required_context: true
+          allowed_contexts:
+            - learner
+            - teacher
+            - guardian
+            - admin
+      - name: learner_scope
+        config:
+          learner_param_name: "learnerId"
+          jwt_learner_claim: "learner_uid"
+          enforce_scope: true
+          bypass_roles:
+            - admin
+            - teacher
+      - name: consent_gate
+        config:
+          redis_host: "redis"
+          redis_port: 6379
+          consent_key_prefix: "consent:"
+          enforce_consent: true
+          require_consent_for_paths:
+            - "/notifications/"
+            - "/api/v1/notifications/"
+          bypass_roles:
+            - admin
+          default_consent_status: false
+
+  # Search Service - S1-16 NEW
+  - name: search-svc
+    url: http://search-service:8003
+    connect_timeout: 30000
+    write_timeout: 30000
+    read_timeout: 30000
+    routes:
+      - name: search-routes
+        paths:
+          - /search
+          - /api/v1/search
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - token
+          cookie_names:
+            - jwt
+          header_names:
+            - Authorization
+          key_claim_name: iss
+          secret_is_base64: false
+          run_on_preflight: false
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:3001"
+            - "https://*.aivo.ai"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Correlation-ID
+            - X-Dashboard-Context
+            - X-Learner-Scope
+          credentials: true
+          max_age: 3600
+      - name: correlation-id
+        config:
+          header_name: X-Correlation-ID
+          generator: uuid#counter
+          echo_downstream: true
+      - name: rate-limiting
+        config:
+          minute: 400
+          hour: 4000
+          policy: local
+          hide_client_headers: false
+      - name: dash_context
+        config:
+          header_prefix: "X-Dash-"
+          context_header: "X-Dashboard-Context"
+          required_context: true
+          allowed_contexts:
+            - learner
+            - teacher
+            - guardian
+            - admin
+      - name: learner_scope
+        config:
+          learner_param_name: "learnerId"
+          jwt_learner_claim: "learner_uid"
+          enforce_scope: true
+          bypass_roles:
+            - admin
+            - teacher
+      - name: consent_gate
+        config:
+          redis_host: "redis"
+          redis_port: 6379
+          consent_key_prefix: "consent:"
+          enforce_consent: true
+          require_consent_for_paths:
+            - "/search/"
+            - "/api/v1/search/"
           bypass_roles:
             - admin
           default_consent_status: false
@@ -310,6 +693,34 @@ plugins:
       upstream_health_metrics: true
 
   # Global Request/Response Logging
+  - name: file-log
+    config:
+      path: "/tmp/access.log"
+      custom_fields_by_lua:
+        correlation_id: "return kong.ctx.shared.correlation_id"
+        dashboard_context: "return kong.ctx.shared.dashboard_context"
+
+  # S1-16 OpenTelemetry Integration
+  - name: opentelemetry
+    config:
+      endpoint: "http://otel-collector:4318/v1/traces"
+      headers:
+        Content-Type: "application/json"
+      resource_attributes:
+        service.name: "aivo-gateway"
+        service.version: "1.0.0"
+        deployment.environment: "development"
+      batch_span_processor:
+        drop_on_queue_full: false
+        max_export_batch_size: 200
+        max_queue_size: 1000
+        schedule_delay_millis: 1000
+
+  # Global Request ID
+  - name: request-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid
   - name: file-log
     config:
       path: /dev/stdout
