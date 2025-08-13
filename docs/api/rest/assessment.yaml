@@ -1,0 +1,532 @@
+openapi: 3.1.0
+info:
+  title: Assessment Service API
+  version: 1.0.0
+  description: Assessment service for educational evaluations with IRT-ready analytics
+servers:
+  - url: http://localhost:8010
+    description: Development server
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /assessments:
+    post:
+      summary: Create new assessment
+      operationId: createAssessment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssessmentRequest"
+      responses:
+        "201":
+          description: Assessment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assessment"
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+
+    get:
+      summary: List assessments
+      operationId: listAssessments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: learner_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: assessment_type
+          in: query
+          schema:
+            type: string
+            enum: [baseline, progress, diagnostic, summative]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Assessments retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentList"
+
+  /assessments/{assessment_id}:
+    get:
+      summary: Get assessment by ID
+      operationId: getAssessment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assessment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Assessment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assessment"
+        "404":
+          description: Assessment not found
+
+    put:
+      summary: Update assessment
+      operationId: updateAssessment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assessment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAssessmentRequest"
+      responses:
+        "200":
+          description: Assessment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assessment"
+
+    delete:
+      summary: Delete assessment
+      operationId: deleteAssessment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assessment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Assessment deleted successfully
+        "404":
+          description: Assessment not found
+
+  /assessments/{assessment_id}/responses:
+    post:
+      summary: Submit assessment response
+      operationId: submitResponse
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assessment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssessmentResponse"
+      responses:
+        "201":
+          description: Response submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseResult"
+
+  /assessments/{assessment_id}/analytics:
+    get:
+      summary: Get assessment analytics
+      operationId: getAssessmentAnalytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assessment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentAnalytics"
+
+  /baselines:
+    post:
+      summary: Create baseline assessment
+      operationId: createBaseline
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBaselineRequest"
+      responses:
+        "201":
+          description: Baseline assessment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assessment"
+
+  /baselines/{baseline_id}/complete:
+    post:
+      summary: Complete baseline assessment
+      operationId: completeBaseline
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: baseline_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteBaselineRequest"
+      responses:
+        "200":
+          description: Baseline completed and event published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaselineResult"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        components:
+          type: object
+          additionalProperties:
+            type: string
+
+    Assessment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+          format: uuid
+        assessment_type:
+          type: string
+          enum: [baseline, progress, diagnostic, summative]
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, completed, archived]
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssessmentQuestion"
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    AssessmentQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question_text:
+          type: string
+        question_type:
+          type: string
+          enum: [multiple_choice, short_answer, essay, true_false]
+        options:
+          type: array
+          items:
+            type: string
+        correct_answer:
+          type: string
+        difficulty:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        discrimination:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        subject_area:
+          type: string
+        cognitive_level:
+          type: string
+          enum: [remember, understand, apply, analyze, evaluate, create]
+
+    CreateAssessmentRequest:
+      type: object
+      required: [tenant_id, learner_id, assessment_type, title]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+          format: uuid
+        assessment_type:
+          type: string
+          enum: [baseline, progress, diagnostic, summative]
+        title:
+          type: string
+        description:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssessmentQuestion"
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateAssessmentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, completed, archived]
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssessmentQuestion"
+        metadata:
+          type: object
+          additionalProperties: true
+
+    AssessmentResponse:
+      type: object
+      required: [question_id, answer]
+      properties:
+        question_id:
+          type: string
+          format: uuid
+        answer:
+          type: string
+        response_time_ms:
+          type: integer
+        confidence_level:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+
+    ResponseResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question_id:
+          type: string
+          format: uuid
+        is_correct:
+          type: boolean
+        score:
+          type: number
+        feedback:
+          type: string
+        next_question_id:
+          type: string
+          format: uuid
+
+    AssessmentAnalytics:
+      type: object
+      properties:
+        overall_score:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        percentile_rank:
+          type: number
+          minimum: 0
+          maximum: 100
+        ability_estimate:
+          type: number
+        standard_error:
+          type: number
+        question_analytics:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionAnalytics"
+        subject_scores:
+          type: object
+          additionalProperties:
+            type: number
+        cognitive_scores:
+          type: object
+          additionalProperties:
+            type: number
+        strengths:
+          type: array
+          items:
+            type: string
+        challenges:
+          type: array
+          items:
+            type: string
+
+    QuestionAnalytics:
+      type: object
+      properties:
+        question_id:
+          type: string
+          format: uuid
+        response_time_ms:
+          type: integer
+        is_correct:
+          type: boolean
+        difficulty_level:
+          type: number
+        discrimination_index:
+          type: number
+
+    AssessmentList:
+      type: object
+      properties:
+        assessments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Assessment"
+        total_count:
+          type: integer
+        has_more:
+          type: boolean
+
+    CreateBaselineRequest:
+      type: object
+      required: [tenant_id, learner_id]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+          format: uuid
+        grade_level:
+          type: string
+        subject_areas:
+          type: array
+          items:
+            type: string
+
+    CompleteBaselineRequest:
+      type: object
+      required: [responses]
+      properties:
+        responses:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssessmentResponse"
+
+    BaselineResult:
+      type: object
+      properties:
+        assessment_id:
+          type: string
+          format: uuid
+        overall_score:
+          type: number
+        percentile:
+          type: number
+        strengths:
+          type: array
+          items:
+            type: string
+        challenges:
+          type: array
+          items:
+            type: string
+        recommended_level:
+          type: string
+        event_published:
+          type: boolean
+        event_id:
+          type: string

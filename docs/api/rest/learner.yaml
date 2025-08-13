@@ -1,0 +1,643 @@
+openapi: 3.1.0
+info:
+  title: Learner Service API
+  version: 1.0.0
+  description: Learner management service with private brain personas and level management
+servers:
+  - url: http://localhost:8001
+    description: Development server
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /learners:
+    post:
+      summary: Create new learner
+      operationId: createLearner
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLearnerRequest"
+      responses:
+        "201":
+          description: Learner created successfully with private brain persona
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+
+    get:
+      summary: List learners
+      operationId: listLearners
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Learners retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerList"
+
+  /learners/{learner_id}:
+    get:
+      summary: Get learner by ID
+      operationId: getLearner
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Learner retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+        "404":
+          description: Learner not found
+
+    put:
+      summary: Update learner
+      operationId: updateLearner
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLearnerRequest"
+      responses:
+        "200":
+          description: Learner updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+
+    delete:
+      summary: Delete learner
+      operationId: deleteLearner
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Learner deleted successfully
+        "404":
+          description: Learner not found
+
+  /learners/{learner_id}/level:
+    put:
+      summary: Update learner difficulty level
+      operationId: updateLearnerLevel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLevelRequest"
+      responses:
+        "200":
+          description: Level updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LevelUpdateResult"
+
+  /learners/{learner_id}/brain:
+    get:
+      summary: Get learner's private brain persona
+      operationId: getPrivateBrain
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Private brain retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivateBrain"
+        "404":
+          description: Private brain not found
+
+    put:
+      summary: Update private brain persona
+      operationId: updatePrivateBrain
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePrivateBrainRequest"
+      responses:
+        "200":
+          description: Private brain updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivateBrain"
+
+  /learners/{learner_id}/models:
+    get:
+      summary: Get model bindings for learner
+      operationId: getModelBindings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Model bindings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelBindings"
+
+    post:
+      summary: Create model binding
+      operationId: createModelBinding
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateModelBindingRequest"
+      responses:
+        "201":
+          description: Model binding created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelBinding"
+
+  /learners/{learner_id}/progress:
+    get:
+      summary: Get learner progress
+      operationId: getLearnerProgress
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: subject
+          in: query
+          schema:
+            type: string
+        - name: timeframe
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, year]
+            default: month
+      responses:
+        "200":
+          description: Progress retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerProgress"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        components:
+          type: object
+          additionalProperties:
+            type: string
+
+    Learner:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        grade_level:
+          type: string
+        current_level:
+          type: string
+          enum: [beginner, easy, moderate, challenging, advanced]
+        learning_preferences:
+          type: object
+          additionalProperties: true
+        private_brain:
+          $ref: "#/components/schemas/PrivateBrain"
+        model_bindings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelBinding"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PrivateBrain:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+          format: uuid
+        persona_name:
+          type: string
+        personality_traits:
+          type: object
+          properties:
+            curiosity:
+              type: number
+              minimum: 0.0
+              maximum: 1.0
+            patience:
+              type: number
+              minimum: 0.0
+              maximum: 1.0
+            encouragement:
+              type: number
+              minimum: 0.0
+              maximum: 1.0
+            creativity:
+              type: number
+              minimum: 0.0
+              maximum: 1.0
+        communication_style:
+          type: string
+          enum: [formal, casual, encouraging, analytical]
+        learning_approach:
+          type: string
+          enum: [visual, auditory, kinesthetic, mixed]
+        strengths:
+          type: array
+          items:
+            type: string
+        growth_areas:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ModelBinding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          enum: [openai, anthropic, google, custom]
+        model_name:
+          type: string
+        endpoint_url:
+          type: string
+        api_key_ref:
+          type: string
+        is_default:
+          type: boolean
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum:
+              [text_generation, code_completion, math_solving, creative_writing]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateLearnerRequest:
+      type: object
+      required: [tenant_id, user_id, name, grade_level]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        grade_level:
+          type: string
+        learning_preferences:
+          type: object
+          additionalProperties: true
+        initial_persona:
+          type: object
+          properties:
+            personality_traits:
+              type: object
+              additionalProperties:
+                type: number
+            communication_style:
+              type: string
+            learning_approach:
+              type: string
+
+    UpdateLearnerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        grade_level:
+          type: string
+        current_level:
+          type: string
+          enum: [beginner, easy, moderate, challenging, advanced]
+        learning_preferences:
+          type: object
+          additionalProperties: true
+
+    UpdateLevelRequest:
+      type: object
+      required: [level, reason]
+      properties:
+        level:
+          type: string
+          enum: [beginner, easy, moderate, challenging, advanced]
+        reason:
+          type: string
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        performance_data:
+          type: object
+          properties:
+            current_score:
+              type: number
+            consecutive_correct:
+              type: integer
+            consecutive_incorrect:
+              type: integer
+        temporary:
+          type: boolean
+          default: false
+
+    LevelUpdateResult:
+      type: object
+      properties:
+        previous_level:
+          type: string
+        new_level:
+          type: string
+        reason:
+          type: string
+        confidence:
+          type: number
+        updated_at:
+          type: string
+          format: date-time
+        event_published:
+          type: boolean
+
+    UpdatePrivateBrainRequest:
+      type: object
+      properties:
+        persona_name:
+          type: string
+        personality_traits:
+          type: object
+          additionalProperties:
+            type: number
+        communication_style:
+          type: string
+          enum: [formal, casual, encouraging, analytical]
+        learning_approach:
+          type: string
+          enum: [visual, auditory, kinesthetic, mixed]
+        strengths:
+          type: array
+          items:
+            type: string
+        growth_areas:
+          type: array
+          items:
+            type: string
+
+    CreateModelBindingRequest:
+      type: object
+      required: [provider, model_name]
+      properties:
+        provider:
+          type: string
+          enum: [openai, anthropic, google, custom]
+        model_name:
+          type: string
+        endpoint_url:
+          type: string
+        api_key_ref:
+          type: string
+        is_default:
+          type: boolean
+          default: false
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum:
+              [text_generation, code_completion, math_solving, creative_writing]
+
+    ModelBindings:
+      type: object
+      properties:
+        bindings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelBinding"
+        default_binding_id:
+          type: string
+          format: uuid
+
+    LearnerProgress:
+      type: object
+      properties:
+        learner_id:
+          type: string
+          format: uuid
+        timeframe:
+          type: string
+        overall_progress:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        subject_progress:
+          type: object
+          additionalProperties:
+            type: number
+        level_progression:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              level:
+                type: string
+              reason:
+                type: string
+        recent_activities:
+          type: array
+          items:
+            type: object
+            properties:
+              activity_type:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+              performance:
+                type: number
+        strengths:
+          type: array
+          items:
+            type: string
+        growth_areas:
+          type: array
+          items:
+            type: string
+
+    LearnerList:
+      type: object
+      properties:
+        learners:
+          type: array
+          items:
+            $ref: "#/components/schemas/Learner"
+        total_count:
+          type: integer
+        has_more:
+          type: boolean

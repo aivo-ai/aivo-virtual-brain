@@ -1,0 +1,469 @@
+openapi: 3.1.0
+info:
+  title: Orchestrator Service API
+  version: 1.0.0
+  description: Event-driven orchestration service for intelligent level suggestions and game break triggers
+servers:
+  - url: http://localhost:8080
+    description: Development server
+paths:
+  /health:
+    get:
+      summary: Health check with component status
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /stats:
+    get:
+      summary: Get orchestration statistics
+      operationId: getStats
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrchestrationStats"
+
+  /internal/trigger:
+    post:
+      summary: Manual event trigger for testing
+      operationId: triggerEvent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriggerEventRequest"
+      responses:
+        "200":
+          description: Event processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TriggerEventResponse"
+        "400":
+          description: Invalid event data
+        "500":
+          description: Processing error
+
+  /events:
+    get:
+      summary: List processed events (admin only)
+      operationId: listEvents
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: event_type
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                BASELINE_COMPLETE,
+                SLP_UPDATED,
+                SEL_ALERT,
+                COURSEWORK_ANALYZED,
+                ASSESSMENT_COMPLETE,
+                LEARNER_PROGRESS,
+                ENGAGEMENT_LOW,
+              ]
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Events retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventList"
+
+  /actions:
+    get:
+      summary: List generated actions (admin only)
+      operationId: listActions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: action_type
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                LEVEL_SUGGESTED,
+                GAME_BREAK,
+                SEL_INTERVENTION,
+                LEARNING_PATH_UPDATE,
+              ]
+        - name: target_service
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, executing, completed, failed]
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Actions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionList"
+
+  /learners/{learner_id}/state:
+    get:
+      summary: Get learner orchestration state
+      operationId: getLearnerState
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Learner state retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerOrchestrationState"
+        "404":
+          description: Learner state not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        components:
+          type: object
+          properties:
+            event_consumer:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            orchestration_engine:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            redis_connection:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            service_clients:
+              type: object
+              additionalProperties:
+                type: string
+
+    OrchestrationStats:
+      type: object
+      properties:
+        total_events_processed:
+          type: integer
+        level_suggestions_sent:
+          type: integer
+        game_breaks_scheduled:
+          type: integer
+        sel_interventions_triggered:
+          type: integer
+        learning_path_updates:
+          type: integer
+        active_learners:
+          type: integer
+        is_initialized:
+          type: boolean
+        uptime_seconds:
+          type: integer
+        last_event_processed_at:
+          type: string
+          format: date-time
+
+    TriggerEventRequest:
+      type: object
+      required: [type, learner_id, tenant_id, data]
+      properties:
+        type:
+          type: string
+          enum:
+            [
+              BASELINE_COMPLETE,
+              SLP_UPDATED,
+              SEL_ALERT,
+              COURSEWORK_ANALYZED,
+              ASSESSMENT_COMPLETE,
+              LEARNER_PROGRESS,
+              ENGAGEMENT_LOW,
+            ]
+        learner_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        data:
+          type: object
+          additionalProperties: true
+
+    TriggerEventResponse:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        actions_generated:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrchestrationAction"
+        processing_time_ms:
+          type: integer
+
+    OrchestrationEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            [
+              BASELINE_COMPLETE,
+              SLP_UPDATED,
+              SEL_ALERT,
+              COURSEWORK_ANALYZED,
+              ASSESSMENT_COMPLETE,
+              LEARNER_PROGRESS,
+              ENGAGEMENT_LOW,
+            ]
+        learner_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          additionalProperties: true
+        processed_at:
+          type: string
+          format: date-time
+        actions_generated:
+          type: integer
+
+    OrchestrationAction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            [
+              LEVEL_SUGGESTED,
+              GAME_BREAK,
+              SEL_INTERVENTION,
+              LEARNING_PATH_UPDATE,
+            ]
+        target_service:
+          type: string
+        learner_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        action_data:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum: [pending, executing, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+        executed_at:
+          type: string
+          format: date-time
+        error_message:
+          type: string
+
+    LearnerOrchestrationState:
+      type: object
+      properties:
+        learner_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        current_level:
+          type: string
+          enum: [beginner, easy, moderate, challenging, advanced]
+        engagement_score:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        performance_score:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        consecutive_correct:
+          type: integer
+        consecutive_incorrect:
+          type: integer
+        session_duration_minutes:
+          type: integer
+        break_due_time:
+          type: string
+          format: date-time
+        last_break_time:
+          type: string
+          format: date-time
+        sel_alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              alert_type:
+                type: string
+              severity:
+                type: string
+              data:
+                type: object
+                additionalProperties: true
+        baseline_established:
+          type: boolean
+        slp_data:
+          type: object
+          additionalProperties: true
+        recent_assessments:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              score:
+                type: number
+              percentile:
+                type: number
+              assessment_type:
+                type: string
+        updated_at:
+          type: string
+          format: date-time
+
+    EventList:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrchestrationEvent"
+        total_count:
+          type: integer
+        has_more:
+          type: boolean
+        filters_applied:
+          type: object
+          additionalProperties: true
+
+    ActionList:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrchestrationAction"
+        total_count:
+          type: integer
+        has_more:
+          type: boolean
+        filters_applied:
+          type: object
+          additionalProperties: true

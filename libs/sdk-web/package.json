@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "@aivo/sdk-web",
   "version": "1.0.0",
   "description": "TypeScript SDK for Aivo Virtual Brains platform",
@@ -6,11 +6,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "run-s generate build:tsc",
+    "build:tsc": "tsc",
     "generate": "run-s generate:*",
+    "generate:rest": "orval --config orval.config.ts",
+    "generate:graphql": "graphql-codegen --config codegen.yml",
     "generate:auth": "orval --config orval.auth.config.ts",
-    "generate:user": "orval --config orval.user.config.ts",
-    "generate:graphql": "graphql-codegen --config codegen.yml"
+    "generate:user": "orval --config orval.user.config.ts"
   },
   "dependencies": {
     "axios": "^1.7.7",
@@ -18,8 +20,10 @@
     "graphql-request": "^7.1.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@graphql-codegen/cli": "^5.0.2",
     "@graphql-codegen/client-preset": "^4.3.3",
+    "msw": "^2.10.4",
     "npm-run-all2": "^6.2.3",
     "orval": "^7.1.1",
     "typescript": "^5.6.2"

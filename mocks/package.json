@@ -4,19 +4,29 @@
   "description": "Mock servers for Aivo Virtual Brains API",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm:prism\" \"npm:apollo\"",
-    "prism": "prism mock ../docs/api/rest/auth.yaml -p 4010",
+    "dev": "concurrently \"npm:prism:*\" \"npm:apollo\" \"npm:msw\"",
+    "prism:auth": "prism mock ../docs/api/rest/auth.yaml -p 4010",
+    "prism:user": "prism mock ../docs/api/rest/user.yaml -p 4011",
+    "prism:assessment": "prism mock ../docs/api/rest/assessment.yaml -p 4012",
+    "prism:learner": "prism mock ../docs/api/rest/learner.yaml -p 4013",
+    "prism:notification": "prism mock ../docs/api/rest/notification.yaml -p 4014",
+    "prism:search": "prism mock ../docs/api/rest/search.yaml -p 4015",
+    "prism:orchestrator": "prism mock ../docs/api/rest/orchestrator.yaml -p 4016",
     "apollo": "node apollo-mock.js",
+    "msw": "node msw-server.js",
     "start": "npm run dev"
   },
   "dependencies": {
     "@apollo/server": "^4.10.4",
+    "@faker-js/faker": "^8.4.1",
     "@graphql-tools/mock": "^9.0.1",
     "@graphql-tools/schema": "^10.0.4",
     "@prismicio/mock": "^0.3.8",
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
-    "graphql": "^16.9.0"
+    "express": "^4.18.2",
+    "graphql": "^16.9.0",
+    "msw": "^2.0.11"
   },
   "devDependencies": {
     "@stoplight/prism-cli": "^5.8.2"
