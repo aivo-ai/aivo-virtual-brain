@@ -1,0 +1,187 @@
+{
+  "index_patterns": ["aivo_assessment*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "analysis": {
+        "analyzer": {
+          "aivo_assessment_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "lowercase",
+              "asciifolding",
+              "stop",
+              "snowball",
+              "assessment_synonym"
+            ]
+          },
+          "suggestion_analyzer": {
+            "type": "custom",
+            "tokenizer": "keyword",
+            "filter": ["lowercase", "asciifolding"]
+          }
+        },
+        "filter": {
+          "assessment_synonym": {
+            "type": "synonym",
+            "synonyms": [
+              "WISC,wechsler intelligence scale for children",
+              "WIAT,wechsler individual achievement test",
+              "KTEA,kaufman test of educational achievement",
+              "WJ,woodcock johnson",
+              "CTOPP,comprehensive test of phonological processing",
+              "GORT,gray oral reading tests",
+              "TOWRE,test of word reading efficiency",
+              "VMI,developmental test of visual motor integration",
+              "BASC,behavior assessment system for children",
+              "CBCL,child behavior checklist",
+              "CARS,childhood autism rating scale",
+              "ADOS,autism diagnostic observation schedule",
+              "percentile,percentile rank,standard score",
+              "grade equivalent,age equivalent"
+            ]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "title": {
+          "type": "text",
+          "analyzer": "aivo_assessment_analyzer",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer",
+              "contexts": [
+                {
+                  "name": "tenant_id",
+                  "type": "category"
+                },
+                {
+                  "name": "school_id",
+                  "type": "category"
+                }
+              ]
+            },
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "content": {
+          "type": "text",
+          "analyzer": "aivo_assessment_analyzer"
+        },
+        "document_type": {
+          "type": "keyword"
+        },
+        "tenant_id": {
+          "type": "keyword"
+        },
+        "school_id": {
+          "type": "keyword"
+        },
+        "student_id": {
+          "type": "keyword"
+        },
+        "assessment_type": {
+          "type": "keyword"
+        },
+        "subject": {
+          "type": "keyword",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer"
+            }
+          }
+        },
+        "test_name": {
+          "type": "text",
+          "analyzer": "aivo_assessment_analyzer",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            },
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer"
+            }
+          }
+        },
+        "score": {
+          "type": "float"
+        },
+        "percentile": {
+          "type": "float"
+        },
+        "standard_score": {
+          "type": "float"
+        },
+        "grade_equivalent": {
+          "type": "keyword"
+        },
+        "age_equivalent": {
+          "type": "keyword"
+        },
+        "status": {
+          "type": "keyword"
+        },
+        "administration_date": {
+          "type": "date"
+        },
+        "created_at": {
+          "type": "date"
+        },
+        "updated_at": {
+          "type": "date"
+        },
+        "examiner": {
+          "type": "keyword"
+        },
+        "tags": {
+          "type": "keyword"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "parent_id": {
+              "type": "keyword"
+            },
+            "referral_reason": {
+              "type": "text",
+              "analyzer": "aivo_assessment_analyzer"
+            },
+            "accommodations_used": {
+              "type": "text",
+              "analyzer": "aivo_assessment_analyzer"
+            },
+            "validity_indicators": {
+              "type": "keyword"
+            },
+            "recommendations": {
+              "type": "text",
+              "analyzer": "aivo_assessment_analyzer"
+            },
+            "areas_of_concern": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  },
+  "priority": 200,
+  "composed_of": [],
+  "_meta": {
+    "description": "Template for AIVO assessment documents with psychometric analysis",
+    "created_by": "aivo-search-svc",
+    "version": "1.0.0"
+  }
+}

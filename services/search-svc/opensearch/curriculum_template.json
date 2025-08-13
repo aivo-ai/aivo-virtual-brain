@@ -1,0 +1,191 @@
+{
+  "index_patterns": ["aivo_curriculum*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "analysis": {
+        "analyzer": {
+          "aivo_curriculum_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "lowercase",
+              "asciifolding",
+              "stop",
+              "snowball",
+              "curriculum_synonym"
+            ]
+          },
+          "suggestion_analyzer": {
+            "type": "custom",
+            "tokenizer": "keyword",
+            "filter": ["lowercase", "asciifolding"]
+          }
+        },
+        "filter": {
+          "curriculum_synonym": {
+            "type": "synonym",
+            "synonyms": [
+              "CCSS,common core state standards,common core",
+              "NGSS,next generation science standards",
+              "fractions,rational numbers,parts of a whole",
+              "multiplication,times,product,multiply",
+              "division,quotient,divide",
+              "addition,sum,plus,add",
+              "subtraction,difference,minus,subtract",
+              "phonics,phonemic awareness,letter sounds",
+              "comprehension,reading comprehension,understanding",
+              "vocabulary,word knowledge,word meaning",
+              "writing,composition,essay,narrative",
+              "geometry,shapes,spatial reasoning",
+              "algebra,equations,variables,expressions",
+              "measurement,units,length,weight,volume"
+            ]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "title": {
+          "type": "text",
+          "analyzer": "aivo_curriculum_analyzer",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer",
+              "contexts": [
+                {
+                  "name": "tenant_id",
+                  "type": "category"
+                },
+                {
+                  "name": "subject",
+                  "type": "category"
+                },
+                {
+                  "name": "grade_level",
+                  "type": "category"
+                }
+              ]
+            },
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "content": {
+          "type": "text",
+          "analyzer": "aivo_curriculum_analyzer"
+        },
+        "standard": {
+          "type": "text",
+          "analyzer": "aivo_curriculum_analyzer",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer"
+            }
+          }
+        },
+        "learning_objective": {
+          "type": "text",
+          "analyzer": "aivo_curriculum_analyzer",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer"
+            }
+          }
+        },
+        "document_type": {
+          "type": "keyword"
+        },
+        "tenant_id": {
+          "type": "keyword"
+        },
+        "school_id": {
+          "type": "keyword"
+        },
+        "subject": {
+          "type": "keyword",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer"
+            }
+          }
+        },
+        "grade_level": {
+          "type": "keyword"
+        },
+        "difficulty_level": {
+          "type": "keyword"
+        },
+        "standard_code": {
+          "type": "keyword"
+        },
+        "prerequisite_skills": {
+          "type": "text",
+          "analyzer": "aivo_curriculum_analyzer"
+        },
+        "status": {
+          "type": "keyword"
+        },
+        "created_at": {
+          "type": "date"
+        },
+        "updated_at": {
+          "type": "date"
+        },
+        "tags": {
+          "type": "keyword"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "curriculum_framework": {
+              "type": "keyword"
+            },
+            "domain": {
+              "type": "keyword"
+            },
+            "strand": {
+              "type": "keyword"
+            },
+            "cluster": {
+              "type": "text",
+              "analyzer": "aivo_curriculum_analyzer"
+            },
+            "essential_question": {
+              "type": "text",
+              "analyzer": "aivo_curriculum_analyzer"
+            },
+            "big_idea": {
+              "type": "text",
+              "analyzer": "aivo_curriculum_analyzer"
+            },
+            "assessment_type": {
+              "type": "keyword"
+            },
+            "instructional_strategies": {
+              "type": "text",
+              "analyzer": "aivo_curriculum_analyzer"
+            }
+          }
+        }
+      }
+    }
+  },
+  "priority": 200,
+  "composed_of": [],
+  "_meta": {
+    "description": "Template for AIVO curriculum documents with educational standards analysis",
+    "created_by": "aivo-search-svc",
+    "version": "1.0.0"
+  }
+}

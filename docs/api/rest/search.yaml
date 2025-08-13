@@ -1,0 +1,685 @@
+openapi: 3.0.3
+info:
+  title: AIVO Search Service API
+  description: |
+    OpenSearch-powered search and suggestion service with role-based access control.
+
+    ## Overview
+
+    The AIVO Search Service provides comprehensive full-text search capabilities across
+    educational documents including IEPs, assessments, student records, and curriculum
+    resources. All search operations enforce role-based access control (RBAC) to ensure
+    users only access data they're authorized to view.
+
+    ## Authentication
+
+    All endpoints require JWT authentication via the `Authorization: Bearer <token>` header.
+    The JWT token must contain:
+    - `sub`: User ID
+    - `tenant_id`: Tenant identifier  
+    - `roles`: Array of user roles
+    - `school_ids`: Array of accessible school IDs
+    - `student_ids`: Array of accessible student IDs (for parents)
+
+    ## Role-Based Access Control
+
+    Access to search results is filtered based on user roles:
+
+    - **System Admin**: Access to all data across all tenants
+    - **Tenant Admin**: Access to all data within their tenant
+    - **School Admin**: Access to data within their assigned schools
+    - **Teacher**: Access to student data within their schools
+    - **Case Manager**: Access to IEPs and assessments within their schools
+    - **Parent**: Access to their children's IEPs and assessments only
+    - **Student**: Access to their own IEP data only
+
+    ## Document Types
+
+    - `iep`: Individual Education Programs
+    - `assessment`: Psychological and educational assessments
+    - `student`: Student profile information
+    - `curriculum`: Curriculum standards and learning objectives
+    - `resource`: Educational resources and materials
+
+  version: 1.0.0
+  contact:
+    name: AIVO Support
+    email: support@aivo.ai
+    url: https://aivo.ai/support
+  license:
+    name: Proprietary
+    url: https://aivo.ai/terms
+
+servers:
+  - url: http://localhost:8004/api/v1
+    description: Development server
+  - url: https://api.aivo.ai/search/v1
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /search:
+    get:
+      summary: Search Documents
+      description: |
+        Perform full-text search across educational documents with RBAC filtering.
+
+        ## Features
+
+        - Multi-field search across title, content, goals, accommodations
+        - Document type filtering (IEP, assessment, curriculum, etc.)
+        - Pagination support
+        - Custom sorting options
+        - Syntax highlighting in results
+        - Role-based result filtering
+
+        ## Examples
+
+        **Basic search:**
+        ```
+        GET /search?q=reading comprehension
+        ```
+
+        **Search specific document types:**
+        ```
+        GET /search?q=autism&doc_types=iep,assessment
+        ```
+
+        **Search with pagination:**
+        ```
+        GET /search?q=math&size=10&from=20
+        ```
+
+        **Search with sorting:**
+        ```
+        GET /search?q=goals&sort=updated_at:desc,score:desc
+        ```
+
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 500
+          description: Search query string
+          example: "reading comprehension goals"
+
+        - name: doc_types
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated document types to search
+          example: "iep,assessment,curriculum"
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of results to return
+          example: 10
+
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Starting offset for pagination
+          example: 20
+
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Sort criteria as 'field:order' pairs
+          example: "score:desc,updated_at:asc"
+
+      responses:
+        200:
+          description: Search results with metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+              examples:
+                iep_search:
+                  summary: IEP search results
+                  value:
+                    results:
+                      - id: "iep_12345"
+                        title: "IEP for Jane Doe - Grade 5"
+                        content: "Individual Education Program focusing on reading comprehension and mathematical reasoning..."
+                        document_type: "iep"
+                        tenant_id: "district_123"
+                        school_id: "school_456"
+                        score: 0.95
+                        created_at: "2025-01-10T10:30:00Z"
+                        updated_at: "2025-01-12T14:15:00Z"
+                        highlight:
+                          title:
+                            ["IEP for <em>Jane</em> <em>Doe</em> - Grade 5"]
+                          content:
+                            [
+                              "focusing on <em>reading</em> <em>comprehension</em> and mathematical",
+                            ]
+                        metadata:
+                          student_id: "student_789"
+                          grade_level: "5"
+                          case_manager: "teacher_101"
+                    total: 1
+                    page: 0
+                    size: 20
+                    query: "Jane reading comprehension"
+                    filters:
+                      doc_types: ["iep"]
+                      tenant_id: "district_123"
+                      school_ids: ["school_456"]
+                    took: 15
+
+        400:
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Invalid document type: invalid_type"
+                status_code: 400
+                timestamp: "2025-01-15T14:30:00Z"
+
+        401:
+          description: Authentication required or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Invalid token: token has expired"
+                status_code: 401
+                timestamp: "2025-01-15T14:30:00Z"
+
+        403:
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Insufficient permissions to perform search"
+                status_code: 403
+                timestamp: "2025-01-15T14:30:00Z"
+
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /suggest:
+    get:
+      summary: Get Search Suggestions
+      description: |
+        Get search suggestions with role-based filtering for auto-complete functionality.
+
+        ## Features
+
+        - Real-time query suggestions
+        - Prefix matching with fuzzy tolerance
+        - Role-based suggestion filtering
+        - Category-based suggestions
+        - Cross-school visibility controls
+
+        ## Examples
+
+        **Basic suggestions:**
+        ```
+        GET /suggest?q=fra
+        ```
+        Returns: "fractions", "framework", "fragmented"
+
+        **Limited suggestions:**
+        ```
+        GET /suggest?q=read&size=5
+        ```
+        Returns top 5 reading-related suggestions
+
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: Partial query for suggestions
+          example: "fra"
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+          description: Number of suggestions to return
+          example: 5
+
+      responses:
+        200:
+          description: Search suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionResponse"
+              examples:
+                fraction_suggestions:
+                  summary: Suggestions for "fra"
+                  value:
+                    suggestions:
+                      - text: "fractions"
+                        score: 0.9
+                        category: "curriculum"
+                      - text: "framework"
+                        score: 0.8
+                        category: "curriculum"
+                      - text: "fragmented attention"
+                        score: 0.7
+                        category: "assessment"
+                    query: "fra"
+                    total: 3
+
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        403:
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /index:
+    post:
+      summary: Index Document (Internal)
+      description: |
+        Index a document for search (internal use by other AIVO services).
+
+        This endpoint is typically called by other services when documents
+        are created or updated to ensure they appear in search results.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IndexDocument"
+            examples:
+              iep_document:
+                summary: Index IEP document
+                value:
+                  id: "iep_12345"
+                  title: "IEP for John Smith - Grade 3"
+                  content: "Individual Education Program with goals for reading fluency, mathematical operations, and social skills development..."
+                  document_type: "iep"
+                  tenant_id: "district_123"
+                  school_id: "elementary_456"
+                  metadata:
+                    student_id: "student_789"
+                    grade_level: "3"
+                    case_manager: "teacher_101"
+                    disability_categories: ["specific_learning_disability"]
+
+      responses:
+        200:
+          description: Document indexed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  indexed:
+                    type: boolean
+                  document_id:
+                    type: string
+                  document_type:
+                    type: string
+                  result:
+                    type: object
+              example:
+                indexed: true
+                document_id: "iep_12345"
+                document_type: "iep"
+                result:
+                  _index: "aivo_iep"
+                  _id: "iep_12345"
+                  _version: 1
+                  result: "created"
+
+        400:
+          description: Invalid document data
+        403:
+          description: Insufficient permissions to index documents
+        500:
+          description: Indexing failed
+
+  /index/{doc_type}/{doc_id}:
+    delete:
+      summary: Delete Document (Internal)
+      description: Remove a document from the search index
+      parameters:
+        - name: doc_type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [iep, assessment, student, curriculum, resource]
+          description: Document type
+          example: "iep"
+
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Document identifier
+          example: "iep_12345"
+
+      responses:
+        200:
+          description: Document deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                  document_id:
+                    type: string
+                  document_type:
+                    type: string
+                  result:
+                    type: object
+
+        404:
+          description: Document not found
+        403:
+          description: Insufficient permissions
+        500:
+          description: Deletion failed
+
+  /stats:
+    get:
+      summary: Search Statistics
+      description: Get search statistics and user context information
+      responses:
+        200:
+          description: Search statistics and user context
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_context:
+                    type: object
+                  search_health:
+                    type: object
+                  accessible_document_types:
+                    type: array
+                    items:
+                      type: string
+                  cross_school_access:
+                    type: boolean
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SearchResponse:
+      type: object
+      required:
+        - results
+        - total
+        - page
+        - size
+        - query
+        - filters
+        - took
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+          description: Array of search results
+        total:
+          type: integer
+          description: Total number of results
+          example: 42
+        page:
+          type: integer
+          description: Current page number (zero-based)
+          example: 0
+        size:
+          type: integer
+          description: Number of results per page
+          example: 20
+        query:
+          type: string
+          description: Original search query
+          example: "reading comprehension"
+        filters:
+          type: object
+          description: Applied filters
+          properties:
+            doc_types:
+              type: array
+              items:
+                type: string
+            tenant_id:
+              type: string
+            school_ids:
+              type: array
+              items:
+                type: string
+        took:
+          type: integer
+          description: Search time in milliseconds
+          example: 15
+
+    SearchResult:
+      type: object
+      required:
+        - id
+        - title
+        - content
+        - document_type
+        - tenant_id
+      properties:
+        id:
+          type: string
+          description: Unique document identifier
+          example: "iep_12345"
+        title:
+          type: string
+          description: Document title
+          example: "IEP for Jane Doe - Grade 5"
+        content:
+          type: string
+          description: Document content (truncated)
+          example: "Individual Education Program focusing on reading comprehension..."
+        document_type:
+          type: string
+          enum: [iep, assessment, student, curriculum, resource]
+          description: Type of document
+          example: "iep"
+        tenant_id:
+          type: string
+          description: Tenant identifier
+          example: "district_123"
+        school_id:
+          type: string
+          nullable: true
+          description: School identifier
+          example: "school_456"
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Document creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Document update timestamp
+        score:
+          type: number
+          format: float
+          nullable: true
+          description: Search relevance score
+          example: 0.95
+        highlight:
+          type: object
+          nullable: true
+          description: Highlighted search terms
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        metadata:
+          type: object
+          nullable: true
+          description: Additional document metadata
+
+    SuggestionResponse:
+      type: object
+      required:
+        - suggestions
+        - query
+        - total
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SuggestionResult"
+          description: Array of suggestions
+        query:
+          type: string
+          description: Original query
+          example: "fra"
+        total:
+          type: integer
+          description: Total number of suggestions
+          example: 5
+
+    SuggestionResult:
+      type: object
+      required:
+        - text
+        - score
+      properties:
+        text:
+          type: string
+          description: Suggested text
+          example: "fractions"
+        score:
+          type: number
+          format: float
+          description: Suggestion relevance score
+          example: 0.9
+        category:
+          type: string
+          nullable: true
+          description: Suggestion category
+          example: "curriculum"
+
+    IndexDocument:
+      type: object
+      required:
+        - id
+        - title
+        - content
+        - document_type
+        - tenant_id
+      properties:
+        id:
+          type: string
+          description: Unique document identifier
+          example: "iep_12345"
+        title:
+          type: string
+          description: Document title for search
+          example: "IEP for John Smith - Grade 3"
+        content:
+          type: string
+          description: Full document content
+          example: "Individual Education Program with goals for reading fluency..."
+        document_type:
+          type: string
+          enum: [iep, assessment, student, curriculum, resource]
+          description: Type of document
+          example: "iep"
+        tenant_id:
+          type: string
+          description: Tenant identifier
+          example: "district_123"
+        school_id:
+          type: string
+          nullable: true
+          description: School identifier
+          example: "elementary_456"
+        metadata:
+          type: object
+          nullable: true
+          description: Additional document metadata
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - status_code
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Invalid document type: invalid_type"
+        status_code:
+          type: integer
+          description: HTTP status code
+          example: 400
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+          example: "2025-01-15T14:30:00Z"
+
+tags:
+  - name: search
+    description: Search operations
+  - name: suggestions
+    description: Auto-complete suggestions
+  - name: indexing
+    description: Document indexing (internal)
+  - name: admin
+    description: Administrative operations

@@ -1,0 +1,176 @@
+{
+  "index_patterns": ["aivo_iep*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "analysis": {
+        "analyzer": {
+          "aivo_iep_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "lowercase",
+              "asciifolding",
+              "stop",
+              "snowball",
+              "iep_synonym"
+            ]
+          },
+          "suggestion_analyzer": {
+            "type": "custom",
+            "tokenizer": "keyword",
+            "filter": ["lowercase", "asciifolding"]
+          }
+        },
+        "filter": {
+          "iep_synonym": {
+            "type": "synonym",
+            "synonyms": [
+              "IEP,individualized education program,individual education plan",
+              "FAPE,free appropriate public education",
+              "LRE,least restrictive environment",
+              "ESY,extended school year",
+              "RTI,response to intervention",
+              "PBIS,positive behavior interventions and supports",
+              "BIP,behavior intervention plan",
+              "FBA,functional behavior assessment",
+              "APE,adapted physical education",
+              "AT,assistive technology",
+              "OT,occupational therapy",
+              "PT,physical therapy",
+              "SLP,speech language pathology"
+            ]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "title": {
+          "type": "text",
+          "analyzer": "aivo_iep_analyzer",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer",
+              "contexts": [
+                {
+                  "name": "tenant_id",
+                  "type": "category"
+                },
+                {
+                  "name": "school_id",
+                  "type": "category"
+                }
+              ]
+            },
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "content": {
+          "type": "text",
+          "analyzer": "aivo_iep_analyzer"
+        },
+        "goals": {
+          "type": "text",
+          "analyzer": "aivo_iep_analyzer",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer"
+            }
+          }
+        },
+        "accommodations": {
+          "type": "text",
+          "analyzer": "aivo_iep_analyzer",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "suggestion_analyzer"
+            }
+          }
+        },
+        "services": {
+          "type": "text",
+          "analyzer": "aivo_iep_analyzer"
+        },
+        "document_type": {
+          "type": "keyword"
+        },
+        "tenant_id": {
+          "type": "keyword"
+        },
+        "school_id": {
+          "type": "keyword"
+        },
+        "student_id": {
+          "type": "keyword"
+        },
+        "grade_level": {
+          "type": "keyword"
+        },
+        "disability_categories": {
+          "type": "keyword"
+        },
+        "status": {
+          "type": "keyword"
+        },
+        "created_at": {
+          "type": "date"
+        },
+        "updated_at": {
+          "type": "date"
+        },
+        "effective_date": {
+          "type": "date"
+        },
+        "expiration_date": {
+          "type": "date"
+        },
+        "meeting_date": {
+          "type": "date"
+        },
+        "tags": {
+          "type": "keyword"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "parent_id": {
+              "type": "keyword"
+            },
+            "case_manager": {
+              "type": "keyword"
+            },
+            "team_members": {
+              "type": "keyword"
+            },
+            "signature_status": {
+              "type": "keyword"
+            },
+            "version": {
+              "type": "integer"
+            },
+            "is_draft": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  },
+  "priority": 200,
+  "composed_of": [],
+  "_meta": {
+    "description": "Template for AIVO IEP documents with specialized analysis and suggestions",
+    "created_by": "aivo-search-svc",
+    "version": "1.0.0"
+  }
+}
