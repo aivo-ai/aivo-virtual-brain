@@ -1,0 +1,933 @@
+openapi: 3.0.3
+info:
+  title: Lesson Registry API
+  description: |
+    Educational Content Management System with versioning and CDN delivery.
+
+    ## Overview
+
+    The Lesson Registry API provides comprehensive content management for educational materials with:
+
+    - **Content Versioning**: Semantic versioning for lesson iterations
+    - **Asset Management**: File upload, validation, and integrity checking  
+    - **CDN Integration**: Signed URLs for secure, time-limited asset access
+    - **Role-Based Access**: Permission control for different user types
+    - **Manifest Generation**: Complete lesson packages ready for delivery
+
+    ## Authentication
+
+    All endpoints require JWT bearer token authentication. Tokens should be included in the `Authorization` header as `Bearer <token>`.
+
+    ## Roles & Permissions
+
+    - **subject_brain**: Full content creation and management
+    - **teacher**: Content access and metadata updates
+    - **parent/student**: Read-only access to published content
+    - **admin**: Full system access
+
+  version: 1.0.0
+  contact:
+    name: AIVO API Support
+    email: api-support@aivo.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.aivo.com/lesson-registry/v1
+    description: Production server
+  - url: https://staging-api.aivo.com/lesson-registry/v1
+    description: Staging server
+  - url: http://localhost:8000/api/v1
+    description: Development server
+
+paths:
+  /lesson:
+    post:
+      summary: Create a new lesson
+      description: |
+        Create a new lesson entity with metadata. Only users with `subject_brain` or `admin` roles can create lessons.
+
+        The lesson is initially created in `draft` status and can be published after content is added.
+      operationId: createLesson
+      tags:
+        - Lessons
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonCreate"
+            example:
+              title: "Introduction to Algebra"
+              description: "Basic algebraic concepts and operations for middle school students"
+              subject: "Mathematics"
+              grade_level: "7th"
+              topic: "Algebra Fundamentals"
+              curriculum_standard: "Common Core 7.EE"
+              difficulty_level: "intermediate"
+      responses:
+        "201":
+          description: Lesson created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    get:
+      summary: List lessons with filtering and pagination
+      description: |
+        Retrieve a paginated list of lessons with optional filtering by subject, grade level, status, and search terms.
+
+        Results are ordered by most recently updated.
+      operationId: listLessons
+      tags:
+        - Lessons
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-based)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: subject
+          in: query
+          description: Filter by subject (partial match)
+          required: false
+          schema:
+            type: string
+        - name: grade_level
+          in: query
+          description: Filter by exact grade level
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by lesson status
+          required: false
+          schema:
+            $ref: "#/components/schemas/LessonStatus"
+        - name: search
+          in: query
+          description: Search in title, description, and topic
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lessons retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedLessons"
+
+  /lesson/{lessonId}:
+    get:
+      summary: Get lesson details with version history
+      description: |
+        Retrieve detailed information about a specific lesson including its version history.
+
+        Draft versions are only visible to lesson creators and admins.
+      operationId: getLesson
+      tags:
+        - Lessons
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          description: Unique lesson identifier
+          schema:
+            type: string
+            format: uuid
+        - name: include_drafts
+          in: query
+          description: Include draft versions (requires appropriate permissions)
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Lesson details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonWithVersions"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      summary: Update lesson metadata
+      description: |
+        Update lesson metadata fields. Role-based restrictions apply:
+
+        - **Teachers**: Can update descriptive fields but not status
+        - **Subject Brain/Admin**: Can update all fields including status
+      operationId: updateLesson
+      tags:
+        - Lessons
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonUpdate"
+      responses:
+        "200":
+          description: Lesson updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /lesson/{lessonId}/version:
+    post:
+      summary: Create a new lesson version
+      description: |
+        Create a new version for an existing lesson. Version numbers must follow semantic versioning format (major.minor.patch) and be unique within the lesson.
+
+        Only `subject_brain` and `admin` roles can create versions.
+      operationId: createVersion
+      tags:
+        - Versions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VersionCreate"
+            example:
+              version_number: "1.1.0"
+              version_name: "Enhanced Graphics"
+              changelog: "Added interactive diagrams and improved visual elements"
+              content_type: "interactive"
+              duration_minutes: 50
+              learning_objectives:
+                - "Understand basic algebraic expressions"
+                - "Solve simple linear equations"
+                - "Apply algebra to real-world problems"
+      responses:
+        "201":
+          description: Version created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+        "409":
+          description: Version number already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /manifest/{lessonId}:
+    get:
+      summary: Get lesson manifest with signed CDN URLs
+      description: |
+        **Core endpoint for lesson delivery**
+
+        Generate a complete lesson manifest including all assets with signed, time-limited URLs for secure access. This manifest contains everything needed to deliver the lesson content.
+
+        ## Features
+        - Signed CDN URLs with configurable expiration (60-3600 seconds)
+        - Asset integrity verification with checksums
+        - Entry point identification for lesson loading
+        - Complete asset inventory with metadata
+        - Version-specific content delivery
+
+        ## Security
+        - URLs expire after specified time (default: 10 minutes)
+        - Role-based access control
+        - Asset-level permission validation
+
+        ## Caching
+        - Manifest includes cache headers for each asset
+        - CDN-optimized delivery paths
+        - Compression settings per asset type
+      operationId: getLessonManifest
+      tags:
+        - Manifest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          description: Unique lesson identifier
+          schema:
+            type: string
+            format: uuid
+        - name: version
+          in: query
+          description: Specific version number (defaults to current published version)
+          required: false
+          schema:
+            type: string
+            pattern: '^\\d+\\.\\d+\\.\\d+$'
+          example: "1.2.0"
+        - name: expires_seconds
+          in: query
+          description: URL expiration time in seconds
+          required: false
+          schema:
+            type: integer
+            minimum: 60
+            maximum: 3600
+            default: 600
+      responses:
+        "200":
+          description: Manifest generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonManifest"
+              example:
+                lesson_id: "123e4567-e89b-12d3-a456-426614174000"
+                version_id: "456e7890-e89b-12d3-a456-426614174111"
+                version_number: "1.0.0"
+                title: "Introduction to Algebra"
+                description: "Basic algebraic concepts and operations"
+                subject: "Mathematics"
+                grade_level: "7th"
+                content_type: "interactive"
+                duration_minutes: 45
+                learning_objectives:
+                  - "Understand basic algebraic expressions"
+                  - "Solve simple linear equations"
+                generated_at: "2025-08-14T10:30:00Z"
+                expires_at: "2025-08-14T10:40:00Z"
+                total_assets: 5
+                total_size: 2048576
+                checksum: "a1b2c3d4e5f6..."
+                entry_point: "index.html"
+                assets:
+                  - path: "index.html"
+                    url: "https://cdn.example.com/lessons/.../index.html?signature=..."
+                    size: 4096
+                    checksum: "f6e5d4c3b2a1..."
+                    type: "html"
+                    required: true
+                    expires_at: "2025-08-14T10:40:00Z"
+        "404":
+          description: Lesson or version not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                lesson_not_found:
+                  value:
+                    error: "NotFound"
+                    message: "Lesson not found"
+                version_not_found:
+                  value:
+                    error: "NotFound"
+                    message: "Version 2.0.0 not found"
+
+  /lesson/{lessonId}/version/{versionId}/asset:
+    post:
+      summary: Register a new asset for a lesson version
+      description: |
+        Register asset metadata for a lesson version. This endpoint records asset information in the registry.
+
+        **Note**: Actual file upload should be performed separately to the configured storage backend (S3/MinIO) before calling this endpoint.
+      operationId: uploadAsset
+      tags:
+        - Assets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetCreate"
+            example:
+              filename: "interactive_graph.js"
+              asset_path: "js/interactive_graph.js"
+              content_type: "application/javascript"
+              size_bytes: 15360
+              checksum: "a1b2c3d4e5f6789..."
+              asset_type: "js"
+              is_entry_point: false
+              is_required: true
+              cache_duration_seconds: 7200
+              compression_enabled: true
+      responses:
+        "201":
+          description: Asset registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetResponse"
+
+  /health:
+    get:
+      summary: Basic health check
+      description: Simple health check endpoint for monitoring
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "lesson-registry"
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Enums
+    LessonStatus:
+      type: string
+      enum: [draft, published, archived]
+      description: Lesson publication status
+
+    VersionStatus:
+      type: string
+      enum: [draft, published, deprecated]
+      description: Version publication status
+
+    AssetType:
+      type: string
+      enum: [html, css, js, image, video, audio, document, data, font]
+      description: Asset type category
+
+    DifficultyLevel:
+      type: string
+      enum: [beginner, intermediate, advanced, expert]
+      description: Content difficulty level
+
+    # Request schemas
+    LessonCreate:
+      type: object
+      required:
+        - title
+        - subject
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Lesson title
+        description:
+          type: string
+          description: Detailed lesson description
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Academic subject
+        grade_level:
+          type: string
+          maxLength: 20
+          description: Target grade level
+        topic:
+          type: string
+          maxLength: 200
+          description: Specific topic within subject
+        curriculum_standard:
+          type: string
+          maxLength: 100
+          description: Curriculum alignment
+        difficulty_level:
+          $ref: "#/components/schemas/DifficultyLevel"
+
+    LessonUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 100
+        grade_level:
+          type: string
+          maxLength: 20
+        topic:
+          type: string
+          maxLength: 200
+        curriculum_standard:
+          type: string
+          maxLength: 100
+        difficulty_level:
+          $ref: "#/components/schemas/DifficultyLevel"
+        status:
+          $ref: "#/components/schemas/LessonStatus"
+
+    VersionCreate:
+      type: object
+      required:
+        - version_number
+      properties:
+        version_number:
+          type: string
+          pattern: '^\\d+\\.\\d+\\.\\d+$'
+          description: Semantic version number (e.g., 1.0.0)
+        version_name:
+          type: string
+          maxLength: 100
+          description: Human-readable version name
+        changelog:
+          type: string
+          description: Changes in this version
+        content_type:
+          type: string
+          maxLength: 50
+          default: "interactive"
+          description: Type of educational content
+        duration_minutes:
+          type: integer
+          minimum: 1
+          description: Expected duration in minutes
+        learning_objectives:
+          type: array
+          items:
+            type: string
+          description: Learning objectives for this content
+
+    AssetCreate:
+      type: object
+      required:
+        - filename
+        - asset_path
+        - content_type
+        - size_bytes
+        - checksum
+        - asset_type
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Original filename
+        asset_path:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Logical path in lesson structure
+        content_type:
+          type: string
+          maxLength: 100
+          description: MIME type
+        size_bytes:
+          type: integer
+          minimum: 1
+          description: File size in bytes
+        checksum:
+          type: string
+          minLength: 64
+          maxLength: 64
+          description: SHA-256 checksum
+        asset_type:
+          $ref: "#/components/schemas/AssetType"
+        is_entry_point:
+          type: boolean
+          default: false
+          description: Main lesson entry file
+        is_required:
+          type: boolean
+          default: true
+          description: Required for lesson functionality
+        cache_duration_seconds:
+          type: integer
+          minimum: 1
+          default: 3600
+          description: CDN cache duration
+        compression_enabled:
+          type: boolean
+          default: true
+          description: Enable compression for delivery
+
+    # Response schemas
+    LessonResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        grade_level:
+          type: string
+        topic:
+          type: string
+        curriculum_standard:
+          type: string
+        difficulty_level:
+          $ref: "#/components/schemas/DifficultyLevel"
+        status:
+          $ref: "#/components/schemas/LessonStatus"
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+
+    VersionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        lesson_id:
+          type: string
+          format: uuid
+        version_number:
+          type: string
+        version_name:
+          type: string
+        changelog:
+          type: string
+        content_type:
+          type: string
+        duration_minutes:
+          type: integer
+        learning_objectives:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: "#/components/schemas/VersionStatus"
+        is_current:
+          type: boolean
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        published_at:
+          type: string
+          format: date-time
+        manifest_checksum:
+          type: string
+        total_assets:
+          type: integer
+        total_size_bytes:
+          type: integer
+
+    AssetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        version_id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        s3_key:
+          type: string
+        asset_path:
+          type: string
+        content_type:
+          type: string
+        size_bytes:
+          type: integer
+        checksum:
+          type: string
+        asset_type:
+          $ref: "#/components/schemas/AssetType"
+        is_entry_point:
+          type: boolean
+        is_required:
+          type: boolean
+        cache_duration_seconds:
+          type: integer
+        compression_enabled:
+          type: boolean
+        uploaded_at:
+          type: string
+          format: date-time
+        uploaded_by:
+          type: string
+          format: uuid
+        validated_at:
+          type: string
+          format: date-time
+        validation_status:
+          type: string
+
+    LessonWithVersions:
+      allOf:
+        - $ref: "#/components/schemas/LessonResponse"
+        - type: object
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/VersionResponse"
+
+    LessonSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        subject:
+          type: string
+        grade_level:
+          type: string
+        difficulty_level:
+          $ref: "#/components/schemas/DifficultyLevel"
+        status:
+          $ref: "#/components/schemas/LessonStatus"
+        current_version:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PaginatedLessons:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LessonSummary"
+        total:
+          type: integer
+        page:
+          type: integer
+          minimum: 1
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 100
+        pages:
+          type: integer
+
+    # Manifest schemas
+    ManifestAsset:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Logical asset path
+        url:
+          type: string
+          format: uri
+          description: Signed CDN URL
+        size:
+          type: integer
+          description: File size in bytes
+        checksum:
+          type: string
+          description: SHA-256 hash
+        type:
+          type: string
+          description: Asset type
+        required:
+          type: boolean
+          description: Required for lesson functionality
+        expires_at:
+          type: string
+          format: date-time
+          description: URL expiration time
+
+    LessonManifest:
+      type: object
+      properties:
+        lesson_id:
+          type: string
+          format: uuid
+        version_id:
+          type: string
+          format: uuid
+        version_number:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        grade_level:
+          type: string
+        content_type:
+          type: string
+        duration_minutes:
+          type: integer
+        learning_objectives:
+          type: array
+          items:
+            type: string
+        generated_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        total_assets:
+          type: integer
+        total_size:
+          type: integer
+        checksum:
+          type: string
+        entry_point:
+          type: string
+        assets:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManifestAsset"
+
+    # Error schemas
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        status_code:
+          type: integer
+        request_id:
+          type: string
+        path:
+          type: string
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "ValidationError"
+            message: "Invalid input data"
+            status_code: 400
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Unauthorized"
+            message: "Valid authentication token required"
+            status_code: 401
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Forbidden"
+            message: "Role 'teacher' not authorized for this operation"
+            status_code: 403
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "NotFound"
+            message: "Lesson not found"
+            status_code: 404
