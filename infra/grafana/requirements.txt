@@ -1,0 +1,5 @@
+# Requirements for AIVO Grafana testing tools
+flask==2.3.3
+prometheus_client==0.17.1
+aiohttp==3.8.5
+requests==2.31.0

@@ -1,0 +1,231 @@
+apiVersion: 1
+
+groups:
+  - name: aivo-services-sli-alerts
+    interval: 5m
+    rules:
+      # Auth Service Alerts
+      - alert: AuthService5xxErrorRateHigh
+        expr: (rate(http_requests_total{service="auth-svc",status_code=~"5.."}[5m]) / rate(http_requests_total{service="auth-svc"}[5m]) * 100) > 2
+        for: 5m
+        labels:
+          severity: critical
+          service: auth-svc
+          alert_type: error_rate
+        annotations:
+          summary: "Auth Service 5xx error rate is above 2%"
+          description: "Auth Service has {{ $value }}% 5xx error rate for more than 5 minutes. This indicates potential service degradation."
+          runbook_url: "https://docs.aivo.ai/runbooks/auth-service-5xx-errors"
+
+      - alert: AuthServiceP95LatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="auth-svc"}[5m])) * 1000 > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: auth-svc
+          alert_type: sli_breach
+        annotations:
+          summary: "Auth Service P95 latency SLI breach"
+          description: "Auth Service P95 response time is {{ $value }}ms, exceeding 1000ms SLI threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/auth-service-latency"
+
+      # User Service Alerts
+      - alert: UserService5xxErrorRateHigh
+        expr: (rate(http_requests_total{service="user-svc",status_code=~"5.."}[5m]) / rate(http_requests_total{service="user-svc"}[5m]) * 100) > 2
+        for: 5m
+        labels:
+          severity: critical
+          service: user-svc
+          alert_type: error_rate
+        annotations:
+          summary: "User Service 5xx error rate is above 2%"
+          description: "User Service has {{ $value }}% 5xx error rate for more than 5 minutes."
+          runbook_url: "https://docs.aivo.ai/runbooks/user-service-5xx-errors"
+
+      - alert: UserServiceP95LatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="user-svc"}[5m])) * 1000 > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: user-svc
+          alert_type: sli_breach
+        annotations:
+          summary: "User Service P95 latency SLI breach"
+          description: "User Service P95 response time is {{ $value }}ms, exceeding 1000ms SLI threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/user-service-latency"
+
+      # Learner Service Alerts
+      - alert: LearnerService5xxErrorRateHigh
+        expr: (rate(http_requests_total{service="learner-svc",status_code=~"5.."}[5m]) / rate(http_requests_total{service="learner-svc"}[5m]) * 100) > 2
+        for: 5m
+        labels:
+          severity: critical
+          service: learner-svc
+          alert_type: error_rate
+        annotations:
+          summary: "Learner Service 5xx error rate is above 2%"
+          description: "Learner Service has {{ $value }}% 5xx error rate for more than 5 minutes."
+          runbook_url: "https://docs.aivo.ai/runbooks/learner-service-5xx-errors"
+
+      - alert: LearnerServiceP95LatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="learner-svc"}[5m])) * 1000 > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: learner-svc
+          alert_type: sli_breach
+        annotations:
+          summary: "Learner Service P95 latency SLI breach"
+          description: "Learner Service P95 response time is {{ $value }}ms, exceeding 1000ms SLI threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/learner-service-latency"
+
+      - alert: LearnerServiceAIInferenceLatencyHigh
+        expr: histogram_quantile(0.95, rate(ai_inference_duration_seconds_bucket{service="learner-svc"}[5m])) * 1000 > 2000
+        for: 5m
+        labels:
+          severity: warning
+          service: learner-svc
+          alert_type: ai_performance
+        annotations:
+          summary: "Learner Service AI inference latency high"
+          description: "AI inference P95 latency is {{ $value }}ms, exceeding 2000ms threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/ai-inference-latency"
+
+      # Payment Service Alerts
+      - alert: PaymentService5xxErrorRateHigh
+        expr: (rate(http_requests_total{service="payment-svc",status_code=~"5.."}[5m]) / rate(http_requests_total{service="payment-svc"}[5m]) * 100) > 2
+        for: 5m
+        labels:
+          severity: critical
+          service: payment-svc
+          alert_type: error_rate
+        annotations:
+          summary: "Payment Service 5xx error rate is above 2%"
+          description: "Payment Service has {{ $value }}% 5xx error rate for more than 5 minutes."
+          runbook_url: "https://docs.aivo.ai/runbooks/payment-service-5xx-errors"
+
+      - alert: PaymentServiceP95LatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="payment-svc"}[5m])) * 1000 > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: payment-svc
+          alert_type: sli_breach
+        annotations:
+          summary: "Payment Service P95 latency SLI breach"
+          description: "Payment Service P95 response time is {{ $value }}ms, exceeding 1000ms SLI threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/payment-service-latency"
+
+      - alert: PaymentTransactionFailureRateHigh
+        expr: (rate(payment_transactions_total{service="payment-svc",status="failed"}[5m]) / rate(payment_transactions_total{service="payment-svc"}[5m]) * 100) > 5
+        for: 5m
+        labels:
+          severity: critical
+          service: payment-svc
+          alert_type: business_metric
+        annotations:
+          summary: "Payment transaction failure rate high"
+          description: "Payment transaction failure rate is {{ $value }}%, exceeding 5% threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/payment-transaction-failures"
+
+      # Assessment Service Alerts
+      - alert: AssessmentService5xxErrorRateHigh
+        expr: (rate(http_requests_total{service="assessment-svc",status_code=~"5.."}[5m]) / rate(http_requests_total{service="assessment-svc"}[5m]) * 100) > 2
+        for: 5m
+        labels:
+          severity: critical
+          service: assessment-svc
+          alert_type: error_rate
+        annotations:
+          summary: "Assessment Service 5xx error rate is above 2%"
+          description: "Assessment Service has {{ $value }}% 5xx error rate for more than 5 minutes."
+          runbook_url: "https://docs.aivo.ai/runbooks/assessment-service-5xx-errors"
+
+      - alert: AssessmentServiceP95LatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="assessment-svc"}[5m])) * 1000 > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: assessment-svc
+          alert_type: sli_breach
+        annotations:
+          summary: "Assessment Service P95 latency SLI breach"
+          description: "Assessment Service P95 response time is {{ $value }}ms, exceeding 1000ms SLI threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/assessment-service-latency"
+
+      - alert: AssessmentAIScoringLatencyHigh
+        expr: histogram_quantile(0.95, rate(ai_scoring_duration_seconds_bucket{service="assessment-svc"}[5m])) * 1000 > 3000
+        for: 5m
+        labels:
+          severity: warning
+          service: assessment-svc
+          alert_type: ai_performance
+        annotations:
+          summary: "Assessment AI scoring latency high"
+          description: "AI scoring P95 latency is {{ $value }}ms, exceeding 3000ms threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/ai-scoring-latency"
+
+      # IEP Service Alerts
+      - alert: IEPService5xxErrorRateHigh
+        expr: (rate(http_requests_total{service="iep-svc",status_code=~"5.."}[5m]) / rate(http_requests_total{service="iep-svc"}[5m]) * 100) > 2
+        for: 5m
+        labels:
+          severity: critical
+          service: iep-svc
+          alert_type: error_rate
+        annotations:
+          summary: "IEP Service 5xx error rate is above 2%"
+          description: "IEP Service has {{ $value }}% 5xx error rate for more than 5 minutes."
+          runbook_url: "https://docs.aivo.ai/runbooks/iep-service-5xx-errors"
+
+      - alert: IEPServiceP95LatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="iep-svc"}[5m])) * 1000 > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: iep-svc
+          alert_type: sli_breach
+        annotations:
+          summary: "IEP Service P95 latency SLI breach"
+          description: "IEP Service P95 response time is {{ $value }}ms, exceeding 1000ms SLI threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/iep-service-latency"
+
+      - alert: IEPAIGenerationLatencyHigh
+        expr: histogram_quantile(0.95, rate(ai_iep_generation_duration_seconds_bucket{service="iep-svc"}[5m])) * 1000 > 5000
+        for: 5m
+        labels:
+          severity: warning
+          service: iep-svc
+          alert_type: ai_performance
+        annotations:
+          summary: "IEP AI generation latency high"
+          description: "AI IEP generation P95 latency is {{ $value }}ms, exceeding 5000ms threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/ai-iep-generation-latency"
+
+      - alert: IEPComplianceScoreLow
+        expr: avg(iep_compliance_score{service="iep-svc"}) < 85
+        for: 10m
+        labels:
+          severity: warning
+          service: iep-svc
+          alert_type: compliance
+        annotations:
+          summary: "IEP compliance score below threshold"
+          description: "Average IEP compliance score is {{ $value }}%, below 85% threshold."
+          runbook_url: "https://docs.aivo.ai/runbooks/iep-compliance-issues"
+
+  - name: aivo-finops-alerts
+    interval: 15m
+    rules:
+      - alert: InferenceCostSpikePlaceholder
+        expr: increase(payment_processing_cost_total{service="payment-svc"}[1h]) > 100
+        for: 15m
+        labels:
+          severity: warning
+          alert_type: finops
+          stage: placeholder
+        annotations:
+          summary: "PLACEHOLDER: AI inference cost spike detected"
+          description: "Placeholder alert for Stage-2 FinOps: AI inference costs have increased significantly. Current hourly cost: ${{ $value }}."
+          runbook_url: "https://docs.aivo.ai/runbooks/finops-cost-spike"
+          note: "This is a placeholder alert. Real AI inference cost tracking will be implemented in Stage-2."

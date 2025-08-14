@@ -1,0 +1,34 @@
+# Grafana alert rule provisioning for AIVO Virtual Brains
+
+apiVersion: 1
+
+groups:
+  - name: aivo-alert-rules
+    orgId: 1
+    folder: AIVO Development
+    interval: 5m
+    rules:
+      - uid: aivo-service-alerts
+        title: AIVO Service SLI Alerts
+        condition: C
+        data:
+          - refId: A
+            queryType: prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(http_requests_total{status_code=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 2
+              interval: ""
+              refId: A
+        noDataState: NoData
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          description: Service 5xx error rate is above 2% threshold
+          runbook_url: https://docs.aivo.ai/runbooks/5xx-errors
+          summary: High 5xx error rate detected
+        labels:
+          team: platform
+          severity: critical
