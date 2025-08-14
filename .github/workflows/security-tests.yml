@@ -57,7 +57,7 @@ jobs:
           if [ -f "tests/security/validate_s1_18.ps1" ]; then
             pwsh tests/security/validate_s1_18.ps1 -Verbose || true
           else
-            echo "❌ S1-18 validation script not found"
+            echo "ERROR: S1-18 validation script not found"
           fi
 
   jwt-security-tests:
@@ -84,7 +84,7 @@ jobs:
           if [ -f "test_jwt_security.py" ]; then
             python test_jwt_security.py || echo "JWT tests executed with warnings"
           else
-            echo "❌ JWT security tests not found"
+            echo "ERROR: JWT security tests not found"
             exit 1
           fi
 
@@ -127,7 +127,7 @@ jobs:
           if [ -f "test_consent_logging.py" ]; then
             python test_consent_logging.py || echo "Consent tests executed with warnings"
           else
-            echo "❌ Consent logging tests not found"
+            echo "ERROR: Consent logging tests not found"
             exit 1
           fi
 
@@ -155,7 +155,7 @@ jobs:
           if [ -f "test_pii_scrubbing.py" ]; then
             python test_pii_scrubbing.py || echo "PII tests executed with warnings"
           else
-            echo "❌ PII scrubbing tests not found"
+            echo "ERROR: PII scrubbing tests not found"
             exit 1
           fi
 
@@ -183,7 +183,7 @@ jobs:
           if [ -f "run_security_tests.py" ]; then
             python run_security_tests.py || echo "Security integration tests completed"
           else
-            echo "❌ Security test runner not found"
+            echo "ERROR: Security test runner not found"
             exit 1
           fi
 
@@ -202,7 +202,7 @@ jobs:
     steps:
       - name: Evaluate Security Gate
         run: |
-          echo "🔍 Evaluating S1-18 Security Gate..."
+          echo "INFO: Evaluating S1-18 Security Gate..."
 
           JWT_STATUS="${{ needs.jwt-security-tests.result }}"
           CONSENT_STATUS="${{ needs.consent-logging-tests.result }}"
@@ -223,10 +223,10 @@ jobs:
           echo "Security tests passed: $SUCCESS_COUNT/4"
 
           if [[ $SUCCESS_COUNT -ge 3 ]]; then
-            echo "✅ Security gate PASSED (≥75% success rate)"
-            echo "🚀 S1-18 ready for deployment"
+            echo "SUCCESS: Security gate PASSED (>=75% success rate)"
+            echo "READY: S1-18 ready for deployment"
           else
-            echo "❌ Security gate FAILED"
-            echo "🚫 S1-18 NOT ready for deployment"
+            echo "FAILED: Security gate FAILED"
+            echo "NOT_READY: S1-18 NOT ready for deployment"
             exit 1
           fi
