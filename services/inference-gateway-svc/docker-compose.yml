@@ -1,0 +1,84 @@
+# AIVO Inference Gateway - S2-01 Docker Compose
+# Multi-provider AI inference service with observability
+
+version: "3.8"
+
+services:
+  inference-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aivo-inference-gateway
+    ports:
+      - "8020:8000"
+    environment:
+      # Service configuration
+      - ENVIRONMENT=development
+      - PORT=8000
+
+      # OpenAI provider (required)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=https://api.openai.com/v1
+      - OPENAI_TIMEOUT=60
+
+      # Vertex AI provider (optional, behind feature flag)
+      - ENABLE_VERTEX=${ENABLE_VERTEX:-false}
+      - VERTEX_PROJECT=${VERTEX_PROJECT}
+      - VERTEX_LOCATION=${VERTEX_LOCATION:-us-central1}
+      - VERTEX_SERVICE_ACCOUNT_PATH=/app/vertex-sa.json
+
+      # Bedrock provider (optional, behind feature flag)
+      - ENABLE_BEDROCK=${ENABLE_BEDROCK:-false}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+
+      # PII scrubbing configuration
+      - PII_SCRUB_MODE=${PII_SCRUB_MODE:-mask}
+
+      # CORS and security
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - TRUSTED_HOSTS=${TRUSTED_HOSTS:-localhost,127.0.0.1}
+
+      # OpenTelemetry tracing
+      - OTLP_ENDPOINT=http://otel-collector:4317
+    volumes:
+      # Mount service account key if using Vertex AI
+      - ${VERTEX_SERVICE_ACCOUNT_PATH:-/dev/null}:/app/vertex-sa.json:ro
+    networks:
+      - aivo-network
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import httpx; httpx.get('http://localhost:8000/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.89.0
+    container_name: aivo-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ../../../infra/otel/collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8888:8888" # Prometheus metrics
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+networks:
+  aivo-network:
+    name: aivo-virtual-brains_default
+    external: true
