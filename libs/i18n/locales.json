@@ -1,0 +1,460 @@
+{
+  "version": "1.0.0",
+  "default_locale": "en",
+  "fallback_locale": "en",
+  "supported_locales": {
+    "en": {
+      "code": "en",
+      "iso_639_1": "en",
+      "iso_639_2": "eng",
+      "display_name": "English",
+      "native_name": "English",
+      "region": "US",
+      "full_code": "en-US",
+      "rtl": false,
+      "currency": "USD",
+      "date_format": "MM/DD/YYYY",
+      "time_format": "12h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": ["azure", "google", "aws"],
+        "tts": ["azure", "google", "aws"]
+      },
+      "educational_subjects": [
+        "mathematics",
+        "english",
+        "science",
+        "social_studies"
+      ],
+      "status": "active"
+    },
+
+    "es": {
+      "code": "es",
+      "iso_639_1": "es",
+      "iso_639_2": "spa",
+      "display_name": "Spanish",
+      "native_name": "Español",
+      "region": "ES",
+      "full_code": "es-ES",
+      "rtl": false,
+      "currency": "EUR",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "24h",
+      "decimal_separator": ",",
+      "thousands_separator": ".",
+      "speech_support": {
+        "asr": ["azure", "google", "aws"],
+        "tts": ["azure", "google", "aws"]
+      },
+      "educational_subjects": [
+        "matemáticas",
+        "español",
+        "ciencias",
+        "estudios_sociales"
+      ],
+      "status": "active"
+    },
+
+    "fr": {
+      "code": "fr",
+      "iso_639_1": "fr",
+      "iso_639_2": "fra",
+      "display_name": "French",
+      "native_name": "Français",
+      "region": "FR",
+      "full_code": "fr-FR",
+      "rtl": false,
+      "currency": "EUR",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "24h",
+      "decimal_separator": ",",
+      "thousands_separator": " ",
+      "speech_support": {
+        "asr": ["azure", "google", "aws"],
+        "tts": ["azure", "google", "aws"]
+      },
+      "educational_subjects": [
+        "mathématiques",
+        "français",
+        "sciences",
+        "études_sociales"
+      ],
+      "status": "active"
+    },
+
+    "ar": {
+      "code": "ar",
+      "iso_639_1": "ar",
+      "iso_639_2": "ara",
+      "display_name": "Arabic",
+      "native_name": "العربية",
+      "region": "SA",
+      "full_code": "ar-SA",
+      "rtl": true,
+      "currency": "SAR",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "12h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": ["azure", "google"],
+        "tts": ["azure", "google"]
+      },
+      "educational_subjects": [
+        "الرياضيات",
+        "العربية",
+        "العلوم",
+        "الدراسات_الاجتماعية"
+      ],
+      "status": "active"
+    },
+
+    "zh-Hans": {
+      "code": "zh-Hans",
+      "iso_639_1": "zh",
+      "iso_639_2": "zho",
+      "display_name": "Chinese (Simplified)",
+      "native_name": "简体中文",
+      "region": "CN",
+      "full_code": "zh-CN",
+      "rtl": false,
+      "currency": "CNY",
+      "date_format": "YYYY-MM-DD",
+      "time_format": "24h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": ["azure", "google", "aws"],
+        "tts": ["azure", "google", "aws"]
+      },
+      "educational_subjects": ["数学", "中文", "科学", "社会研究"],
+      "status": "active"
+    },
+
+    "hi": {
+      "code": "hi",
+      "iso_639_1": "hi",
+      "iso_639_2": "hin",
+      "display_name": "Hindi",
+      "native_name": "हिन्दी",
+      "region": "IN",
+      "full_code": "hi-IN",
+      "rtl": false,
+      "currency": "INR",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "12h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": ["azure", "google"],
+        "tts": ["azure", "google"]
+      },
+      "educational_subjects": ["गणित", "हिन्दी", "विज्ञान", "सामाजिक_अध्ययन"],
+      "status": "active"
+    },
+
+    "pt": {
+      "code": "pt",
+      "iso_639_1": "pt",
+      "iso_639_2": "por",
+      "display_name": "Portuguese",
+      "native_name": "Português",
+      "region": "BR",
+      "full_code": "pt-BR",
+      "rtl": false,
+      "currency": "BRL",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "24h",
+      "decimal_separator": ",",
+      "thousands_separator": ".",
+      "speech_support": {
+        "asr": ["azure", "google", "aws"],
+        "tts": ["azure", "google", "aws"]
+      },
+      "educational_subjects": [
+        "matemática",
+        "português",
+        "ciências",
+        "estudos_sociais"
+      ],
+      "status": "active"
+    },
+
+    "ig": {
+      "code": "ig",
+      "iso_639_1": "ig",
+      "iso_639_2": "ibo",
+      "display_name": "Igbo",
+      "native_name": "Asụsụ Igbo",
+      "region": "NG",
+      "full_code": "ig-NG",
+      "rtl": false,
+      "currency": "NGN",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "12h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": ["google"],
+        "tts": ["google"]
+      },
+      "educational_subjects": ["mgbakọ", "igbo", "sayensị", "ọmụmụ_obodo"],
+      "status": "beta"
+    },
+
+    "yo": {
+      "code": "yo",
+      "iso_639_1": "yo",
+      "iso_639_2": "yor",
+      "display_name": "Yoruba",
+      "native_name": "Èdè Yorùbá",
+      "region": "NG",
+      "full_code": "yo-NG",
+      "rtl": false,
+      "currency": "NGN",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "12h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": ["google"],
+        "tts": ["google"]
+      },
+      "educational_subjects": ["mathimátìkì", "yoruba", "sáyẹ́nsì", "ẹ̀kọ́_àwùjọ"],
+      "status": "beta"
+    },
+
+    "ha": {
+      "code": "ha",
+      "iso_639_1": "ha",
+      "iso_639_2": "hau",
+      "display_name": "Hausa",
+      "native_name": "Harshen Hausa",
+      "region": "NG",
+      "full_code": "ha-NG",
+      "rtl": false,
+      "currency": "NGN",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "12h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": ["google"],
+        "tts": ["google"]
+      },
+      "educational_subjects": [
+        "lissafi",
+        "hausa",
+        "kimiyya",
+        "karatun_al'umma"
+      ],
+      "status": "beta"
+    },
+
+    "efi": {
+      "code": "efi",
+      "iso_639_1": "efi",
+      "iso_639_2": "efi",
+      "display_name": "Efik",
+      "native_name": "Efik",
+      "region": "NG",
+      "full_code": "efi-NG",
+      "rtl": false,
+      "currency": "NGN",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "12h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": [],
+        "tts": []
+      },
+      "educational_subjects": [
+        "mathematics",
+        "efik",
+        "science",
+        "social_studies"
+      ],
+      "status": "experimental"
+    },
+
+    "sw": {
+      "code": "sw",
+      "iso_639_1": "sw",
+      "iso_639_2": "swa",
+      "display_name": "Swahili",
+      "native_name": "Kiswahili",
+      "region": "KE",
+      "full_code": "sw-KE",
+      "rtl": false,
+      "currency": "KES",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "24h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": ["google"],
+        "tts": ["google"]
+      },
+      "educational_subjects": [
+        "hisabati",
+        "kiswahili",
+        "sayansi",
+        "maarifa_ya_kijamii"
+      ],
+      "status": "active"
+    },
+
+    "xh": {
+      "code": "xh",
+      "iso_639_1": "xh",
+      "iso_639_2": "xho",
+      "display_name": "Xhosa",
+      "native_name": "isiXhosa",
+      "region": "ZA",
+      "full_code": "xh-ZA",
+      "rtl": false,
+      "currency": "ZAR",
+      "date_format": "YYYY/MM/DD",
+      "time_format": "24h",
+      "decimal_separator": ".",
+      "thousands_separator": " ",
+      "speech_support": {
+        "asr": [],
+        "tts": []
+      },
+      "educational_subjects": [
+        "izibalo",
+        "isixhosa",
+        "inzululwazi",
+        "izifundo_zentlalo"
+      ],
+      "status": "experimental"
+    },
+
+    "ki": {
+      "code": "ki",
+      "iso_639_1": "ki",
+      "iso_639_2": "kik",
+      "display_name": "Kikuyu",
+      "native_name": "Gĩkũyũ",
+      "region": "KE",
+      "full_code": "ki-KE",
+      "rtl": false,
+      "currency": "KES",
+      "date_format": "DD/MM/YYYY",
+      "time_format": "24h",
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "speech_support": {
+        "asr": [],
+        "tts": []
+      },
+      "educational_subjects": [
+        "thabiti",
+        "gikuyu",
+        "ũtaũgĩ",
+        "mĩthiori_ya_gĩkamĩrũ"
+      ],
+      "status": "experimental"
+    }
+  },
+
+  "locale_groups": {
+    "tier_1": ["en", "es", "fr", "ar", "zh-Hans", "hi", "pt"],
+    "tier_2": ["ig", "yo", "ha", "sw"],
+    "experimental": ["efi", "xh", "ki"]
+  },
+
+  "rtl_locales": ["ar"],
+
+  "speech_matrix": {
+    "providers": {
+      "azure": {
+        "name": "Azure Cognitive Services",
+        "priority": 1,
+        "capabilities": ["asr", "tts"],
+        "supported_locales": ["en", "es", "fr", "ar", "zh-Hans", "hi", "pt"],
+        "rate_limits": {
+          "asr": 20,
+          "tts": 50
+        },
+        "quality_score": 95
+      },
+      "google": {
+        "name": "Google Cloud Speech",
+        "priority": 2,
+        "capabilities": ["asr", "tts"],
+        "supported_locales": [
+          "en",
+          "es",
+          "fr",
+          "ar",
+          "zh-Hans",
+          "hi",
+          "pt",
+          "ig",
+          "yo",
+          "ha",
+          "sw"
+        ],
+        "rate_limits": {
+          "asr": 15,
+          "tts": 30
+        },
+        "quality_score": 90
+      },
+      "aws": {
+        "name": "AWS Transcribe/Polly",
+        "priority": 3,
+        "capabilities": ["asr", "tts"],
+        "supported_locales": ["en", "es", "fr", "zh-Hans", "pt"],
+        "rate_limits": {
+          "asr": 10,
+          "tts": 25
+        },
+        "quality_score": 85
+      }
+    },
+
+    "fallback_chains": {
+      "asr": {
+        "en": ["azure", "google", "aws"],
+        "es": ["azure", "google", "aws"],
+        "fr": ["azure", "google", "aws"],
+        "ar": ["azure", "google"],
+        "zh-Hans": ["azure", "google", "aws"],
+        "hi": ["azure", "google"],
+        "pt": ["azure", "google", "aws"],
+        "ig": ["google"],
+        "yo": ["google"],
+        "ha": ["google"],
+        "sw": ["google"],
+        "default": ["google", "azure"]
+      },
+      "tts": {
+        "en": ["azure", "google", "aws"],
+        "es": ["azure", "google", "aws"],
+        "fr": ["azure", "google", "aws"],
+        "ar": ["azure", "google"],
+        "zh-Hans": ["azure", "google", "aws"],
+        "hi": ["azure", "google"],
+        "pt": ["azure", "google", "aws"],
+        "ig": ["google"],
+        "yo": ["google"],
+        "ha": ["google"],
+        "sw": ["google"],
+        "default": ["google", "azure"]
+      }
+    }
+  },
+
+  "regional_preferences": {
+    "africa": ["en", "sw", "yo", "ha", "ig", "fr", "ar"],
+    "europe": ["en", "fr", "es", "ar"],
+    "asia": ["en", "zh-Hans", "hi", "ar"],
+    "americas": ["en", "es", "pt", "fr"]
+  }
+}
