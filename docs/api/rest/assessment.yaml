@@ -245,6 +245,140 @@ paths:
               schema:
                 $ref: "#/components/schemas/BaselineResult"
 
+  # S2-08 Adaptive Assessment Endpoints
+  /adaptive/start:
+    post:
+      summary: Start adaptive assessment session
+      description: |
+        Initialize a new adaptive assessment session using IRT (Item Response Theory).
+        Starts with medium difficulty and adapts based on responses.
+      operationId: startAdaptiveAssessment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdaptiveStartRequest"
+      responses:
+        "200":
+          description: Adaptive session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdaptiveStartResponse"
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+
+  /adaptive/answer:
+    post:
+      summary: Submit answer and get next question
+      description: |
+        Submit an answer for the current question. Updates ability estimate using IRT
+        and returns the next optimal question or completes the assessment.
+      operationId: submitAdaptiveAnswer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdaptiveAnswerRequest"
+      responses:
+        "200":
+          description: Answer processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdaptiveAnswerResponse"
+        "400":
+          description: Invalid request
+        "404":
+          description: Session or question not found
+
+  /adaptive/next/{sessionId}:
+    get:
+      summary: Get next question
+      description: Get the next optimal question without submitting an answer
+      operationId: getNextQuestion
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Next question available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextQuestionResponse"
+        "404":
+          description: Session not found
+
+  /adaptive/report/{sessionId}:
+    get:
+      summary: Get assessment report
+      description: |
+        Get comprehensive assessment report with IRT results, proficiency level mapping,
+        and detailed analysis.
+      operationId: getAssessmentReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Assessment report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentReportResponse"
+        "404":
+          description: Session not found
+        "400":
+          description: Assessment not completed
+
+  /admin/calibrate:
+    post:
+      summary: Calibrate item parameters (Admin)
+      description: |
+        Admin utility to calibrate IRT parameters for question items using response data.
+        Updates question bank with estimated difficulty, discrimination, and guessing parameters.
+      operationId: calibrateItems
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemCalibrationRequest"
+      responses:
+        "200":
+          description: Items calibrated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemCalibrationResponse"
+        "400":
+          description: Invalid request
+        "403":
+          description: Admin access required
+
 components:
   securitySchemes:
     bearerAuth:
@@ -530,3 +664,236 @@ components:
           type: boolean
         event_id:
           type: string
+
+    # S2-08 Adaptive Assessment Schemas
+    AdaptiveStartRequest:
+      type: object
+      required: [learner_id, tenant_id, subject]
+      properties:
+        learner_id:
+          type: string
+          maxLength: 100
+          description: Learner identifier
+        tenant_id:
+          type: string
+          maxLength: 100
+          description: Tenant identifier
+        subject:
+          type: string
+          enum: [math, reading, science, social_studies, language_arts]
+          description: Assessment subject
+        metadata:
+          type: object
+          description: Additional session metadata
+
+    AdaptiveStartResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Assessment session ID
+        status:
+          type: string
+          enum: [active, completed, error]
+        initial_theta:
+          type: number
+          description: Initial ability estimate
+        timestamp:
+          type: string
+          format: date-time
+
+    AdaptiveAnswerRequest:
+      type: object
+      required: [session_id, item_id, response]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Assessment session ID
+        item_id:
+          type: string
+          format: uuid
+          description: Assessment item ID
+        response:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+          description: Learner response
+        response_time_ms:
+          type: integer
+          description: Response time in milliseconds
+
+    AdaptiveAnswerResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        is_correct:
+          type: boolean
+        updated_theta:
+          type: number
+          description: Updated ability estimate
+        standard_error:
+          type: number
+          description: Standard error of ability estimate
+        is_complete:
+          type: boolean
+          description: Whether assessment is complete
+        timestamp:
+          type: string
+          format: date-time
+
+    NextQuestionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        question_text:
+          type: string
+          description: Question content
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              text:
+                type: string
+        item_type:
+          type: string
+          enum: [multiple_choice, true_false, short_answer]
+        difficulty:
+          type: number
+          description: Item difficulty parameter
+        information:
+          type: number
+          description: Expected information at current theta
+        is_complete:
+          type: boolean
+          description: Whether this is the final question
+
+    AssessmentReportResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+        final_theta:
+          type: number
+          description: Final ability estimate
+        standard_error:
+          type: number
+          description: Final standard error
+        proficiency_level:
+          type: string
+          enum: [L0, L1, L2, L3, L4]
+          description: Mapped proficiency level
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Confidence in level assignment
+        items_completed:
+          type: integer
+          description: Number of items administered
+        total_time_ms:
+          type: integer
+          description: Total assessment time
+        performance_summary:
+          type: object
+          properties:
+            correct_responses:
+              type: integer
+            incorrect_responses:
+              type: integer
+            average_difficulty:
+              type: number
+        completed_at:
+          type: string
+          format: date-time
+
+    ItemCalibrationRequest:
+      type: object
+      required: [item_id, responses]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+          description: Item to calibrate
+        responses:
+          type: array
+          items:
+            type: object
+            required: [learner_theta, response, is_correct]
+            properties:
+              learner_theta:
+                type: number
+                description: Known learner ability
+              response:
+                oneOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+              is_correct:
+                type: boolean
+        force_recalibrate:
+          type: boolean
+          default: false
+          description: Force recalibration even if item has parameters
+
+    ItemCalibrationResponse:
+      type: object
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        previous_parameters:
+          type: object
+          properties:
+            difficulty:
+              type: number
+            discrimination:
+              type: number
+            guessing:
+              type: number
+        new_parameters:
+          type: object
+          required: [difficulty, discrimination, guessing]
+          properties:
+            difficulty:
+              type: number
+              description: Item difficulty (b parameter)
+            discrimination:
+              type: number
+              description: Item discrimination (a parameter)
+            guessing:
+              type: number
+              description: Guessing parameter (c parameter)
+        fit_statistics:
+          type: object
+          properties:
+            log_likelihood:
+              type: number
+            chi_squared:
+              type: number
+            p_value:
+              type: number
+        sample_size:
+          type: integer
+          description: Number of responses used
+        calibrated_at:
+          type: string
+          format: date-time

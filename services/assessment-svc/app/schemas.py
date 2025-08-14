@@ -239,3 +239,127 @@ class ValidationError(AssessmentError):
     """Validation error response."""
     error: str = "validation_error"
     field_errors: Optional[List[Dict[str, str]]] = None
+
+# Adaptive Assessment Schemas (S2-08)
+class AdaptiveStartRequest(BaseModel):
+    """Request to start an adaptive assessment session."""
+    learner_id: str = Field(..., min_length=1, max_length=100, description="Learner identifier")
+    tenant_id: str = Field(..., min_length=1, max_length=100, description="Tenant identifier")
+    subject: str = Field(..., min_length=1, max_length=50, description="Assessment subject")
+    metadata: Optional[Dict[str, Any]] = Field(default={}, description="Additional session metadata")
+    
+    @validator('subject')
+    def validate_subject(cls, v):
+        allowed_subjects = ["math", "reading", "science", "social_studies", "language_arts"]
+        if v.lower() not in allowed_subjects:
+            raise ValueError(f"Subject must be one of: {', '.join(allowed_subjects)}")
+        return v.lower()
+
+class AdaptiveStartResponse(BaseModel):
+    """Response when starting an adaptive assessment."""
+    session_id: str = Field(..., description="Assessment session ID")
+    status: str = Field(..., description="Session status")
+    current_theta: float = Field(..., description="Initial ability estimate")
+    standard_error: float = Field(..., description="Standard error of ability estimate")
+    questions_answered: int = Field(..., description="Number of questions answered so far")
+    first_question: Optional[Dict[str, Any]] = Field(None, description="First question to answer")
+    estimated_total_questions: int = Field(..., description="Estimated total questions needed")
+    message: str = Field(..., description="Status message")
+
+class AdaptiveAnswerRequest(BaseModel):
+    """Request to submit an answer in adaptive assessment."""
+    session_id: str = Field(..., description="Assessment session ID")
+    question_id: str = Field(..., description="Question ID being answered")
+    user_answer: str = Field(..., min_length=1, description="User's answer")
+    response_time_ms: Optional[int] = Field(None, ge=0, description="Response time in milliseconds")
+    metadata: Optional[Dict[str, Any]] = Field(default={}, description="Additional response metadata")
+
+class AdaptiveAnswerResponse(BaseModel):
+    """Response after submitting an answer."""
+    session_id: str = Field(..., description="Assessment session ID")
+    is_correct: bool = Field(..., description="Whether the answer was correct")
+    updated_theta: float = Field(..., description="Updated ability estimate")
+    standard_error: float = Field(..., description="Current standard error")
+    questions_answered: int = Field(..., description="Total questions answered")
+    assessment_complete: bool = Field(..., description="Whether assessment is complete")
+    next_question: Optional[Dict[str, Any]] = Field(None, description="Next question if continuing")
+    stopping_reason: Optional[str] = Field(None, description="Reason for stopping if complete")
+    message: str = Field(..., description="Status message")
+
+class NextQuestionResponse(BaseModel):
+    """Response when requesting next question."""
+    session_id: str = Field(..., description="Assessment session ID")
+    question: Optional[Dict[str, Any]] = Field(None, description="Next question data")
+    current_theta: float = Field(..., description="Current ability estimate")
+    standard_error: float = Field(..., description="Current standard error")
+    questions_answered: int = Field(..., description="Questions answered so far")
+    has_next_question: bool = Field(..., description="Whether next question is available")
+    message: str = Field(..., description="Status message")
+
+class AssessmentReportResponse(BaseModel):
+    """Comprehensive assessment report response."""
+    session_id: str = Field(..., description="Assessment session ID")
+    learner_id: str = Field(..., description="Learner identifier")
+    subject: str = Field(..., description="Assessment subject")
+    assessment_type: str = Field(..., description="Type of assessment")
+    status: str = Field(..., description="Assessment status")
+    
+    # IRT Results
+    final_theta: float = Field(..., description="Final ability estimate")
+    standard_error: float = Field(..., description="Final standard error")
+    reliability: Optional[float] = Field(None, description="Assessment reliability")
+    
+    # Level Mapping
+    proficiency_level: str = Field(..., description="Proficiency level (L0-L4)")
+    level_confidence: float = Field(..., description="Confidence in level assignment")
+    
+    # Performance Metrics
+    total_questions: int = Field(..., description="Total questions answered")
+    correct_answers: int = Field(..., description="Number of correct answers")
+    accuracy_percentage: float = Field(..., description="Accuracy as percentage")
+    average_response_time_ms: Optional[int] = Field(None, description="Average response time")
+    
+    # Detailed Results
+    strengths: List[str] = Field(default=[], description="Identified strengths")
+    weaknesses: List[str] = Field(default=[], description="Areas for improvement")
+    recommendations: List[str] = Field(default=[], description="Learning recommendations")
+    
+    # Session Timeline
+    theta_history: List[float] = Field(default=[], description="History of theta estimates")
+    response_history: List[Dict[str, Any]] = Field(default=[], description="Detailed response history")
+    
+    # Timestamps
+    started_at: Optional[datetime] = Field(None, description="Assessment start time")
+    completed_at: Optional[datetime] = Field(None, description="Assessment completion time")
+    total_time_minutes: Optional[float] = Field(None, description="Total assessment time in minutes")
+
+# Item Calibration Schemas (Admin)
+class ItemResponseData(BaseModel):
+    """Individual response data for item calibration."""
+    theta: float = Field(..., description="Ability level of respondent")
+    is_correct: bool = Field(..., description="Whether response was correct")
+    response_time_ms: Optional[int] = Field(None, description="Response time")
+
+class ItemCalibrationData(BaseModel):
+    """Calibration data for a single item."""
+    item_id: str = Field(..., description="Item/question identifier")
+    responses: List[ItemResponseData] = Field(..., min_items=10, description="Response data for calibration")
+
+class ItemCalibrationRequest(BaseModel):
+    """Request to calibrate item parameters."""
+    items: List[ItemCalibrationData] = Field(..., min_items=1, description="Items to calibrate")
+    calibration_method: str = Field("mle", description="Calibration method (mle, bayes)")
+    
+class ItemCalibrationResponse(BaseModel):
+    """Response from item calibration."""
+    calibrated_items: int = Field(..., description="Number of successfully calibrated items")
+    failed_items: List[Dict[str, str]] = Field(default=[], description="Items that failed calibration")
+    message: str = Field(..., description="Status message")
+
+# Error Response
+class ErrorResponse(BaseModel):
+    """Standard error response."""
+    error: str = Field(..., description="Error type")
+    message: str = Field(..., description="Error message")
+    details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
