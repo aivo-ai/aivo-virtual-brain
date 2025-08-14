@@ -1,0 +1,57 @@
+# Mathematics/Math Subject Synonyms
+# Common mathematical terms and their variations for improved search
+
+# Basic Operations
+addition,add,plus,sum,total,combine
+subtraction,subtract,minus,difference,take away
+multiplication,multiply,times,product,of
+division,divide,divided by,quotient,split,share
+equals,equal,is,same as,equivalent
+
+# Fractions and Decimals
+fraction,part,piece,portion,ratio
+numerator,top number,dividend
+denominator,bottom number,divisor
+decimal,decimal point,point
+percent,percentage,out of 100,per hundred
+
+# Geometry
+triangle,3 sides,three sided,triangular
+square,4 equal sides,quadrilateral,rectangle
+circle,round,circular,circumference
+angle,corner,degree,degrees
+perimeter,around,edge,border,boundary
+area,inside,space,coverage,square units
+volume,capacity,cubic,3d space
+
+# Algebra
+variable,unknown,letter,x,y,z
+equation,formula,expression,statement
+solve,find,calculate,determine,figure out
+graph,plot,chart,coordinate,axis
+
+# Numbers
+integer,whole number,counting number
+positive,greater than zero,above zero
+negative,less than zero,below zero,minus
+odd,not even,1 3 5 7 9
+even,divisible by 2,2 4 6 8
+
+# Problem Types
+word problem,story problem,real world,application
+pattern,sequence,series,order,next
+probability,chance,likelihood,odds
+statistics,data,information,survey,average
+
+# Math Tools
+calculator,compute,figure,estimate
+ruler,measure,length,distance
+protractor,angle measure,degrees
+compass,draw circles,arc
+
+# Common Math Phrases  
+how many,total,all together,in all
+how much,cost,price,money,dollars
+per,each,every,rate,speed
+more than,greater,bigger,larger,increased
+less than,fewer,smaller,decreased,reduced

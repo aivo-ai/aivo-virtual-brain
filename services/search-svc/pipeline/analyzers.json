@@ -1,0 +1,310 @@
+{
+  "analyzers": {
+    "standard_analyzer": {
+      "type": "custom",
+      "tokenizer": "standard",
+      "char_filter": ["html_strip"],
+      "filter": ["lowercase", "stop", "stemmer_filter", "synonym_filter"]
+    },
+
+    "math_analyzer": {
+      "type": "custom",
+      "tokenizer": "keyword",
+      "char_filter": ["html_strip", "math_symbol_filter"],
+      "filter": ["lowercase", "math_synonym_filter", "edge_ngram_filter"]
+    },
+
+    "ela_analyzer": {
+      "type": "custom",
+      "tokenizer": "standard",
+      "char_filter": ["html_strip"],
+      "filter": [
+        "lowercase",
+        "stop",
+        "ela_synonym_filter",
+        "stemmer_filter",
+        "phonetic_filter"
+      ]
+    },
+
+    "science_analyzer": {
+      "type": "custom",
+      "tokenizer": "standard",
+      "char_filter": ["html_strip"],
+      "filter": [
+        "lowercase",
+        "stop",
+        "science_synonym_filter",
+        "stemmer_filter"
+      ]
+    },
+
+    "edge_ngram_analyzer": {
+      "type": "custom",
+      "tokenizer": "standard",
+      "filter": ["lowercase", "edge_ngram_filter"]
+    },
+
+    "autocomplete_analyzer": {
+      "type": "custom",
+      "tokenizer": "standard",
+      "filter": ["lowercase", "edge_ngram_completion_filter"]
+    }
+  },
+
+  "tokenizers": {
+    "math_tokenizer": {
+      "type": "pattern",
+      "pattern": "[+\\-*/=<>≤≥()\\[\\]{}^√∑∏∫]|\\w+"
+    }
+  },
+
+  "char_filters": {
+    "html_strip": {
+      "type": "html_strip"
+    },
+
+    "math_symbol_filter": {
+      "type": "mapping",
+      "mappings": [
+        "+ => plus addition",
+        "- => minus subtraction",
+        "* => times multiplication multiply",
+        "/ => divided division",
+        "= => equals equal",
+        "> => greater than",
+        "< => less than",
+        "≥ => greater than or equal",
+        "≤ => less than or equal",
+        "^ => power exponent",
+        "√ => square root sqrt",
+        "² => squared to the second power",
+        "³ => cubed to the third power",
+        "π => pi 3.14159",
+        "∞ => infinity infinite",
+        "∑ => sum summation",
+        "∏ => product multiplication",
+        "∫ => integral integration"
+      ]
+    }
+  },
+
+  "filters": {
+    "stemmer_filter": {
+      "type": "stemmer",
+      "language": "english"
+    },
+
+    "edge_ngram_filter": {
+      "type": "edge_ngram",
+      "min_gram": 2,
+      "max_gram": 20,
+      "side": "front"
+    },
+
+    "edge_ngram_completion_filter": {
+      "type": "edge_ngram",
+      "min_gram": 1,
+      "max_gram": 10,
+      "side": "front"
+    },
+
+    "synonym_filter": {
+      "type": "synonym_graph",
+      "synonyms_path": "synonyms.txt",
+      "updateable": true
+    },
+
+    "math_synonym_filter": {
+      "type": "synonym_graph",
+      "synonyms": [
+        "addition,add,plus,sum,total,combine",
+        "subtraction,subtract,minus,difference",
+        "multiplication,multiply,times,product",
+        "division,divide,quotient,split",
+        "fraction,part,piece,portion,ratio",
+        "decimal,decimal point,point",
+        "percent,percentage,out of 100",
+        "triangle,3 sides,three sided,triangular",
+        "square,4 equal sides,quadrilateral",
+        "circle,round,circular,circumference",
+        "angle,corner,degree,degrees",
+        "perimeter,around,edge,border",
+        "area,inside,space,coverage",
+        "volume,capacity,cubic,3d space",
+        "equation,formula,expression,statement",
+        "solve,find,calculate,determine",
+        "graph,plot,chart,coordinate",
+        "variable,unknown,letter,x,y,z",
+        "integer,whole number,counting number",
+        "positive,greater than zero,above zero",
+        "negative,less than zero,below zero",
+        "odd,not even",
+        "even,divisible by 2"
+      ]
+    },
+
+    "ela_synonym_filter": {
+      "type": "synonym_graph",
+      "synonyms": [
+        "metaphor,figurative language,comparison,like,as if",
+        "simile,figurative language,like,as,comparison",
+        "alliteration,repetition,sound,beginning sound",
+        "theme,main idea,message,moral,lesson",
+        "plot,story,narrative,storyline,sequence",
+        "character,person,protagonist,main character",
+        "setting,place,location,where,when,time",
+        "conflict,problem,struggle,challenge,issue",
+        "resolution,solution,ending,conclusion,outcome",
+        "author,writer,creator,novelist,poet",
+        "genre,type,kind,category,style",
+        "fiction,story,made up,imaginary,not real",
+        "nonfiction,real,true,factual,actual",
+        "poem,poetry,verse,stanza,rhyme",
+        "essay,paper,writing,composition,article",
+        "paragraph,section,part,passage,chunk",
+        "sentence,statement,phrase,clause,thought",
+        "word,vocabulary,term,language,expression",
+        "grammar,rules,structure,syntax,mechanics",
+        "punctuation,period,comma,question mark,exclamation"
+      ]
+    },
+
+    "science_synonym_filter": {
+      "type": "synonym_graph",
+      "synonyms": [
+        "hypothesis,theory,idea,prediction,guess",
+        "experiment,test,trial,investigation,study",
+        "observation,notice,see,watch,examine",
+        "data,information,results,findings,facts",
+        "conclusion,result,outcome,finding,discovery",
+        "variable,factor,element,component,part",
+        "control,standard,comparison,baseline,normal",
+        "procedure,method,steps,process,protocol",
+        "equipment,tools,instruments,apparatus,materials",
+        "measurement,measure,quantify,calculate,record",
+        "atom,particle,element,building block,smallest unit",
+        "molecule,compound,combination,group of atoms",
+        "cell,basic unit,building block of life",
+        "organism,living thing,creature,life form",
+        "ecosystem,environment,habitat,community,biome",
+        "energy,power,force,strength,fuel",
+        "matter,substance,material,stuff,physical thing",
+        "chemical,substance,compound,element,reaction",
+        "physical,mechanical,motion,movement,force",
+        "biology,life science,living things,organisms",
+        "chemistry,chemical science,substances,reactions",
+        "physics,physical science,matter,energy,motion"
+      ]
+    },
+
+    "phonetic_filter": {
+      "type": "phonetic",
+      "encoder": "metaphone",
+      "replace": false
+    }
+  },
+
+  "index_settings": {
+    "general": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index": {
+        "max_ngram_diff": 50,
+        "max_shingle_diff": 8,
+        "analysis": {
+          "analyzer": "standard_analyzer",
+          "search_analyzer": "standard_analyzer"
+        }
+      }
+    },
+
+    "mathematics": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index": {
+        "max_ngram_diff": 50,
+        "analysis": {
+          "analyzer": "math_analyzer",
+          "search_analyzer": "math_analyzer"
+        }
+      }
+    },
+
+    "english": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index": {
+        "max_ngram_diff": 50,
+        "analysis": {
+          "analyzer": "ela_analyzer",
+          "search_analyzer": "ela_analyzer"
+        }
+      }
+    },
+
+    "science": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index": {
+        "max_ngram_diff": 50,
+        "analysis": {
+          "analyzer": "science_analyzer",
+          "search_analyzer": "science_analyzer"
+        }
+      }
+    }
+  },
+
+  "field_mappings": {
+    "content_by_subject": {
+      "mathematics": {
+        "type": "text",
+        "analyzer": "math_analyzer",
+        "search_analyzer": "math_analyzer",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "autocomplete_analyzer"
+          }
+        }
+      },
+
+      "english": {
+        "type": "text",
+        "analyzer": "ela_analyzer",
+        "search_analyzer": "ela_analyzer",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "autocomplete_analyzer"
+          }
+        }
+      },
+
+      "science": {
+        "type": "text",
+        "analyzer": "science_analyzer",
+        "search_analyzer": "science_analyzer",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "autocomplete_analyzer"
+          }
+        }
+      },
+
+      "default": {
+        "type": "text",
+        "analyzer": "standard_analyzer",
+        "search_analyzer": "standard_analyzer",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "autocomplete_analyzer"
+          }
+        }
+      }
+    }
+  }
+}
