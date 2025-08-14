@@ -1,0 +1,20 @@
+<mj-section background-color="#ffffff" padding="20px 0">
+  <mj-column>
+    <mj-button 
+      background-color="{{ button_color|default('#059669') }}" 
+      color="#ffffff" 
+      border-radius="6px" 
+      font-size="18px" 
+      font-weight="700"
+      padding="15px 40px"
+      href="{{ button_url }}"
+      target="_blank"
+    >
+      💳 {{ button_text }}
+    </mj-button>
+    
+    <mj-text font-size="12px" color="#6b7280" align="center" padding-top="10px">
+      {{ t('email.payment.secure_processing') }}
+    </mj-text>
+  </mj-column>
+</mj-section>

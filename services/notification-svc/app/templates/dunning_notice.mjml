@@ -1,0 +1,135 @@
+<mj-include path="./partials/header.mjml" />
+
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-column>
+    <mj-text font-size="24px" font-weight="600" color="#dc2626" align="center">
+      {{ t('email.dunning.title', level=dunning_level) }}
+    </mj-text>
+    
+    <mj-divider border-color="#e5e7eb" border-width="1px" padding="20px 0" />
+    
+    <mj-text font-size="16px" color="#374151" line-height="24px">
+      {{ t('email.dunning.greeting', customer_name=customer_name) }}
+    </mj-text>
+    
+    <mj-text font-size="16px" color="#374151" line-height="24px" padding-top="10px">
+      {{ t('email.dunning.message', level=dunning_level, past_due_days=past_due_days) }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Account Summary -->
+<mj-section background-color="#f9fafb" border-radius="8px" padding="20px" margin="0 20px">
+  <mj-column>
+    <mj-text font-size="18px" font-weight="600" color="#374151" align="center" padding-bottom="15px">
+      {{ t('email.dunning.account_summary') }}
+    </mj-text>
+    
+    <mj-table>
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px 0; font-weight: 600; color: #374151; width: 200px;">
+          {{ t('email.dunning.account_number') }}:
+        </td>
+        <td style="padding: 12px 0; color: #6b7280;">
+          {{ account_number }}
+        </td>
+      </tr>
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px 0; font-weight: 600; color: #374151;">
+          {{ t('email.dunning.current_balance') }}:
+        </td>
+        <td style="padding: 12px 0; color: #dc2626; font-weight: 700; font-size: 18px;">
+          {{ outstanding_balance|currency }}
+        </td>
+      </tr>
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px 0; font-weight: 600; color: #374151;">
+          {{ t('email.dunning.past_due_amount') }}:
+        </td>
+        <td style="padding: 12px 0; color: #dc2626; font-weight: 700;">
+          {{ past_due_amount|currency }}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 12px 0; font-weight: 600; color: #374151;">
+          {{ t('email.dunning.days_overdue') }}:
+        </td>
+        <td style="padding: 12px 0; color: #dc2626; font-weight: 600;">
+          {{ past_due_days }} {{ t('common.days', count=past_due_days) }}
+        </td>
+      </tr>
+    </mj-table>
+  </mj-column>
+</mj-section>
+
+<!-- Payment Method -->
+{% if payment_method %}
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-column>
+    <mj-text font-size="16px" color="#374151" line-height="24px">
+      {{ t('email.dunning.payment_method_text') }}
+    </mj-text>
+    
+    <mj-text font-size="14px" color="#6b7280" padding="10px 20px" background-color="#f9fafb" border-radius="6px">
+      {{ payment_method.type|title }} ending in {{ payment_method.last_four }}
+      {% if payment_method.expired %}
+      <span style="color: #dc2626; font-weight: 600;">({{ t('email.dunning.expired') }})</span>
+      {% endif %}
+    </mj-text>
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Warning Level Specific Content -->
+{% if dunning_level >= 3 %}
+<mj-section background-color="#fef2f2" border="2px solid #dc2626" border-radius="8px" padding="20px" margin="0 20px">
+  <mj-column>
+    <mj-text font-size="16px" font-weight="600" color="#dc2626" align="center">
+      ⚠️ {{ t('email.dunning.final_notice') }}
+    </mj-text>
+    
+    <mj-text font-size="14px" color="#7f1d1d" line-height="20px" align="center" padding-top="10px">
+      {{ t('email.dunning.service_suspension_warning', suspension_date=suspension_date|date()) }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Payment Button -->
+<mj-section background-color="#ffffff" padding="30px 20px">
+  <mj-column>
+    <mj-include path="./partials/payment_button.mjml" 
+                button_text="{{ t('email.dunning.pay_now', amount=outstanding_balance|currency) }}" 
+                button_url="{{ payment_url }}" />
+    
+    <mj-text font-size="14px" color="#6b7280" line-height="20px" align="center" padding-top="20px">
+      {{ t('email.dunning.payment_methods_accepted') }}
+    </mj-text>
+    
+    <mj-text font-size="14px" color="#6b7280" line-height="20px" align="center" padding-top="10px">
+      {{ t('email.dunning.questions_contact') }}
+      <a href="mailto:{{ billing_email }}" style="color: #2563eb; text-decoration: none;">{{ billing_email }}</a>
+      {{ t('common.or') }}
+      <a href="tel:{{ support_phone }}" style="color: #2563eb; text-decoration: none;">{{ support_phone }}</a>
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Alternative Payment Instructions -->
+<mj-section background-color="#f8fafc" padding="20px">
+  <mj-column>
+    <mj-text font-size="16px" font-weight="600" color="#374151" padding-bottom="10px">
+      {{ t('email.dunning.alternative_payment') }}
+    </mj-text>
+    
+    <mj-text font-size="14px" color="#6b7280" line-height="20px">
+      {{ t('email.dunning.mail_payment_instructions', payment_address=payment_address) }}
+    </mj-text>
+    
+    <mj-text font-size="14px" color="#6b7280" line-height="20px" padding-top="10px">
+      {{ t('email.dunning.include_account_number') }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<mj-include path="./partials/footer.mjml" />

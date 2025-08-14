@@ -1,0 +1,35 @@
+<mj-section background-color="#ffffff" border-left="4px solid {{ color|default('#2563eb') }}" padding="15px">
+  <mj-column>
+    <mj-text font-size="16px" font-weight="600" color="#374151" padding-bottom="8px">
+      {{ subject.name }}
+    </mj-text>
+    
+    <mj-table>
+      <tr>
+        <td style="width: 150px; padding: 5px 0;">
+          <div style="background-color: #f3f4f6; border-radius: 6px; padding: 4px 0; text-align: center;">
+            <span style="font-size: 18px; font-weight: 700; color: {% if subject.score >= 80 %}#059669{% elif subject.score >= 60 %}#d97706{% else %}#dc2626{% endif %};">
+              {{ subject.score }}%
+            </span>
+          </div>
+        </td>
+        <td style="padding: 5px 10px;">
+          <div style="background-color: #e5e7eb; border-radius: 10px; height: 8px; overflow: hidden;">
+            <div style="background-color: {% if subject.score >= 80 %}#10b981{% elif subject.score >= 60 %}#f59e0b{% else %}#ef4444{% endif %}; height: 100%; width: {{ subject.score }}%; transition: width 0.3s ease;"></div>
+          </div>
+        </td>
+        <td style="padding: 5px 0; width: 100px;">
+          <span style="font-size: 12px; color: #6b7280; font-weight: 600;">
+            {{ subject.questions_correct }}/{{ subject.total_questions }}
+          </span>
+        </td>
+      </tr>
+    </mj-table>
+    
+    {% if subject.notes %}
+    <mj-text font-size="13px" color="#6b7280" line-height="18px" padding-top="8px">
+      {{ subject.notes }}
+    </mj-text>
+    {% endif %}
+  </mj-column>
+</mj-section>

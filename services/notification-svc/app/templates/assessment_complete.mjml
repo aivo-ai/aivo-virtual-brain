@@ -1,0 +1,201 @@
+<mj-include path="./partials/header.mjml" />
+
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-column>
+    <mj-text font-size="24px" font-weight="600" color="#059669" align="center">
+      🎉 {{ t('email.assessment.complete.title') }}
+    </mj-text>
+    
+    <mj-divider border-color="#e5e7eb" border-width="1px" padding="20px 0" />
+    
+    <mj-text font-size="16px" color="#374151" line-height="24px">
+      {{ t('email.assessment.complete.greeting', parent_name=parent_name) }}
+    </mj-text>
+    
+    <mj-text font-size="16px" color="#374151" line-height="24px" padding-top="10px">
+      {{ t('email.assessment.complete.message', learner_name=learner_name, assessment_name=assessment_name) }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Assessment Results Card -->
+<mj-section background-color="#f0fdf4" border="1px solid #bbf7d0" border-radius="8px" padding="20px" margin="0 20px">
+  <mj-column>
+    <mj-text font-size="18px" font-weight="600" color="#166534" align="center" padding-bottom="15px">
+      {{ t('email.assessment.results_summary') }}
+    </mj-text>
+    
+    <mj-table>
+      <tr style="border-bottom: 1px solid #d1fae5;">
+        <td style="padding: 12px 0; font-weight: 600; color: #374151; width: 200px;">
+          {{ t('email.assessment.assessment_name') }}:
+        </td>
+        <td style="padding: 12px 0; color: #166534; font-weight: 600;">
+          {{ assessment_name }}
+        </td>
+      </tr>
+      <tr style="border-bottom: 1px solid #d1fae5;">
+        <td style="padding: 12px 0; font-weight: 600; color: #374151;">
+          {{ t('email.assessment.completion_date') }}:
+        </td>
+        <td style="padding: 12px 0; color: #6b7280;">
+          {{ completion_date|date('%B %d, %Y at %I:%M %p') }}
+        </td>
+      </tr>
+      <tr style="border-bottom: 1px solid #d1fae5;">
+        <td style="padding: 12px 0; font-weight: 600; color: #374151;">
+          {{ t('email.assessment.duration') }}:
+        </td>
+        <td style="padding: 12px 0; color: #6b7280;">
+          {{ duration_minutes }} {{ t('common.minutes', count=duration_minutes) }}
+        </td>
+      </tr>
+      {% if overall_score %}
+      <tr>
+        <td style="padding: 12px 0; font-weight: 600; color: #374151;">
+          {{ t('email.assessment.overall_score') }}:
+        </td>
+        <td style="padding: 12px 0; color: #166534; font-weight: 700; font-size: 18px;">
+          {{ overall_score }}%
+        </td>
+      </tr>
+      {% endif %}
+    </mj-table>
+  </mj-column>
+</mj-section>
+
+<!-- Performance by Subject Area -->
+{% if subject_scores %}
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-column>
+    <mj-text font-size="18px" font-weight="600" color="#374151" padding-bottom="15px">
+      {{ t('email.assessment.performance_by_area') }}
+    </mj-text>
+    
+    {% for subject in subject_scores %}
+    <mj-include path="./partials/results_card.mjml" 
+                subject=subject
+                learner_name=learner_name />
+    {% endfor %}
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Strengths and Growth Areas -->
+<mj-section background-color="#ffffff" padding="0 20px">
+  <mj-column width="50%">
+    {% if strengths %}
+    <mj-text font-size="16px" font-weight="600" color="#059669" padding-bottom="10px">
+      💪 {{ t('email.assessment.strengths') }}
+    </mj-text>
+    
+    {% for strength in strengths %}
+    <mj-text font-size="14px" color="#047857" line-height="20px" padding="3px 0">
+      • {{ strength }}
+    </mj-text>
+    {% endfor %}
+    {% endif %}
+  </mj-column>
+  
+  <mj-column width="50%">
+    {% if growth_areas %}
+    <mj-text font-size="16px" font-weight="600" color="#d97706" padding-bottom="10px">
+      📈 {{ t('email.assessment.growth_opportunities') }}
+    </mj-text>
+    
+    {% for area in growth_areas %}
+    <mj-text font-size="14px" color="#b45309" line-height="20px" padding="3px 0">
+      • {{ area }}
+    </mj-text>
+    {% endfor %}
+    {% endif %}
+  </mj-column>
+</mj-section>
+
+<!-- Recommendations -->
+{% if recommendations %}
+<mj-section background-color="#fef3c7" border-radius="8px" padding="20px" margin="20px 20px">
+  <mj-column>
+    <mj-text font-size="16px" font-weight="600" color="#92400e" padding-bottom="10px">
+      💡 {{ t('email.assessment.recommendations') }}
+    </mj-text>
+    
+    {% for recommendation in recommendations %}
+    <mj-text font-size="14px" color="#78350f" line-height="22px" padding="5px 0">
+      {{ recommendation }}
+    </mj-text>
+    {% endfor %}
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Progress Compared to Previous -->
+{% if previous_comparison %}
+<mj-section background-color="#f8fafc" border-radius="8px" padding="20px" margin="0 20px">
+  <mj-column>
+    <mj-text font-size="16px" font-weight="600" color="#475569" padding-bottom="10px">
+      📊 {{ t('email.assessment.progress_comparison') }}
+    </mj-text>
+    
+    <mj-text font-size="14px" color="#334155" line-height="20px">
+      {{ t('email.assessment.compared_to_previous', 
+           improvement=previous_comparison.improvement,
+           previous_date=previous_comparison.previous_date|date('%B %Y')) }}
+    </mj-text>
+    
+    {% if previous_comparison.improvement > 0 %}
+    <mj-text font-size="14px" color="#059669" font-weight="600" padding-top="5px">
+      🎯 {{ t('email.assessment.improvement_points', points=previous_comparison.improvement) }}
+    </mj-text>
+    {% endif %}
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Action Buttons -->
+<mj-section background-color="#ffffff" padding="30px 20px">
+  <mj-column width="50%">
+    <mj-button 
+      background-color="#2563eb" 
+      color="#ffffff" 
+      border-radius="6px" 
+      font-size="14px"
+      font-weight="600"
+      padding="12px 20px"
+      href="{{ detailed_results_url }}"
+      target="_blank"
+    >
+      {{ t('email.assessment.view_detailed_results') }}
+    </mj-button>
+  </mj-column>
+  
+  <mj-column width="50%">
+    {% if schedule_conference_url %}
+    <mj-button 
+      background-color="#059669" 
+      color="#ffffff" 
+      border-radius="6px" 
+      font-size="14px"
+      font-weight="600"
+      padding="12px 20px"
+      href="{{ schedule_conference_url }}"
+      target="_blank"
+    >
+      {{ t('email.assessment.schedule_conference') }}
+    </mj-button>
+    {% endif %}
+  </mj-column>
+</mj-section>
+
+<!-- Contact Information -->
+<mj-section background-color="#ffffff" padding="0 20px 20px">
+  <mj-column>
+    <mj-text font-size="14px" color="#6b7280" align="center" line-height="20px">
+      {{ t('email.assessment.questions_contact') }}
+      <a href="mailto:{{ educator_email }}" style="color: #2563eb; text-decoration: none;">{{ educator_name }}</a>
+      {{ t('common.or') }} {{ school_phone }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<mj-include path="./partials/footer.mjml" />

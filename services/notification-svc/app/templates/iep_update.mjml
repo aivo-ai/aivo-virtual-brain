@@ -1,0 +1,110 @@
+<mj-include path="./partials/header.mjml" />
+
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-column>
+    <mj-text font-size="24px" font-weight="600" color="#2563eb" align="center">
+      {{ t('email.iep.update.title') }}
+    </mj-text>
+    
+    <mj-divider border-color="#e5e7eb" border-width="1px" padding="20px 0" />
+    
+    <mj-text font-size="16px" color="#374151" line-height="24px">
+      {{ t('email.iep.update.greeting', parent_name=parent_name) }}
+    </mj-text>
+    
+    <mj-text font-size="16px" color="#374151" line-height="24px" padding-top="10px">
+      {{ t('email.iep.update.message', learner_name=learner_name, educator_name=educator_name) }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- Progress Summary Card -->
+<mj-section background-color="#f0f9ff" border="1px solid #bae6fd" border-radius="8px" padding="20px" margin="0 20px">
+  <mj-column>
+    <mj-text font-size="18px" font-weight="600" color="#0369a1" align="center" padding-bottom="15px">
+      {{ t('email.iep.progress_summary') }}
+    </mj-text>
+    
+    <!-- Progress Cards -->
+    {% for goal in iep_goals %}
+    <mj-include path="./partials/progress_card.mjml" 
+                goal=goal 
+                learner_name=learner_name />
+    {% endfor %}
+  </mj-column>
+</mj-section>
+
+<!-- Key Highlights -->
+{% if highlights %}
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-column>
+    <mj-text font-size="18px" font-weight="600" color="#374151" padding-bottom="10px">
+      {{ t('email.iep.key_highlights') }}
+    </mj-text>
+    
+    {% for highlight in highlights %}
+    <mj-text font-size="14px" color="#16a34a" line-height="20px" padding="5px 0">
+      ✓ {{ highlight }}
+    </mj-text>
+    {% endfor %}
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Areas for Improvement -->
+{% if improvement_areas %}
+<mj-section background-color="#fffbeb" border-radius="8px" padding="15px" margin="0 20px">
+  <mj-column>
+    <mj-text font-size="16px" font-weight="600" color="#d97706" padding-bottom="10px">
+      {{ t('email.iep.improvement_areas') }}
+    </mj-text>
+    
+    {% for area in improvement_areas %}
+    <mj-text font-size="14px" color="#92400e" line-height="20px" padding="3px 0">
+      • {{ area }}
+    </mj-text>
+    {% endfor %}
+  </mj-column>
+</mj-section>
+{% endif %}
+
+<!-- Next Steps -->
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-column>
+    <mj-text font-size="18px" font-weight="600" color="#374151" padding-bottom="10px">
+      {{ t('email.iep.next_steps') }}
+    </mj-text>
+    
+    {% if next_meeting_date %}
+    <mj-text font-size="14px" color="#6b7280" line-height="20px">
+      • {{ t('email.iep.next_meeting', date=next_meeting_date|date('%B %d, %Y at %I:%M %p')) }}
+    </mj-text>
+    {% endif %}
+    
+    {% if parent_conference %}
+    <mj-text font-size="14px" color="#6b7280" line-height="20px">
+      • {{ t('email.iep.parent_conference_scheduled', date=parent_conference|date('%B %d, %Y')) }}
+    </mj-text>
+    {% endif %}
+    
+    <mj-text font-size="14px" color="#6b7280" line-height="20px">
+      • {{ t('email.iep.continue_home_support') }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<!-- View Full Report Button -->
+<mj-section background-color="#ffffff" padding="30px 20px">
+  <mj-column>
+    <mj-include path="./partials/button.mjml" 
+                button_text="{{ t('email.iep.view_full_report') }}" 
+                button_url="{{ iep_report_url }}" />
+    
+    <mj-text font-size="14px" color="#6b7280" align="center" padding-top="15px">
+      {{ t('email.iep.questions_contact') }}
+      <a href="mailto:{{ educator_email }}" style="color: #2563eb; text-decoration: none;">{{ educator_name }}</a>
+    </mj:text>
+  </mj-column>
+</mj-section>
+
+<mj-include path="./partials/footer.mjml" />

@@ -1,0 +1,38 @@
+{{ t('email.dunning.subject') }}
+
+{{ t('email.dunning.greeting', customer_name=customer_name) }}
+
+{{ t('email.dunning.message', level=dunning_level, past_due_days=past_due_days) }}
+
+{{ t('email.dunning.account_summary') }}:
+- {{ t('email.dunning.account_number') }}: {{ account_number }}
+- {{ t('email.dunning.current_balance') }}: {{ outstanding_balance|currency }}
+- {{ t('email.dunning.past_due_amount') }}: {{ past_due_amount|currency }}
+- {{ t('email.dunning.days_overdue') }}: {{ past_due_days }} {{ t('common.days', count=past_due_days) }}
+
+{% if payment_method %}
+{{ t('email.dunning.payment_method_text') }}
+{{ payment_method.type|title }} ending in {{ payment_method.last_four }}{% if payment_method.expired %} ({{ t('email.dunning.expired') }}){% endif %}
+{% endif %}
+
+{% if dunning_level >= 3 %}
+⚠️ {{ t('email.dunning.final_notice') }}
+{{ t('email.dunning.service_suspension_warning', suspension_date=suspension_date|date()) }}
+{% endif %}
+
+{{ t('email.dunning.pay_now', amount=outstanding_balance|currency) }}: {{ payment_url }}
+
+{{ t('email.dunning.payment_methods_accepted') }}
+
+{{ t('email.dunning.questions_contact') }} {{ billing_email }} {{ t('common.or') }} {{ support_phone }}
+
+{{ t('email.dunning.alternative_payment') }}:
+{{ t('email.dunning.mail_payment_instructions', payment_address=payment_address) }}
+{{ t('email.dunning.include_account_number') }}
+
+---
+{{ company_name|default('AIVO Virtual Brains') }}
+{{ t('email.footer.copyright', year=current_year, company=company_name|default('AIVO Virtual Brains')) }}
+
+{{ t('email.footer.unsubscribe') }}: {{ unsubscribe_url|default('#') }}
+{{ t('email.footer.privacy') }}: {{ privacy_url|default('#') }}

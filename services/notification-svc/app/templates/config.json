@@ -1,0 +1,52 @@
+{
+  "templates": [
+    {
+      "name": "approval_request",
+      "subject_template": "{{ t('email.approval.subject', item_type=item_type, item_title=item_title) }}",
+      "mjml_template": "approval_request.mjml",
+      "text_template": "approval_request.txt",
+      "locale": "en",
+      "partials": ["header", "footer", "button"]
+    },
+    {
+      "name": "daily_digest",
+      "subject_template": "{{ t('email.digest.daily.subject') }}",
+      "mjml_template": "daily_digest.mjml",
+      "text_template": "daily_digest.txt",
+      "locale": "en",
+      "partials": ["header", "footer", "digest_item"]
+    },
+    {
+      "name": "weekly_digest",
+      "subject_template": "{{ t('email.digest.weekly.subject') }}",
+      "mjml_template": "weekly_digest.mjml",
+      "text_template": "weekly_digest.txt",
+      "locale": "en",
+      "partials": ["header", "footer", "digest_item"]
+    },
+    {
+      "name": "dunning_notice",
+      "subject_template": "{{ t('email.dunning.subject', level=dunning_level) }}",
+      "mjml_template": "dunning_notice.mjml",
+      "text_template": "dunning_notice.txt",
+      "locale": "en",
+      "partials": ["header", "footer", "payment_button"]
+    },
+    {
+      "name": "iep_update",
+      "subject_template": "{{ t('email.iep.update.subject', learner_name=learner_name) }}",
+      "mjml_template": "iep_update.mjml",
+      "text_template": "iep_update.txt",
+      "locale": "en",
+      "partials": ["header", "footer", "progress_card"]
+    },
+    {
+      "name": "assessment_complete",
+      "subject_template": "{{ t('email.assessment.complete.subject', assessment_name=assessment_name) }}",
+      "mjml_template": "assessment_complete.mjml",
+      "text_template": "assessment_complete.txt",
+      "locale": "en",
+      "partials": ["header", "footer", "results_card"]
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "email": {
+    "header": {
+      "tagline": "Empoderando la Educación de Necesidades Especiales"
+    },
+    "footer": {
+      "copyright": "© {year} {company}. Todos los derechos reservados.",
+      "connect": "Conéctate con nosotros",
+      "unsubscribe": "Cancelar suscripción",
+      "privacy": "Política de Privacidad",
+      "system_info": "Este correo fue enviado por el sistema de notificaciones AIVO Virtual Brains",
+      "locale_info": "Idioma: {locale}"
+    },
+    "approval": {
+      "title": "Aprobación Requerida",
+      "subject": "Acción Requerida: {item_type} - {item_title}",
+      "greeting": "Hola,",
+      "message": "Has recibido una nueva solicitud de aprobación de {requester_name} para el siguiente {item_type}:",
+      "item_details": "Detalles del Elemento",
+      "type": "Tipo",
+      "title_label": "Título",
+      "requester": "Solicitado por",
+      "due_date": "Fecha Límite",
+      "urgency": "Esta solicitud de aprobación vence el {due_date}",
+      "review_button": "Revisar y Aprobar",
+      "alternative_text": "¿No puedes ver el botón? Copia y pega este enlace en tu navegador:",
+      "help_text": "¿Necesitas ayuda con el proceso de aprobación? Contacta a nuestro equipo de soporte."
+    },
+    "digest": {
+      "daily": {
+        "title": "Resumen Diario - {digest_date}",
+        "subject": "Tu Resumen de Actividad Diaria",
+        "greeting": "¡Buenos días!",
+        "summary": "Aquí está tu resumen diario con {total_items} nuevas notificaciones y actualizaciones.",
+        "footer_text": "Recibes este resumen porque te suscribiste a notificaciones diarias."
+      },
+      "weekly": {
+        "title": "Resumen Semanal - Semana del {digest_date}",
+        "subject": "Tu Resumen de Actividad Semanal"
+      },
+      "urgent_section": "Elementos Urgentes ({count})",
+      "recent_activity": "Actividad Reciente",
+      "action_items": "Elementos de Acción que Requieren tu Atención",
+      "view_dashboard": "Ver Panel Completo",
+      "view_action": "Ver",
+      "stats": {
+        "active_learners": "Estudiantes Activos",
+        "completed_assessments": "Evaluaciones Completadas",
+        "avg_session_time": "Tiempo Promedio de Sesión",
+        "pending_approvals": "Aprobaciones Pendientes"
+      }
+    },
+    "dunning": {
+      "title": "Recordatorio de Pago - Nivel {level}",
+      "subject": "Recordatorio de Pago: Saldo de tu Cuenta",
+      "greeting": "Estimado/a {customer_name},",
+      "message": "Este es un recordatorio de nivel {level} de que tu cuenta tiene un saldo pendiente de {past_due_days} días vencido.",
+      "account_summary": "Resumen de Cuenta",
+      "account_number": "Número de Cuenta",
+      "current_balance": "Saldo Actual",
+      "past_due_amount": "Cantidad Vencida",
+      "days_overdue": "Días Vencidos",
+      "payment_method_text": "Intentaremos cargar el método de pago registrado:",
+      "expired": "VENCIDO",
+      "final_notice": "Aviso Final - Advertencia de Suspensión de Servicio",
+      "service_suspension_warning": "Tu servicio será suspendido el {suspension_date} si no se recibe el pago.",
+      "pay_now": "Pagar {amount} Ahora",
+      "payment_methods_accepted": "Aceptamos todas las tarjetas de crédito principales y pagos ACH",
+      "questions_contact": "¿Preguntas? Contáctanos en",
+      "alternative_payment": "Métodos de Pago Alternativos",
+      "mail_payment_instructions": "También puedes enviar un cheque o giro postal a: {payment_address}",
+      "include_account_number": "Por favor incluye tu número de cuenta en la línea del memo."
+    },
+    "iep": {
+      "update": {
+        "title": "Actualización del IEP",
+        "subject": "Actualización IEP: Reporte de Progreso para {learner_name}"
+      }
+    },
+    "assessment": {
+      "complete": {
+        "title": "Evaluación Completada",
+        "subject": "Resultados de Evaluación: {assessment_name}"
+      }
+    },
+    "payment": {
+      "secure_processing": "🔒 Procesamiento de pago seguro por Stripe"
+    }
+  },
+  "common": {
+    "days": "{count, plural, one {día} other {días}}",
+    "or": "o",
+    "and": "y",
+    "yes": "Sí",
+    "no": "No",
+    "continue": "Continuar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "loading": "Cargando...",
+    "assessment": {
+      "complete": {
+        "title": "¡Evaluación Completada!",
+        "greeting": "Estimado/a {{parent_name}},",
+        "message": "Nos complace informarle que la {{assessment_name}} de {{learner_name}} se ha completado exitosamente."
+      },
+      "results_summary": "Resumen de Resultados de Evaluación",
+      "assessment_name": "Nombre de la Evaluación",
+      "completion_date": "Fecha de Finalización",
+      "duration": "Duración",
+      "overall_score": "Puntuación General",
+      "performance_by_area": "Rendimiento por Área Temática",
+      "strengths": "Fortalezas Clave",
+      "growth_opportunities": "Oportunidades de Crecimiento",
+      "recommendations": "Recomendaciones del Educador",
+      "progress_comparison": "Progreso Comparado con Evaluación Anterior",
+      "compared_to_previous": "Comparado con la evaluación de {{previous_date}}, {{learner_name}} ha mejorado por {{improvement}} puntos.",
+      "improvement_points": "¡Excelente progreso! ¡Sigue con el gran trabajo!",
+      "view_detailed_results": "Ver Resultados Detallados",
+      "schedule_conference": "Programar Conferencia",
+      "questions_contact": "¿Preguntas? Contacta a tu educador "
+    },
+    "error": "Error",
+    "success": "Éxito"
+  },
+  "notifications": {
+    "types": {
+      "system": "Notificación del Sistema",
+      "iep_update": "Actualización de IEP",
+      "assessment_complete": "Evaluación Completada",
+      "signature_request": "Solicitud de Firma",
+      "signature_complete": "Firma Completada",
+      "daily_digest": "Resumen Diario",
+      "user_mention": "Mención de Usuario",
+      "deadline_reminder": "Recordatorio de Fecha Límite",
+      "collaboration_invite": "Invitación de Colaboración"
+    },
+    "priorities": {
+      "low": "Prioridad Baja",
+      "normal": "Prioridad Normal",
+      "high": "Prioridad Alta",
+      "urgent": "Urgente"
+    }
+  }
+}

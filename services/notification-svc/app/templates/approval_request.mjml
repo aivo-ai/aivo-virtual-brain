@@ -1,0 +1,88 @@
+<mj-include path="./partials/header.mjml" />
+
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-column>
+    <mj-text font-size="24px" font-weight="600" color="#2563eb" align="center">
+      {{ t('email.approval.title') }}
+    </mj-text>
+    
+    <mj-divider border-color="#e5e7eb" border-width="1px" padding="20px 0" />
+    
+    <mj-text font-size="16px" color="#374151" line-height="24px">
+      {{ t('email.approval.greeting') }}
+    </mj-text>
+    
+    <mj-text font-size="16px" color="#374151" line-height="24px" padding-top="10px">
+      {{ t('email.approval.message', 
+           requester_name=requester_name,
+           item_type=item_type,
+           item_title=item_title) }}
+    </mj-text>
+    
+    <mj-section background-color="#f9fafb" border-radius="8px" padding="20px" margin="20px 0">
+      <mj-column>
+        <mj-text font-size="14px" font-weight="600" color="#6b7280" text-transform="uppercase">
+          {{ t('email.approval.item_details') }}
+        </mj-text>
+        
+        <mj-table>
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #374151; width: 120px;">
+              {{ t('email.approval.type') }}:
+            </td>
+            <td style="padding: 8px 0; color: #6b7280;">
+              {{ item_type }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #374151;">
+              {{ t('email.approval.title_label') }}:
+            </td>
+            <td style="padding: 8px 0; color: #6b7280;">
+              {{ item_title }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #374151;">
+              {{ t('email.approval.requester') }}:
+            </td>
+            <td style="padding: 8px 0; color: #6b7280;">
+              {{ requester_name }}
+            </td>
+          </tr>
+          {% if due_date %}
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #374151;">
+              {{ t('email.approval.due_date') }}:
+            </td>
+            <td style="padding: 8px 0; color: #dc2626; font-weight: 600;">
+              {{ due_date|date('%B %d, %Y') }}
+            </td>
+          </tr>
+          {% endif %}
+        </mj-table>
+      </mj-column>
+    </mj-section>
+    
+    {% if due_date %}
+    <mj-text font-size="14px" color="#dc2626" align="center" font-weight="600">
+      {{ t('email.approval.urgency', due_date=due_date|date('%B %d')) }}
+    </mj-text>
+    {% endif %}
+    
+    <mj-include path="./partials/button.mjml" button_text="{{ t('email.approval.review_button') }}" button_url="{{ approval_url }}" />
+    
+    <mj-text font-size="14px" color="#6b7280" line-height="20px" padding-top="20px">
+      {{ t('email.approval.alternative_text') }}
+      <a href="{{ approval_url }}" style="color: #2563eb; text-decoration: none;">
+        {{ approval_url }}
+      </a>
+    </mj-text>
+    
+    <mj-text font-size="14px" color="#6b7280" line-height="20px" padding-top="15px">
+      {{ t('email.approval.help_text') }}
+    </mj-text>
+  </mj-column>
+</mj-section>
+
+<mj-include path="./partials/footer.mjml" />

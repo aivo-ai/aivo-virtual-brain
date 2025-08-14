@@ -1,0 +1,144 @@
+{
+  "email": {
+    "header": {
+      "tagline": "Empowering Special Needs Education"
+    },
+    "footer": {
+      "copyright": "© {year} {company}. All rights reserved.",
+      "connect": "Connect with us",
+      "unsubscribe": "Unsubscribe",
+      "privacy": "Privacy Policy",
+      "system_info": "This email was sent by AIVO Virtual Brains notification system",
+      "locale_info": "Language: {locale}"
+    },
+    "approval": {
+      "title": "Approval Required",
+      "subject": "Action Required: {item_type} - {item_title}",
+      "greeting": "Hello,",
+      "message": "You have received a new approval request from {requester_name} for the following {item_type}:",
+      "item_details": "Item Details",
+      "type": "Type",
+      "title_label": "Title",
+      "requester": "Requested by",
+      "due_date": "Due Date",
+      "urgency": "This approval request is due by {due_date}",
+      "review_button": "Review & Approve",
+      "alternative_text": "Can't see the button? Copy and paste this link into your browser:",
+      "help_text": "Need help with the approval process? Contact our support team for assistance."
+    },
+    "digest": {
+      "daily": {
+        "title": "Daily Digest - {digest_date}",
+        "subject": "Your Daily Activity Summary",
+        "greeting": "Good morning!",
+        "summary": "Here's your daily summary with {total_items} new notifications and updates.",
+        "footer_text": "You're receiving this digest because you subscribed to daily notifications."
+      },
+      "weekly": {
+        "title": "Weekly Summary - Week of {digest_date}",
+        "subject": "Your Weekly Activity Summary"
+      },
+      "urgent_section": "Urgent Items ({count})",
+      "recent_activity": "Recent Activity",
+      "action_items": "Action Items Requiring Your Attention",
+      "view_dashboard": "View Full Dashboard",
+      "view_action": "View",
+      "stats": {
+        "active_learners": "Active Learners",
+        "completed_assessments": "Assessments Completed",
+        "avg_session_time": "Avg. Session Time",
+        "pending_approvals": "Pending Approvals"
+      }
+    },
+    "dunning": {
+      "title": "Payment Reminder - Level {level}",
+      "subject": "Payment Reminder: Your Account Balance",
+      "greeting": "Dear {customer_name},",
+      "message": "This is a {level} reminder that your account has an outstanding balance that is {past_due_days} days overdue.",
+      "account_summary": "Account Summary",
+      "account_number": "Account Number",
+      "current_balance": "Current Balance",
+      "past_due_amount": "Past Due Amount",
+      "days_overdue": "Days Overdue",
+      "payment_method_text": "We will attempt to charge the payment method on file:",
+      "expired": "EXPIRED",
+      "final_notice": "Final Notice - Service Suspension Warning",
+      "service_suspension_warning": "Your service will be suspended on {suspension_date} if payment is not received.",
+      "pay_now": "Pay {amount} Now",
+      "payment_methods_accepted": "We accept all major credit cards and ACH payments",
+      "questions_contact": "Questions? Contact us at",
+      "alternative_payment": "Alternative Payment Methods",
+      "mail_payment_instructions": "You can also mail a check or money order to: {payment_address}",
+      "include_account_number": "Please include your account number on the memo line."
+    },
+    "iep": {
+      "update": {
+        "title": "IEP Progress Update",
+        "subject": "IEP Update: Progress Report for {learner_name}"
+      }
+    },
+    "assessment": {
+      "complete": {
+        "title": "Assessment Completed",
+        "subject": "Assessment Results: {assessment_name}"
+      }
+    },
+    "payment": {
+      "secure_processing": "🔒 Secure payment processing by Stripe"
+    }
+  },
+  "common": {
+    "days": "{count, plural, one {day} other {days}}",
+    "or": "or",
+    "and": "and",
+    "yes": "Yes",
+    "no": "No",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading...",
+    "assessment": {
+      "complete": {
+        "title": "Assessment Complete!",
+        "greeting": "Dear {{parent_name}},",
+        "message": "We're pleased to inform you that {{learner_name}}'s {{assessment_name}} has been completed successfully."
+      },
+      "results_summary": "Assessment Results Summary",
+      "assessment_name": "Assessment Name",
+      "completion_date": "Completion Date",
+      "duration": "Duration",
+      "overall_score": "Overall Score",
+      "performance_by_area": "Performance by Subject Area",
+      "strengths": "Key Strengths",
+      "growth_opportunities": "Growth Opportunities",
+      "recommendations": "Educator Recommendations",
+      "progress_comparison": "Progress Compared to Previous Assessment",
+      "compared_to_previous": "Compared to the {{previous_date}} assessment, {{learner_name}} has improved by {{improvement}} points.",
+      "improvement_points": "Great progress! Keep up the excellent work!",
+      "view_detailed_results": "View Detailed Results",
+      "schedule_conference": "Schedule Conference",
+      "questions_contact": "Questions? Contact your educator "
+    },
+    "error": "Error",
+    "success": "Success"
+  },
+  "notifications": {
+    "types": {
+      "system": "System Notification",
+      "iep_update": "IEP Update",
+      "assessment_complete": "Assessment Complete",
+      "signature_request": "Signature Request",
+      "signature_complete": "Signature Complete",
+      "daily_digest": "Daily Digest",
+      "user_mention": "User Mention",
+      "deadline_reminder": "Deadline Reminder",
+      "collaboration_invite": "Collaboration Invite"
+    },
+    "priorities": {
+      "low": "Low Priority",
+      "normal": "Normal Priority",
+      "high": "High Priority",
+      "urgent": "Urgent"
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{{ t('email.digest.daily.subject') }}
+
+{{ t('email.digest.daily.greeting') }}
+
+{{ t('email.digest.daily.summary', total_items=notifications|length) }}
+
+{% if urgent_notifications %}
+🚨 {{ t('email.digest.urgent_section', count=urgent_notifications|length) }}
+
+{% for notification in urgent_notifications %}
+- {{ notification.title }}
+  {{ notification.message|truncate(120, true, '...') }}
+  {{ notification.created_at|date('%I:%M %p') }} • {{ notification.notification_type.value.replace('_', ' ')|title }}
+  {% if notification.action_url %}{{ t('email.digest.view_action') }}: {{ notification.action_url }}{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{{ t('email.digest.recent_activity') }}:
+
+{% for notification in notifications %}
+- {{ notification.title }}
+  {{ notification.message|truncate(120, true, '...') }}
+  {{ notification.created_at|date('%I:%M %p') }} • {{ notification.notification_type.value.replace('_', ' ')|title }}
+  {% if notification.action_url %}{{ t('email.digest.view_action') }}: {{ notification.action_url }}{% endif %}
+
+{% endfor %}
+
+{% if stats %}
+{{ t('email.digest.stats.active_learners') }}: {{ stats.active_learners|default(0) }}
+{{ t('email.digest.stats.completed_assessments') }}: {{ stats.completed_assessments|default(0) }}
+{{ t('email.digest.stats.avg_session_time') }}: {{ stats.avg_session_minutes|default(0) }}m
+{{ t('email.digest.stats.pending_approvals') }}: {{ stats.pending_approvals|default(0) }}
+{% endif %}
+
+{% if action_items %}
+{{ t('email.digest.action_items') }}:
+
+{% for item in action_items %}
+• {{ item.title }}{% if item.due_date %} (Due: {{ item.due_date|date('%m/%d') }}){% endif %}
+  {{ item.url }}
+
+{% endfor %}
+{% endif %}
+
+{{ t('email.digest.view_dashboard') }}: {{ dashboard_url }}
+
+{{ t('email.digest.daily.footer_text') }}
+
+---
+{{ company_name|default('AIVO Virtual Brains') }}
+{{ t('email.footer.copyright', year=current_year, company=company_name|default('AIVO Virtual Brains')) }}
+
+{{ t('email.footer.unsubscribe') }}: {{ unsubscribe_url|default('#') }}
+{{ t('email.footer.privacy') }}: {{ privacy_url|default('#') }}

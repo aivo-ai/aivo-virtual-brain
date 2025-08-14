@@ -1,0 +1,16 @@
+<mj-section background-color="#ffffff" padding="30px 20px">
+  <mj-column>
+    <mj-button 
+      background-color="{{ button_color|default('#2563eb') }}" 
+      color="#ffffff" 
+      border-radius="6px" 
+      font-size="16px" 
+      font-weight="600"
+      padding="12px 32px"
+      href="{{ button_url }}"
+      target="_blank"
+    >
+      {{ button_text }}
+    </mj-button>
+  </mj-column>
+</mj-section>

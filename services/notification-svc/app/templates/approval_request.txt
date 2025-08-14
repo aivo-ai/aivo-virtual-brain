@@ -1,0 +1,27 @@
+{{ t('email.approval.subject', item_type=item_type, item_title=item_title) }}
+
+{{ t('email.approval.greeting') }}
+
+{{ t('email.approval.message', requester_name=requester_name, item_type=item_type, item_title=item_title) }}
+
+{{ t('email.approval.item_details') }}:
+- {{ t('email.approval.type') }}: {{ item_type }}
+- {{ t('email.approval.title_label') }}: {{ item_title }}
+- {{ t('email.approval.requester') }}: {{ requester_name }}
+{% if due_date %}- {{ t('email.approval.due_date') }}: {{ due_date|date('%B %d, %Y') }}{% endif %}
+
+{% if due_date %}{{ t('email.approval.urgency', due_date=due_date|date('%B %d')) }}{% endif %}
+
+{{ t('email.approval.review_button') }}: {{ approval_url }}
+
+{{ t('email.approval.alternative_text') }}
+{{ approval_url }}
+
+{{ t('email.approval.help_text') }}
+
+---
+{{ company_name|default('AIVO Virtual Brains') }}
+{{ t('email.footer.copyright', year=current_year, company=company_name|default('AIVO Virtual Brains')) }}
+
+{{ t('email.footer.unsubscribe') }}: {{ unsubscribe_url|default('#') }}
+{{ t('email.footer.privacy') }}: {{ privacy_url|default('#') }}

@@ -1,0 +1,39 @@
+<mj-section 
+  background-color="{{ '#fef2f2' if urgent else '#ffffff' }}" 
+  border="{{ '1px solid #fecaca' if urgent else '1px solid #e5e7eb' }}" 
+  border-radius="8px" 
+  padding="15px" 
+  margin="10px 0"
+>
+  <mj-column width="70%">
+    <mj-text font-size="16px" font-weight="600" color="{{ '#dc2626' if urgent else '#374151' }}" padding-bottom="5px">
+      {% if urgent %}🚨{% endif %} {{ notification.title }}
+    </mj-text>
+    
+    <mj-text font-size="14px" color="#6b7280" line-height="20px">
+      {{ notification.message|truncate(120, true, '...') }}
+    </mj-text>
+    
+    <mj-text font-size="12px" color="#9ca3af" padding-top="8px">
+      {{ notification.created_at|date('%I:%M %p') }} • 
+      <span style="text-transform: capitalize;">{{ notification.notification_type.value.replace('_', ' ') }}</span>
+    </mj-text>
+  </mj-column>
+  
+  <mj-column width="30%">
+    {% if notification.action_url %}
+    <mj-button 
+      background-color="{{ '#dc2626' if urgent else '#2563eb' }}" 
+      color="#ffffff" 
+      border-radius="4px" 
+      font-size="14px"
+      font-weight="600"
+      padding="8px 16px"
+      href="{{ notification.action_url }}"
+      target="_blank"
+    >
+      {{ t('email.digest.view_action') }}
+    </mj-button>
+    {% endif %}
+  </mj-column>
+</mj-section>
