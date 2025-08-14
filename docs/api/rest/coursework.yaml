@@ -1,0 +1,615 @@
+openapi: 3.0.3
+info:
+  title: Coursework Ingest API
+  version: 1.0.0
+  description: |
+    API for uploading, processing, and analyzing educational coursework using OCR and topic mapping.
+
+    ## Features
+
+    - **Multi-format Upload**: Support for PDF documents and images (JPEG, PNG, WebP)
+    - **OCR Processing**: Multiple OCR providers (Tesseract, Google Vision API, AWS Textract)
+    - **Topic Classification**: Automatic subject/topic mapping and difficulty estimation
+    - **Event Emission**: Real-time events on processing completion
+    - **Status Tracking**: Monitor processing status in real-time
+
+    ## Workflow
+
+    1. Upload coursework file via `POST /v1/upload`
+    2. Monitor processing status via `GET /v1/analysis/{upload_id}`
+    3. Receive `COURSEWORK_ANALYZED` event when complete
+    4. Access analysis results with subjects, topics, and difficulty level
+
+  contact:
+    name: AIVO API Support
+    email: api-support@aivo.ai
+  license:
+    name: Proprietary
+    url: https://aivo.ai/license
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.aivo.ai/coursework-ingest
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check service health and OCR provider availability
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
+              example:
+                status: healthy
+                version: "1.0.0"
+                timestamp: "2025-08-14T10:30:00Z"
+                dependencies:
+                  ocr_service: healthy
+                  topic_mapping: healthy
+                  storage: healthy
+                ocr_providers:
+                  tesseract: true
+                  vision_api: false
+                  textract: false
+
+  /health/detailed:
+    get:
+      summary: Detailed health check
+      description: Comprehensive health check with service configuration
+      operationId: detailedHealthCheck
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Detailed service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  services:
+                    type: object
+                    properties:
+                      ocr:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            example: healthy
+                          providers:
+                            type: object
+                          available_providers:
+                            type: array
+                            items:
+                              type: string
+                      topic_mapping:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            example: healthy
+                          supported_subjects:
+                            type: array
+                            items:
+                              type: string
+                          supported_topics:
+                            type: array
+                            items:
+                              type: string
+
+  /v1/upload:
+    post:
+      summary: Upload coursework for analysis
+      description: |
+        Upload coursework file (PDF or image) for OCR processing and topic analysis.
+
+        **Supported File Types:**
+        - PDF documents
+        - Images: JPEG, PNG, WebP
+
+        **Processing Steps:**
+        1. File validation and storage
+        2. OCR text extraction
+        3. Subject/topic classification
+        4. Difficulty estimation
+        5. Event emission
+      operationId: uploadCoursework
+      tags:
+        - Upload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - learner_id
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Coursework file (PDF or image)
+                learner_id:
+                  type: string
+                  format: uuid
+                  description: ID of the learner uploading coursework
+                ocr_provider:
+                  $ref: "#/components/schemas/OCRProvider"
+                extract_metadata:
+                  type: boolean
+                  default: true
+                  description: Whether to extract additional metadata
+            example:
+              learner_id: "123e4567-e89b-12d3-a456-426614174000"
+              ocr_provider: tesseract
+              extract_metadata: true
+      responses:
+        "201":
+          description: Upload successful, processing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseworkUploadResponse"
+              example:
+                upload_id: "987fcdeb-51a2-43d1-9f4a-123456789abc"
+                status: uploaded
+                message: "File uploaded successfully. Processing started."
+                estimated_processing_time_seconds: 15
+                storage_url: "https://storage.example.com/uploads/987fcdeb-51a2-43d1-9f4a-123456789abc/homework.pdf"
+        "400":
+          description: Bad request - invalid file or parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalid_file:
+                  summary: Invalid file type
+                  value:
+                    error: "Invalid file type"
+                    message: "File must have one of these extensions: ['.pdf', '.jpg', '.jpeg', '.png', '.webp']"
+                empty_file:
+                  summary: Empty file
+                  value:
+                    error: "Empty file"
+                    message: "File is empty"
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "File too large"
+                message: "File size exceeds maximum allowed size of 52428800 bytes"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/analysis/{upload_id}:
+    get:
+      summary: Get analysis results
+      description: |
+        Retrieve analysis results for uploaded coursework.
+
+        **Status Values:**
+        - `uploaded`: File uploaded, processing not started
+        - `extracting`: OCR text extraction in progress  
+        - `analyzing`: Topic mapping and classification in progress
+        - `completed`: Processing completed successfully
+        - `failed`: Processing failed with error
+      operationId: getAnalysisResults
+      tags:
+        - Analysis
+      parameters:
+        - name: upload_id
+          in: path
+          required: true
+          description: Upload identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Analysis results (may be in progress or completed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseworkAnalysisResponse"
+              examples:
+                completed:
+                  summary: Completed analysis
+                  value:
+                    upload_id: "987fcdeb-51a2-43d1-9f4a-123456789abc"
+                    learner_id: "123e4567-e89b-12d3-a456-426614174000"
+                    status: completed
+                    subjects: ["mathematics"]
+                    topics: ["algebra", "geometry"]
+                    difficulty_level: intermediate
+                    key_concepts: ["equation", "quadratic", "formula", "solve"]
+                    word_count: 156
+                    processing_time_ms: 3240
+                    ocr_confidence: 0.95
+                    created_at: "2025-08-14T10:30:00Z"
+                    processed_at: "2025-08-14T10:30:03Z"
+                in_progress:
+                  summary: Processing in progress
+                  value:
+                    upload_id: "987fcdeb-51a2-43d1-9f4a-123456789abc"
+                    learner_id: "123e4567-e89b-12d3-a456-426614174000"
+                    status: analyzing
+                    created_at: "2025-08-14T10:30:00Z"
+                failed:
+                  summary: Processing failed
+                  value:
+                    upload_id: "987fcdeb-51a2-43d1-9f4a-123456789abc"
+                    learner_id: "123e4567-e89b-12d3-a456-426614174000"
+                    status: failed
+                    error_message: "OCR processing failed: Unable to extract text from image"
+                    created_at: "2025-08-14T10:30:00Z"
+        "404":
+          description: Upload not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Upload not found"
+                message: "No upload found with the specified ID"
+
+  /v1/status/{upload_id}:
+    get:
+      summary: Get processing status
+      description: Get simple processing status for an upload
+      operationId: getProcessingStatus
+      tags:
+        - Status
+      parameters:
+        - name: upload_id
+          in: path
+          required: true
+          description: Upload identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Processing status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upload_id:
+                    type: string
+                    format: uuid
+                  status:
+                    $ref: "#/components/schemas/ProcessingStatus"
+                  created_at:
+                    type: number
+                    description: Upload timestamp (Unix timestamp)
+                  processed_at:
+                    type: number
+                    nullable: true
+                    description: Processing completion timestamp (Unix timestamp)
+              example:
+                upload_id: "987fcdeb-51a2-43d1-9f4a-123456789abc"
+                status: completed
+                created_at: 1692018600.123
+                processed_at: 1692018603.456
+        "404":
+          description: Upload not found
+
+  /v1/uploads/learner/{learner_id}:
+    get:
+      summary: List uploads for learner
+      description: Get list of uploads for a specific learner with pagination
+      operationId: listLearnerUploads
+      tags:
+        - History
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          description: Learner identifier
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Maximum number of uploads to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of uploads to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: List of uploads for the learner
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploads:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        upload_id:
+                          type: string
+                          format: uuid
+                        filename:
+                          type: string
+                        status:
+                          $ref: "#/components/schemas/ProcessingStatus"
+                        subjects:
+                          type: array
+                          items:
+                            type: string
+                          nullable: true
+                        topics:
+                          type: array
+                          items:
+                            type: string
+                          nullable: true
+                        word_count:
+                          type: integer
+                          nullable: true
+                        created_at:
+                          type: number
+                        processed_at:
+                          type: number
+                          nullable: true
+                  total:
+                    type: integer
+                    description: Total number of uploads for this learner
+                  limit:
+                    type: integer
+                    description: Limit applied to this request
+                  offset:
+                    type: integer
+                    description: Offset applied to this request
+              example:
+                uploads:
+                  - upload_id: "987fcdeb-51a2-43d1-9f4a-123456789abc"
+                    filename: "math_homework.pdf"
+                    status: completed
+                    subjects: ["mathematics"]
+                    topics: ["algebra", "quadratic_equations"]
+                    word_count: 156
+                    created_at: 1692018600.123
+                    processed_at: 1692018603.456
+                  - upload_id: "456789ab-cdef-1234-5678-9abcdef01234"
+                    filename: "science_notes.jpg"
+                    status: completed
+                    subjects: ["science"]
+                    topics: ["biology", "cell_structure"]
+                    word_count: 89
+                    created_at: 1692015000.789
+                    processed_at: 1692015003.012
+                total: 2
+                limit: 50
+                offset: 0
+
+components:
+  schemas:
+    OCRProvider:
+      type: string
+      enum:
+        - tesseract
+        - vision_api
+        - textract
+      description: OCR provider to use for text extraction
+
+    ProcessingStatus:
+      type: string
+      enum:
+        - uploaded
+        - extracting
+        - analyzing
+        - completed
+        - failed
+      description: Current processing status
+
+    DifficultyLevel:
+      type: string
+      enum:
+        - beginner
+        - elementary
+        - intermediate
+        - advanced
+        - expert
+      description: Estimated difficulty level
+
+    CourseworkUploadResponse:
+      type: object
+      required:
+        - upload_id
+        - status
+        - message
+        - estimated_processing_time_seconds
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this upload
+        status:
+          $ref: "#/components/schemas/ProcessingStatus"
+        message:
+          type: string
+          description: Status message
+        estimated_processing_time_seconds:
+          type: integer
+          description: Estimated processing time in seconds
+        storage_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Storage URL if immediately available
+
+    CourseworkAnalysisResponse:
+      type: object
+      required:
+        - upload_id
+        - learner_id
+        - status
+        - created_at
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+          description: Upload identifier
+        learner_id:
+          type: string
+          format: uuid
+          description: Learner identifier
+        status:
+          $ref: "#/components/schemas/ProcessingStatus"
+        subjects:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Identified subjects (when completed)
+        topics:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Identified topics (when completed)
+        difficulty_level:
+          $ref: "#/components/schemas/DifficultyLevel"
+          nullable: true
+          description: Estimated difficulty (when completed)
+        key_concepts:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Key concepts extracted (when completed)
+        word_count:
+          type: integer
+          nullable: true
+          description: Total word count (when completed)
+        processing_time_ms:
+          type: integer
+          nullable: true
+          description: Total processing time in milliseconds (when completed)
+        ocr_confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: OCR confidence score (when completed)
+        created_at:
+          type: string
+          format: date-time
+          description: Upload timestamp
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Processing completion timestamp
+        error_message:
+          type: string
+          nullable: true
+          description: Error message if processing failed
+
+    HealthCheckResponse:
+      type: object
+      required:
+        - status
+        - version
+        - timestamp
+        - dependencies
+        - ocr_providers
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          description: Overall service health status
+        version:
+          type: string
+          description: Service version
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+        dependencies:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [healthy, unhealthy]
+          description: Health status of service dependencies
+        ocr_providers:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: Availability of OCR providers
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Detailed error message
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for API authentication
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Upload
+    description: File upload and processing initiation
+  - name: Analysis
+    description: Analysis results and status
+  - name: Status
+    description: Processing status tracking
+  - name: History
+    description: Upload history and management
+  - name: Health
+    description: Service health and monitoring

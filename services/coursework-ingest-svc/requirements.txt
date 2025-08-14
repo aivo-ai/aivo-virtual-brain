@@ -1,0 +1,39 @@
+# Dependencies
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# OCR Providers
+pytesseract==0.3.13
+pillow==10.4.0
+opencv-python==4.10.0.84
+pymupdf==1.24.10
+
+# Google Vision API (optional)
+google-cloud-vision==3.7.4
+
+# AWS Textract (optional)
+boto3==1.35.17
+
+# File Processing
+python-magic==0.4.27
+
+# Image Processing
+numpy==2.1.1
+
+# HTTP Client
+httpx==0.27.2
+
+# Async Tasks (for background processing)
+asyncio-mqtt==0.16.2
+
+# Development Dependencies
+pytest==8.3.2
+pytest-asyncio==0.24.0
+pytest-mock==3.14.0
+httpx==0.27.2
+
+# Optional: For production deployment
+gunicorn==23.0.0
