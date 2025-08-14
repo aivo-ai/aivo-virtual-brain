@@ -9,17 +9,25 @@ from enum import Enum
 import uuid
 
 # GraphQL Enums
-@strawberry.enum
-class IEPStatus:
+class IEPStatus(Enum):
     DRAFT = "draft"
-    IN_REVIEW = "in_review"
+    IN_REVIEW = "in_review" 
     APPROVED = "approved"
     ACTIVE = "active"
     ARCHIVED = "archived"
     EXPIRED = "expired"
 
+@strawberry.enum  
+class IEPStatusGraphQL(Enum):
+    DRAFT = "draft"
+    IN_REVIEW = "in_review"
+    APPROVED = "approved" 
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+    EXPIRED = "expired"
+
 @strawberry.enum
-class SectionType:
+class SectionType(Enum):
     STUDENT_INFO = "student_info"
     PRESENT_LEVELS = "present_levels"
     ANNUAL_GOALS = "annual_goals"
@@ -30,7 +38,7 @@ class SectionType:
     ACCOMMODATIONS = "accommodations"
 
 @strawberry.enum
-class SignatureRole:
+class SignatureRole(Enum):
     STUDENT = "student"
     PARENT_GUARDIAN = "parent_guardian"
     TEACHER = "teacher"
@@ -40,7 +48,7 @@ class SignatureRole:
     ADVOCATE = "advocate"
 
 @strawberry.enum
-class CRDTOperationType:
+class CRDTOperationType(Enum):
     INSERT = "insert"
     DELETE = "delete"
     UPDATE = "update"
@@ -119,7 +127,7 @@ class IEP:
     title: str
     academic_year: str
     grade_level: str
-    status: IEPStatus
+    status: IEPStatusGraphQL
     version: int
     is_current: bool
     effective_date: Optional[datetime] = None
@@ -197,6 +205,27 @@ class ESignatureInviteInput:
     signer_role: SignatureRole
     expires_at: Optional[datetime] = None
 
+@strawberry.input
+class IEPApprovalInput:
+    """Input for IEP approval decision."""
+    iep_id: str
+    approver_role: str
+    approved: bool
+    comments: Optional[str] = None
+
+@strawberry.input 
+class ProposeIepInput:
+    """Input for AI-powered IEP proposal."""
+    learner_uid: str
+    tenant_id: Optional[str] = None
+    academic_year: Optional[str] = None
+
+@strawberry.input
+class SubmitIepApprovalInput:
+    """Input for submitting IEP for approval."""
+    iep_id: str
+    approver_notes: Optional[str] = None
+
 # Response Types
 @strawberry.type
 class IEPMutationResponse:
@@ -204,6 +233,17 @@ class IEPMutationResponse:
     success: bool
     message: str
     iep: Optional[IEP] = None
+    approval_requests: Optional[List[str]] = None  # List of approval request IDs
+    errors: List[str] = strawberry.field(default_factory=list)
+
+@strawberry.type
+class ApprovalWorkflowResponse:
+    """Response for IEP approval workflow operations."""
+    success: bool
+    message: str
+    iep_id: str
+    approval_requests: List[str] = strawberry.field(default_factory=list)
+    estimated_approval_time: Optional[str] = None
     errors: List[str] = strawberry.field(default_factory=list)
 
 @strawberry.type
@@ -250,7 +290,7 @@ class IEPFilterInput:
     """Filter criteria for IEP queries."""
     student_id: Optional[str] = None
     tenant_id: Optional[str] = None
-    status: Optional[IEPStatus] = None
+    status: Optional[IEPStatusGraphQL] = None
     academic_year: Optional[str] = None
     is_current: Optional[bool] = None
     created_after: Optional[datetime] = None

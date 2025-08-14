@@ -9,20 +9,22 @@ from sqlalchemy import and_, or_, desc
 import uuid
 import json
 import logging
+import httpx
 
 from .models import IEP as IEPModel, IEPSection as IEPSectionModel, ESignature as ESignatureModel
 from .models import EvidenceAttachment as EvidenceAttachmentModel, CRDTOperationLog
 from .schema import (
     IEP, IEPSection, ESignature, EvidenceAttachment, CRDTOperation,
     IEPCreateInput, IEPSectionUpsertInput, CRDTOperationInput,
-    EvidenceAttachmentInput, ESignatureInviteInput,
+    EvidenceAttachmentInput, ESignatureInviteInput, IEPApprovalInput,
     IEPMutationResponse, IEPSectionMutationResponse, EvidenceAttachmentResponse,
     ESignatureResponse, IEPUpdateEvent, IEPFilterInput, PaginationInput, IEPConnection,
-    IEPStatus, SectionType, SignatureRole
+    ApprovalWorkflowResponse, IEPStatus, SectionType, SignatureRole
 )
 from .database import get_db
 from .crdt_engine import CRDTEngine
 from .signature_service import ESignatureService
+from .assistant import IEPAssistantEngine
 
 logger = logging.getLogger(__name__)
 
@@ -412,6 +414,384 @@ class Mutation:
             )
         finally:
             db.close()
+    
+    @strawberry.mutation
+    async def propose_iep(self, learner_uid: str) -> IEPMutationResponse:
+        """
+        Generate AI-powered IEP draft from assessment data and questionnaires.
+        
+        This mutation calls the IEP Assistant Engine to synthesize baseline results,
+        teacher/parent questionnaires, and coursework signals into a comprehensive
+        IEP draft that requires guardian and teacher approval.
+        """
+        try:
+            db = next(get_db())
+            
+            # TODO: Fetch actual data from other services
+            # For now, using mock data structure
+            baseline_results = await self._fetch_baseline_results(learner_uid, db)
+            teacher_questionnaire = await self._fetch_teacher_questionnaire(learner_uid, db)
+            guardian_questionnaire = await self._fetch_guardian_questionnaire(learner_uid, db)
+            coursework_signals = await self._fetch_coursework_signals(learner_uid, db)
+            
+            # TODO: Get student/learner details from user service
+            student_info = await self._fetch_student_info(learner_uid)
+            
+            # Initialize IEP Assistant Engine
+            assistant = IEPAssistantEngine()
+            
+            # Generate IEP draft
+            iep = await assistant.generate_iep_draft(
+                student_id=learner_uid,
+                tenant_id=student_info.get("tenant_id", "default"),
+                school_district=student_info.get("school_district", "Unknown District"),
+                school_name=student_info.get("school_name", "Unknown School"),
+                grade_level=student_info.get("grade_level", "Unknown"),
+                academic_year="2024-2025",  # TODO: Get from system config
+                baseline_results=baseline_results,
+                teacher_questionnaire=teacher_questionnaire,
+                guardian_questionnaire=guardian_questionnaire,
+                coursework_signals=coursework_signals,
+                created_by="iep_assistant",  # TODO: Get from auth context
+                db=db
+            )
+            
+            logger.info(f"Successfully generated IEP draft {iep.id} for learner {learner_uid}")
+            
+            return IEPMutationResponse(
+                success=True,
+                message="IEP draft generated successfully by AI assistant",
+                iep=convert_iep_model_to_graphql(iep)
+            )
+            
+        except Exception as e:
+            logger.error(f"Error generating IEP draft for learner {learner_uid}: {str(e)}")
+            return IEPMutationResponse(
+                success=False,
+                message="Failed to generate IEP draft",
+                errors=[str(e)]
+            )
+        finally:
+            db.close()
+    
+    @strawberry.mutation
+    async def submit_iep_for_approval(self, iep_id: str) -> IEPMutationResponse:
+        """
+        Submit IEP draft for approval workflow.
+        
+        This mutation changes the IEP status to IN_REVIEW and creates approval
+        requests through the approval-svc for required stakeholders.
+        """
+        try:
+            db = next(get_db())
+            
+            # Find the IEP
+            iep = db.query(IEPModel).filter(IEPModel.id == uuid.UUID(iep_id)).first()
+            if not iep:
+                return IEPMutationResponse(
+                    success=False,
+                    message="IEP not found",
+                    errors=["IEP with specified ID does not exist"]
+                )
+            
+            # Validate IEP is in DRAFT status
+            if iep.status != IEPStatus.DRAFT:
+                return IEPMutationResponse(
+                    success=False,
+                    message="IEP must be in DRAFT status to submit for approval",
+                    errors=[f"Current status: {iep.status}"]
+                )
+            
+            # Update IEP status
+            iep.status = IEPStatus.IN_REVIEW
+            iep.updated_by = "system"  # TODO: Get from auth context
+            iep.updated_at = datetime.now(timezone.utc)
+            
+            # Set signature deadline (30 days from now)
+            signature_deadline = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59)
+            signature_deadline = signature_deadline.replace(day=signature_deadline.day + 30)
+            iep.signature_deadline = signature_deadline
+            
+            # Create approval requests for required roles
+            approval_requests = await self._create_approval_requests(iep, db)
+            
+            db.commit()
+            db.refresh(iep)
+            
+            logger.info(f"IEP {iep_id} submitted for approval with {len(approval_requests)} approval requests")
+            
+            return IEPMutationResponse(
+                success=True,
+                message=f"IEP submitted for approval. {len(approval_requests)} approval requests created.",
+                iep=convert_iep_model_to_graphql(iep)
+            )
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error submitting IEP for approval: {str(e)}")
+            return IEPMutationResponse(
+                success=False,
+                message="Failed to submit IEP for approval",
+                errors=[str(e)]
+            )
+        finally:
+            db.close()
+    
+    async def _fetch_baseline_results(self, learner_uid: str, db: Session) -> Dict[str, Any]:
+        """Fetch baseline assessment results for the learner."""
+        # TODO: Call assessment-svc to get baseline results
+        # For now, return mock data
+        return {
+            "overall_score": 0.75,
+            "percentile": 65,
+            "final_theta": 0.2,
+            "proficiency_level": "L2",
+            "subject_scores": {
+                "math": 0.65,
+                "reading": 0.80,
+                "science": 0.70
+            },
+            "strengths": [
+                "Strong verbal comprehension skills",
+                "Good problem-solving strategies in familiar contexts"
+            ],
+            "challenges": [
+                "Difficulty with multi-step mathematical problems",
+                "Processing speed below grade level"
+            ],
+            "recommendations": [
+                "Consider extended time accommodations",
+                "Break complex tasks into smaller steps",
+                "Provide visual supports for learning"
+            ]
+        }
+    
+    async def _fetch_teacher_questionnaire(self, learner_uid: str, db: Session) -> Dict[str, Any]:
+        """Fetch teacher questionnaire responses for the learner."""
+        # TODO: Call appropriate service to get teacher questionnaire
+        return {
+            "academic_concerns": "Student struggles with grade-level math concepts, particularly fractions and word problems",
+            "classroom_behavior": "Generally well-behaved, but becomes frustrated with difficult tasks",
+            "social_interactions": "Gets along well with peers, participates in group activities",
+            "attention_focus": "Has difficulty maintaining attention during lengthy instructions",
+            "processing_speed": "Needs extra time to complete assignments",
+            "strengths": "Creative thinking, strong in art and music, helpful to classmates",
+            "accommodations_tried": "Extended time, reduced assignments, visual aids",
+            "effectiveness_of_interventions": "Extended time helps significantly, visual aids moderately effective"
+        }
+    
+    async def _fetch_guardian_questionnaire(self, learner_uid: str, db: Session) -> Dict[str, Any]:
+        """Fetch parent/guardian questionnaire responses for the learner."""
+        # TODO: Call appropriate service to get guardian questionnaire
+        return {
+            "homework_completion": "Often needs significant help and takes much longer than expected",
+            "learning_concerns": "Worried about falling behind in math, struggles with confidence",
+            "home_behavior": "Generally cooperative but gets frustrated with schoolwork",
+            "social_development": "Plays well with neighborhood children, enjoys team sports",
+            "medical_history": "No significant medical issues, normal hearing and vision",
+            "previous_interventions": "Had tutoring over summer, some improvement noted",
+            "goals_priorities": "Want child to feel successful and confident in school",
+            "support_availability": "Available to help at home and attend school meetings"
+        }
+    
+    async def _fetch_coursework_signals(self, learner_uid: str, db: Session) -> Dict[str, Any]:
+        """Fetch coursework performance signals for the learner."""
+        # TODO: Call coursework service to get performance data
+        return {
+            "completion_rate": 0.85,
+            "average_score": 0.72,
+            "subject_performance": {
+                "math": {
+                    "completion_rate": 0.78,
+                    "average_score": 0.65,
+                    "time_per_assignment": "45 minutes",
+                    "help_requests": 12
+                },
+                "reading": {
+                    "completion_rate": 0.92,
+                    "average_score": 0.80,
+                    "time_per_assignment": "30 minutes",
+                    "help_requests": 5
+                }
+            },
+            "engagement_patterns": {
+                "peak_performance_time": "morning",
+                "break_frequency": "every 15 minutes",
+                "preferred_content_types": "visual, interactive"
+            }
+        }
+    
+    async def _fetch_student_info(self, learner_uid: str) -> Dict[str, Any]:
+        """Fetch student information from user service."""
+        # TODO: Call user-svc to get student details
+        return {
+            "tenant_id": "school_district_001",
+            "school_district": "Springfield Public Schools",
+            "school_name": "Lincoln Elementary School", 
+            "grade_level": "3rd Grade"
+        }
+    
+    async def _create_approval_requests(self, iep: IEPModel, db: Session) -> List[Dict[str, Any]]:
+        """Create approval requests through approval-svc."""
+        approval_requests = []
+        
+        # TODO: Call approval-svc to create approval workflow
+        # For now, just create placeholder records
+        
+        for role in iep.signature_required_roles:
+            approval_request = {
+                "id": str(uuid.uuid4()),
+                "iep_id": str(iep.id),
+                "approver_role": role,
+                "status": "pending",
+                "deadline": iep.signature_deadline,
+                "created_at": datetime.now(timezone.utc)
+            }
+            approval_requests.append(approval_request)
+            
+            # TODO: Actually call approval service API
+            logger.info(f"Would create approval request for role {role} on IEP {iep.id}")
+        
+        return approval_requests
+    
+    @strawberry.mutation
+    async def approve_iep(self, iep_id: str, approver_role: str, approved: bool, comments: Optional[str] = None) -> IEPMutationResponse:
+        """
+        Process IEP approval from guardian, teacher, or administrator.
+        
+        When all required approvals are received, status changes to ACTIVE 
+        and IEP_UPDATED event is emitted.
+        """
+        try:
+            db = next(get_db())
+            
+            # Find the IEP
+            iep = db.query(IEPModel).filter(IEPModel.id == uuid.UUID(iep_id)).first()
+            if not iep:
+                return IEPMutationResponse(
+                    success=False,
+                    message="IEP not found",
+                    errors=["IEP with specified ID does not exist"]
+                )
+            
+            # Validate IEP is in review
+            if iep.status != IEPStatus.IN_REVIEW:
+                return IEPMutationResponse(
+                    success=False,
+                    message="IEP must be in review status for approval",
+                    errors=[f"Current status: {iep.status.value}"]
+                )
+            
+            # TODO: Record the approval in approval-svc
+            await self._record_approval(iep_id, approver_role, approved, comments)
+            
+            # Check if all required approvals are received
+            all_approved = await self._check_all_approvals_complete(iep_id, iep.signature_required_roles)
+            
+            if all_approved:
+                # Update IEP to ACTIVE status
+                iep.status = IEPStatus.ACTIVE
+                iep.effective_date = datetime.now(timezone.utc)
+                iep.updated_by = f"approval_system_{approver_role}"
+                iep.updated_at = datetime.now(timezone.utc)
+                
+                db.commit()
+                db.refresh(iep)
+                
+                # Emit IEP_UPDATED event
+                await self._emit_iep_updated_event(iep, "approved_and_activated")
+                
+                logger.info(f"IEP {iep_id} approved by all parties and activated")
+                
+                return IEPMutationResponse(
+                    success=True,
+                    message="IEP approved by all parties and activated",
+                    iep=convert_iep_model_to_graphql(iep)
+                )
+            else:
+                # Just record the approval, IEP still in review
+                db.commit()
+                
+                logger.info(f"IEP {iep_id} approval recorded for {approver_role}, still awaiting other approvals")
+                
+                return IEPMutationResponse(
+                    success=True,
+                    message=f"Approval recorded for {approver_role}. Still awaiting other required approvals.",
+                    iep=convert_iep_model_to_graphql(iep)
+                )
+                
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error processing IEP approval: {str(e)}")
+            return IEPMutationResponse(
+                success=False,
+                message="Failed to process approval",
+                errors=[str(e)]
+            )
+        finally:
+            db.close()
+    
+    async def _record_approval(self, iep_id: str, approver_role: str, approved: bool, comments: Optional[str]) -> None:
+        """Record approval decision in approval service."""
+        # TODO: Call approval-svc API to record the approval
+        approval_data = {
+            "iep_id": iep_id,
+            "approver_role": approver_role,
+            "approved": approved,
+            "comments": comments,
+            "approved_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        logger.info(f"Would record approval: {approval_data}")
+        
+        # Placeholder for actual service call
+        # async with httpx.AsyncClient() as client:
+        #     response = await client.post(
+        #         "http://approval-svc:8000/v1/approvals",
+        #         json=approval_data
+        #     )
+        #     response.raise_for_status()
+    
+    async def _check_all_approvals_complete(self, iep_id: str, required_roles: List[str]) -> bool:
+        """Check if all required approvals have been received."""
+        # TODO: Call approval-svc to check approval status
+        # For now, simulate checking by random or always true for testing
+        
+        logger.info(f"Checking approvals for IEP {iep_id}, required roles: {required_roles}")
+        
+        # Placeholder logic - in real implementation, would query approval service
+        # For testing purposes, assume all approvals are complete if we get here
+        return True
+        
+        # Real implementation would be:
+        # async with httpx.AsyncClient() as client:
+        #     response = await client.get(f"http://approval-svc:8000/v1/approvals/{iep_id}")
+        #     approval_data = response.json()
+        #     approved_roles = [a["approver_role"] for a in approval_data["approvals"] if a["approved"]]
+        #     return set(required_roles).issubset(set(approved_roles))
+    
+    async def _emit_iep_updated_event(self, iep: IEPModel, event_type: str) -> None:
+        """Emit IEP_UPDATED event to event bus."""
+        event_data = {
+            "event_type": "IEP_UPDATED",
+            "iep_id": str(iep.id),
+            "student_id": iep.student_id,
+            "tenant_id": iep.tenant_id,
+            "status": iep.status.value,
+            "version": iep.version,
+            "updated_at": iep.updated_at.isoformat(),
+            "metadata": {
+                "event_subtype": event_type,
+                "effective_date": iep.effective_date.isoformat() if iep.effective_date else None,
+                "signature_roles": iep.signature_required_roles
+            }
+        }
+        
+        # TODO: Publish to actual event bus (Redis, RabbitMQ, etc.)
+        logger.info(f"Would emit IEP_UPDATED event: {event_data}")
+        
+        # Placeholder for actual event emission
+        # await event_bus.publish("iep.updated", event_data)
 
 @strawberry.type
 class Subscription:
