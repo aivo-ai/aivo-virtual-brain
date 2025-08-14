@@ -1,0 +1,88 @@
+version: "3.8"
+
+services:
+  trainer:
+    build: .
+    ports:
+      - "8003:8003"
+      - "9003:9003" # Metrics
+    environment:
+      - DATABASE_URL=postgresql://trainer:trainer@postgres:5432/model_trainer
+      - REDIS_URL=redis://redis:6379/0
+      - MODEL_REGISTRY_URL=http://model-registry:8001
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+      - /tmp/trainer:/tmp/trainer
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: trainer
+      POSTGRES_PASSWORD: trainer
+      POSTGRES_DB: model_trainer
+    ports:
+      - "5433:5432"
+    volumes:
+      - trainer_postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trainer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - trainer_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Celery worker for async training jobs
+  worker:
+    build: .
+    command: celery -A app.celery worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://trainer:trainer@postgres:5432/model_trainer
+      - REDIS_URL=redis://redis:6379/0
+      - MODEL_REGISTRY_URL=http://model-registry:8001
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./app:/app/app
+      - /tmp/trainer:/tmp/trainer
+    restart: unless-stopped
+
+  # Celery beat scheduler
+  scheduler:
+    build: .
+    command: celery -A app.celery beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://trainer:trainer@postgres:5432/model_trainer
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./app:/app/app
+    restart: unless-stopped
+
+volumes:
+  trainer_postgres_data:
+  trainer_redis_data:

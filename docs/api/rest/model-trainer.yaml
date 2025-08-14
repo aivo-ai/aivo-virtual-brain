@@ -1,0 +1,841 @@
+openapi: 3.0.3
+info:
+  title: AIVO Model Trainer Service
+  description: |
+    S2-03 Implementation: OpenAI Fine-Tuning with Evaluation & Promotion
+
+    The Model Trainer Service orchestrates fine-tuning workflows, tracks training jobs, 
+    runs evaluations, and promotes successful models to the registry.
+
+    ## Features
+
+    - **Fine-Tuning Jobs**: Launch OpenAI fine-tuning jobs with configurable parameters
+    - **Status Tracking**: Monitor training progress and completion
+    - **Evaluation Harness**: Run pedagogy and safety evaluations on trained models
+    - **Model Promotion**: Automatically register successful models with bindings
+    - **Datasheet Compliance**: Enforce dataset documentation requirements
+
+  version: 1.0.0
+  contact:
+    name: AIVO Engineering
+    email: engineering@aivo.ai
+  license:
+    name: Proprietary
+    url: https://aivo.ai/license
+
+servers:
+  - url: http://localhost:8003
+    description: Development server
+  - url: https://trainer.aivo.ai
+    description: Production server
+
+tags:
+  - name: Training Jobs
+    description: Fine-tuning job management
+  - name: Evaluation
+    description: Model evaluation and assessment
+  - name: Promotion
+    description: Model promotion to registry
+  - name: Health
+    description: Service health and monitoring
+
+paths:
+  /trainer/jobs:
+    post:
+      tags:
+        - Training Jobs
+      summary: Create fine-tuning job
+      description: |
+        Create a new fine-tuning job with datasheet requirements.
+
+        - **provider**: Training provider (currently supports OpenAI)
+        - **baseModel**: Base model identifier (e.g., "gpt-3.5-turbo")
+        - **datasetUri**: URI to training dataset
+        - **config**: Training configuration parameters
+        - **policy**: Training policy and thresholds
+        - **datasheet**: Dataset documentation requirements
+
+        Returns the created job with a unique job_id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingJobCreate"
+            example:
+              name: "gpt-3.5-math-curriculum"
+              description: "Fine-tune GPT-3.5 for mathematics curriculum"
+              provider: "openai"
+              baseModel: "gpt-3.5-turbo"
+              datasetUri: "s3://aivo-training/math-curriculum.jsonl"
+              config:
+                n_epochs: 3
+                batch_size: 1
+                learning_rate_multiplier: 0.1
+              policy:
+                scope: "tenant_123"
+                thresholds:
+                  pedagogy_score: 0.8
+                  safety_score: 0.9
+              datasheet:
+                source: "curriculum_team"
+                license: "proprietary"
+                redaction: "pii_removed"
+                description: "K-12 mathematics curriculum content"
+      responses:
+        "201":
+          description: Training job created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingJobResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable entity
+
+    get:
+      tags:
+        - Training Jobs
+      summary: List training jobs
+      description: List training jobs with filtering and pagination
+      parameters:
+        - name: status_filter
+          in: query
+          description: Filter by job status
+          schema:
+            $ref: "#/components/schemas/JobStatus"
+        - name: provider_filter
+          in: query
+          description: Filter by training provider
+          schema:
+            type: string
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Training jobs list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingJobList"
+
+  /trainer/jobs/{job_id}:
+    get:
+      tags:
+        - Training Jobs
+      summary: Get training job
+      description: |
+        Get training job status and details.
+
+        Returns current status, progress, and results (if completed).
+        On completion, automatically creates version and binding in registry.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: Training job ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Training job details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingJobResponse"
+        "404":
+          description: Training job not found
+
+    put:
+      tags:
+        - Training Jobs
+      summary: Update training job
+      description: Update training job details
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: Training job ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingJobUpdate"
+      responses:
+        "200":
+          description: Training job updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingJobResponse"
+        "404":
+          description: Training job not found
+
+    delete:
+      tags:
+        - Training Jobs
+      summary: Cancel training job
+      description: Cancel a training job
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: Training job ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Training job cancelled
+        "404":
+          description: Training job not found
+
+  /trainer/jobs/{job_id}/evaluate:
+    post:
+      tags:
+        - Evaluation
+      summary: Run evaluation harness
+      description: |
+        Run evaluation harness on trained model.
+
+        Evaluates the trained model using pedagogy and safety test suites.
+        Only models that pass all thresholds are eligible for promotion.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: Training job ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationCreate"
+            example:
+              name: "comprehensive-evaluation"
+              description: "Full pedagogy and safety evaluation"
+              harness_config:
+                pedagogy_tests:
+                  - "curriculum_alignment"
+                  - "learning_objectives"
+                  - "content_accuracy"
+                safety_tests:
+                  - "harmful_content"
+                  - "bias_detection"
+                  - "age_appropriateness"
+                timeout: 600
+                parallel: true
+              thresholds:
+                pedagogy_score: 0.8
+                safety_score: 0.9
+                overall_score: 0.85
+      responses:
+        "201":
+          description: Evaluation created and started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationResponse"
+        "400":
+          description: Validation error or job not ready for evaluation
+
+  /trainer/jobs/{job_id}/evaluation:
+    get:
+      tags:
+        - Evaluation
+      summary: Get evaluation results
+      description: Get evaluation results for a training job
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: Training job ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Evaluation results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationResponse"
+        "404":
+          description: Evaluation not found
+
+  /trainer/jobs/{job_id}/promote:
+    post:
+      tags:
+        - Promotion
+      summary: Promote model to registry
+      description: |
+        Promote trained model to registry.
+
+        Creates model version and binding in the Model Registry Service.
+        Only successful evaluations are promoted unless force=true.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: Training job ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionRequest"
+            example:
+              force: false
+              metadata:
+                promotion_reason: "Passed all evaluation thresholds"
+                reviewer: "ai_engineer_123"
+      responses:
+        "201":
+          description: Model promoted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromotionResponse"
+        "400":
+          description: Validation error or promotion not allowed
+
+  /trainer/evaluations:
+    get:
+      tags:
+        - Evaluation
+      summary: List evaluations
+      description: List evaluations with filtering and pagination
+      parameters:
+        - name: job_id
+          in: query
+          description: Filter by job ID
+          schema:
+            type: string
+            format: uuid
+        - name: status_filter
+          in: query
+          description: Filter by evaluation status
+          schema:
+            type: string
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Evaluations list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationList"
+
+  /trainer/stats:
+    get:
+      tags:
+        - Health
+      summary: Get service statistics
+      description: Get training service statistics and metrics
+      responses:
+        "200":
+          description: Service statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceStats"
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Service health check endpoint
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "model-trainer"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: "healthy"
+                      openai:
+                        type: string
+                        example: "healthy"
+        "503":
+          description: Service is unhealthy
+
+components:
+  schemas:
+    JobStatus:
+      type: string
+      enum:
+        - pending
+        - validating
+        - training
+        - evaluating
+        - completed
+        - failed
+        - cancelled
+      description: Training job status
+
+    EvaluationStatus:
+      type: string
+      enum:
+        - pending
+        - running
+        - passed
+        - failed
+        - error
+      description: Evaluation status
+
+    Provider:
+      type: string
+      enum:
+        - openai
+        - vertex_ai
+        - bedrock
+        - anthropic
+      description: Training provider
+
+    TrainingConfig:
+      type: object
+      properties:
+        n_epochs:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 3
+          description: Number of training epochs
+        batch_size:
+          type: integer
+          minimum: 1
+          maximum: 32
+          default: 1
+          description: Training batch size
+        learning_rate_multiplier:
+          type: number
+          minimum: 0
+          maximum: 2.0
+          default: 0.1
+          description: Learning rate multiplier
+
+    PolicyConfig:
+      type: object
+      properties:
+        scope:
+          type: string
+          description: Policy scope (e.g., tenant_123)
+        thresholds:
+          type: object
+          additionalProperties:
+            type: number
+          description: Evaluation thresholds
+        restrictions:
+          type: object
+          description: Training restrictions
+      required:
+        - scope
+
+    DatasheetInfo:
+      type: object
+      properties:
+        source:
+          type: string
+          description: Dataset source
+        license:
+          type: string
+          description: Dataset license
+        redaction:
+          type: string
+          description: Redaction/privacy measures
+        description:
+          type: string
+          description: Dataset description
+        size:
+          type: integer
+          description: Dataset size in records
+        collection_date:
+          type: string
+          format: date-time
+          description: Data collection date
+      required:
+        - source
+        - license
+        - redaction
+
+    TrainingJobCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Job name
+        description:
+          type: string
+          description: Job description
+        provider:
+          $ref: "#/components/schemas/Provider"
+        baseModel:
+          type: string
+          minLength: 1
+          description: Base model identifier
+        datasetUri:
+          type: string
+          minLength: 1
+          description: Dataset URI
+        config:
+          $ref: "#/components/schemas/TrainingConfig"
+        policy:
+          $ref: "#/components/schemas/PolicyConfig"
+        datasheet:
+          $ref: "#/components/schemas/DatasheetInfo"
+      required:
+        - name
+        - provider
+        - baseModel
+        - datasetUri
+        - config
+        - policy
+        - datasheet
+
+    TrainingJobUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/JobStatus"
+
+    TrainingJobResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/JobStatus"
+        provider:
+          $ref: "#/components/schemas/Provider"
+        baseModel:
+          type: string
+        datasetUri:
+          type: string
+        config:
+          type: object
+        policy:
+          type: object
+        datasheet:
+          type: object
+        providerJobId:
+          type: string
+        providerModelId:
+          type: string
+        providerMetadata:
+          type: object
+        trainingTokens:
+          type: integer
+        trainingCost:
+          type: number
+        trainingDuration:
+          type: integer
+          description: Duration in seconds
+        errorMessage:
+          type: string
+        retryCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    TrainingJobList:
+      type: object
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingJobResponse"
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    EvaluationThresholds:
+      type: object
+      properties:
+        pedagogy_score:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.8
+        safety_score:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.9
+        overall_score:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    HarnessConfig:
+      type: object
+      properties:
+        pedagogy_tests:
+          type: array
+          items:
+            type: string
+          description: Pedagogy test suite names
+        safety_tests:
+          type: array
+          items:
+            type: string
+          description: Safety test suite names
+        custom_tests:
+          type: object
+          description: Custom test configurations
+        timeout:
+          type: integer
+          default: 600
+          description: Evaluation timeout in seconds
+        parallel:
+          type: boolean
+          default: true
+          description: Run tests in parallel
+
+    EvaluationCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        harness_config:
+          $ref: "#/components/schemas/HarnessConfig"
+        thresholds:
+          $ref: "#/components/schemas/EvaluationThresholds"
+      required:
+        - name
+        - harness_config
+        - thresholds
+
+    EvaluationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/EvaluationStatus"
+        harness_config:
+          type: object
+        thresholds:
+          type: object
+        pedagogy_score:
+          type: number
+        safety_score:
+          type: number
+        overall_score:
+          type: number
+        passed:
+          type: boolean
+        results:
+          type: object
+        metrics:
+          type: object
+        error_message:
+          type: string
+        retry_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    EvaluationList:
+      type: object
+      properties:
+        evaluations:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvaluationResponse"
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    PromotionRequest:
+      type: object
+      properties:
+        force:
+          type: boolean
+          default: false
+          description: Force promotion even if evaluation failed
+        metadata:
+          type: object
+          description: Additional promotion metadata
+
+    PromotionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        evaluation_id:
+          type: string
+          format: uuid
+        registry_model_id:
+          type: string
+          format: uuid
+        registry_version_id:
+          type: string
+          format: uuid
+        registry_binding_id:
+          type: string
+          format: uuid
+        promoted:
+          type: boolean
+        promotion_reason:
+          type: string
+        promotion_metadata:
+          type: object
+        error_message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ServiceStats:
+      type: object
+      properties:
+        total_jobs:
+          type: integer
+        active_jobs:
+          type: integer
+        completed_jobs:
+          type: integer
+        failed_jobs:
+          type: integer
+        total_evaluations:
+          type: integer
+        passed_evaluations:
+          type: integer
+        failed_evaluations:
+          type: integer
+        total_promotions:
+          type: integer
+        successful_promotions:
+          type: integer
+        average_training_time:
+          type: number
+        total_training_cost:
+          type: number
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        error_code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
