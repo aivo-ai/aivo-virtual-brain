@@ -47,7 +47,7 @@ services:
     image: minio/minio:latest
     container_name: aivo-minio
     restart: unless-stopped
-    user: "1000:1000" # non-root user
+    # Remove user specification on Windows to avoid permission issues
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minio_admin

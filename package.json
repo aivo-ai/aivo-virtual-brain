@@ -16,6 +16,7 @@
   "scripts": {
     "prepare": "husky install",
     "verify-all": "turbo run lint typecheck test build --filter=...[origin/main] && pnpm run sec:all && node scripts/check-deprecations.mjs",
+    "verify-stage1": "node scripts/verify-stage1.mjs",
     "sec:all": "node scripts/sec-all.mjs",
     "sec:osv": "osv-scanner --recursive .",
     "sec:trivy": "trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --skip-dirs node_modules .",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.4.0",
     "@commitlint/config-conventional": "^19.4.0",
+    "@types/node": "^24.2.1",
     "globby": "^14.0.2",
     "husky": "^9.1.3",
     "lint-staged": "^15.2.9",
