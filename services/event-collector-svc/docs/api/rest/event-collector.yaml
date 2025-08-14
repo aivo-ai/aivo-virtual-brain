@@ -1,0 +1,549 @@
+openapi: 3.0.3
+info:
+  title: Event Collector Service API (S2-14)
+  description: |
+    High-throughput event ingestion service for batch processing and Kafka integration.
+
+    ## Features
+    - **Batch Event Ingestion**: HTTP POST with support for 1-1000 events per batch
+    - **Gzip Compression**: Automatic decompression of gzipped payloads
+    - **Kafka Integration**: Reliable event streaming with backpressure handling
+    - **Dead Letter Queue**: Poison pill and retry failure handling
+    - **Disk Buffering**: 30-minute outage tolerance with local storage
+    - **Performance**: Target 2k EPS with p99 ≤ 40ms
+
+    ## Event Flow
+    1. Client submits batch via POST /api/v1/collect
+    2. Events validated against schema
+    3. Events partitioned by learner_id for Kafka
+    4. Failed events sent to DLQ topic
+    5. Response includes processing metrics
+
+    ## Rate Limiting
+    - Maximum 1000 events per batch
+    - Backpressure handling with buffering
+    - DLQ for poison pills (>3 failures)
+
+  version: 1.0.0
+  contact:
+    name: AIVO Virtual Brains
+    email: dev@aivo.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api-stage.aivo.com
+    description: Staging server
+  - url: https://api.aivo.com
+    description: Production server
+
+paths:
+  /api/v1/collect:
+    post:
+      summary: Collect Batch of Events
+      description: |
+        Ingest a batch of events for processing and delivery to Kafka.
+
+        **Supported formats:**
+        - JSON array of events
+        - JSON object with batch metadata
+        - Gzipped JSON (set Content-Encoding: gzip)
+
+        **Performance characteristics:**
+        - Target: 2000 events per second
+        - Latency: p99 ≤ 40ms
+        - Batch size: 1-1000 events
+
+        **Error handling:**
+        - Invalid events → DLQ
+        - Schema validation failures → 400 Bad Request  
+        - Kafka unavailable → Disk buffering
+        - Batch too large → 413 Payload Too Large
+
+      tags:
+        - Event Ingestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/EventBatchRequest"
+                - type: array
+                  items:
+                    $ref: "#/components/schemas/BaseEvent"
+            examples:
+              batch_request:
+                summary: Full batch request
+                value:
+                  batch_id: "550e8400-e29b-41d4-a716-446655440000"
+                  events:
+                    - event_id: "123e4567-e89b-12d3-a456-426614174000"
+                      learner_id: "learner_001"
+                      tenant_id: "tenant_alpha"
+                      event_type: "interaction"
+                      timestamp: "2024-01-15T10:30:00Z"
+                      source_service: "learning-app"
+                      event_data:
+                        action: "click"
+                        element: "next_button"
+                        page: "/lesson/1"
+                      metadata:
+                        session_id: "session_xyz"
+                  metadata:
+                    source: "mobile-app"
+                    version: "2.1.0"
+              simple_array:
+                summary: Simple event array
+                value:
+                  - event_id: "123e4567-e89b-12d3-a456-426614174000"
+                    learner_id: "learner_001"
+                    tenant_id: "tenant_alpha"
+                    event_type: "interaction"
+                    timestamp: "2024-01-15T10:30:00Z"
+                    source_service: "learning-app"
+                    event_data:
+                      action: "click"
+                      element: "next_button"
+                    metadata: {}
+      parameters:
+        - name: Content-Encoding
+          in: header
+          description: Set to 'gzip' for compressed payloads
+          required: false
+          schema:
+            type: string
+            enum: [gzip]
+        - name: X-Request-ID
+          in: header
+          description: Request tracking identifier
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: All events processed successfully
+          headers:
+            X-Process-Time:
+              description: Request processing time in seconds
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventBatchResponse"
+              example:
+                batch_id: "550e8400-e29b-41d4-a716-446655440000"
+                accepted_count: 100
+                rejected_count: 0
+                processing_time_ms: 25.3
+                kafka_partition: 2
+                dlq_events: []
+                warnings: []
+        "207":
+          description: Partial success - some events rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventBatchResponse"
+              example:
+                batch_id: "550e8400-e29b-41d4-a716-446655440000"
+                accepted_count: 95
+                rejected_count: 5
+                processing_time_ms: 32.1
+                kafka_partition: 1
+                dlq_events: ["invalid_event_1", "invalid_event_2"]
+                warnings: ["5 events were rejected and sent to DLQ"]
+        "400":
+          description: Bad Request - Invalid JSON or schema validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error_code: "VALIDATION_ERROR"
+                error_message: "Event validation failed: missing required field 'event_type'"
+                timestamp: 1705312200.123
+                request_id: "req_12345"
+        "413":
+          description: Payload Too Large - Batch size exceeds 1000 events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: All events rejected - sent to DLQ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventBatchResponse"
+        "503":
+          description: Service Unavailable - Kafka writer not initialized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/health:
+    get:
+      summary: Health Check
+      description: |
+        Comprehensive health check including Kafka connectivity,
+        buffer status, and throughput metrics.
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: "healthy"
+                kafka_connected: true
+                buffer_status:
+                  buffered_batches: 0
+                  buffer_size_mb: 0.0
+                  oldest_batch_age_minutes: 0
+                throughput_metrics:
+                  events_per_second: 1850.3
+                  avg_processing_time_ms: 15.2
+                uptime_seconds: 3600
+        "503":
+          description: Service unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/v1/metrics:
+    get:
+      summary: Processing Metrics
+      description: |
+        Detailed metrics for monitoring and alerting.
+        Includes throughput, latency, and error rates.
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricsResponse"
+              example:
+                events_processed_total: 1500000
+                events_per_second: 2100.5
+                kafka_writes_total: 15000
+                dlq_events_total: 75
+                buffer_events_count: 0
+                avg_processing_time_ms: 18.4
+                p99_processing_time_ms: 35.8
+
+  /health:
+    get:
+      summary: Simple Health Check
+      description: Basic health check endpoint (non-API)
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: Service running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "event-collector-svc"
+
+  /:
+    get:
+      summary: Service Information
+      description: Root endpoint with service metadata
+      tags:
+        - Information
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  version:
+                    type: string
+                  stage:
+                    type: string
+                  description:
+                    type: string
+                  endpoints:
+                    type: object
+
+components:
+  schemas:
+    BaseEvent:
+      type: object
+      required:
+        - event_id
+        - learner_id
+        - tenant_id
+        - event_type
+        - timestamp
+        - source_service
+        - event_data
+        - metadata
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the event
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        learner_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the learner
+          example: "learner_001"
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant/organization identifier
+          example: "tenant_alpha"
+        event_type:
+          type: string
+          enum: [interaction, progress, assessment, error, system]
+          description: Type of event for routing and processing
+          example: "interaction"
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Processing priority
+          default: "medium"
+          example: "medium"
+        timestamp:
+          type: string
+          format: date-time
+          description: Event occurrence timestamp (ISO 8601)
+          example: "2024-01-15T10:30:00Z"
+        source_service:
+          type: string
+          maxLength: 100
+          description: Service that generated the event
+          example: "learning-app"
+        event_data:
+          type: object
+          description: Event-specific payload data
+          example:
+            action: "click"
+            element: "next_button"
+            page: "/lesson/1"
+        metadata:
+          type: object
+          description: Additional event metadata
+          example:
+            session_id: "session_xyz"
+            user_agent: "Mozilla/5.0..."
+
+    EventBatchRequest:
+      type: object
+      required:
+        - events
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+          description: Optional batch identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/BaseEvent"
+          minItems: 1
+          maxItems: 1000
+          description: Array of events to process
+        metadata:
+          type: object
+          description: Batch-level metadata
+          example:
+            source: "mobile-app"
+            version: "2.1.0"
+
+    EventBatchResponse:
+      type: object
+      required:
+        - batch_id
+        - accepted_count
+        - rejected_count
+        - processing_time_ms
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+          description: Batch identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        accepted_count:
+          type: integer
+          minimum: 0
+          description: Number of events successfully processed
+          example: 100
+        rejected_count:
+          type: integer
+          minimum: 0
+          description: Number of events rejected
+          example: 0
+        processing_time_ms:
+          type: number
+          minimum: 0
+          description: Total processing time in milliseconds
+          example: 25.3
+        kafka_partition:
+          type: integer
+          nullable: true
+          description: Kafka partition used (if available)
+          example: 2
+        dlq_events:
+          type: array
+          items:
+            type: string
+          description: List of event IDs sent to DLQ
+          example: []
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Processing warnings
+          example: []
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - kafka_connected
+        - uptime_seconds
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: Overall service health
+          example: "healthy"
+        kafka_connected:
+          type: boolean
+          description: Kafka connectivity status
+          example: true
+        buffer_status:
+          type: object
+          description: Disk buffer status
+          example:
+            buffered_batches: 0
+            buffer_size_mb: 0.0
+        throughput_metrics:
+          type: object
+          description: Current throughput metrics
+          example:
+            events_per_second: 1850.3
+            avg_processing_time_ms: 15.2
+        uptime_seconds:
+          type: number
+          minimum: 0
+          description: Service uptime in seconds
+          example: 3600
+
+    MetricsResponse:
+      type: object
+      required:
+        - events_processed_total
+        - events_per_second
+        - avg_processing_time_ms
+      properties:
+        events_processed_total:
+          type: integer
+          minimum: 0
+          description: Total events processed since startup
+          example: 1500000
+        events_per_second:
+          type: number
+          minimum: 0
+          description: Current events per second rate
+          example: 2100.5
+        kafka_writes_total:
+          type: integer
+          minimum: 0
+          description: Total Kafka writes
+          example: 15000
+        dlq_events_total:
+          type: integer
+          minimum: 0
+          description: Total events sent to DLQ
+          example: 75
+        buffer_events_count:
+          type: integer
+          minimum: 0
+          description: Events currently buffered
+          example: 0
+        avg_processing_time_ms:
+          type: number
+          minimum: 0
+          description: Average processing time per batch
+          example: 18.4
+        p99_processing_time_ms:
+          type: number
+          minimum: 0
+          description: 99th percentile processing time
+          example: 35.8
+
+    ErrorResponse:
+      type: object
+      required:
+        - error_code
+        - error_message
+        - timestamp
+      properties:
+        error_code:
+          type: string
+          description: Machine-readable error code
+          example: "VALIDATION_ERROR"
+        error_message:
+          type: string
+          description: Human-readable error message
+          example: "Event validation failed"
+        timestamp:
+          type: number
+          description: Error timestamp (Unix)
+          example: 1705312200.123
+        request_id:
+          type: string
+          description: Request tracking identifier
+          example: "req_12345"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for API authentication
+
+# Global security (optional - can be enabled per endpoint)
+# security:
+#   - BearerAuth: []
+
+tags:
+  - name: Event Ingestion
+    description: Batch event collection and processing
+  - name: Monitoring
+    description: Health checks and metrics
+  - name: Information
+    description: Service metadata and documentation
+
+externalDocs:
+  description: Event Collector Service Documentation
+  url: https://docs.aivo.com/services/event-collector
