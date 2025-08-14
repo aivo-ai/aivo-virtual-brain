@@ -1,0 +1,722 @@
+# AIVO Approval Service - REST API Documentation
+# S2-10 Implementation - OpenAPI specification
+
+openapi: 3.0.3
+info:
+  title: AIVO Approval Service API
+  description: |
+    Approval workflow service for level changes, IEP changes, and consent-sensitive actions.
+
+    ## Features
+    - State machine workflow: PENDING → APPROVED/REJECTED/EXPIRED
+    - Role-based approvals (guardian, teacher, district_admin)
+    - TTL with automatic expiration
+    - Webhook notifications to orchestrator
+    - Comprehensive audit logging
+
+    ## Approval Types
+    - **level_change**: Changes to student academic level
+    - **iep_change**: Modifications to Individual Education Programs
+    - **consent_sensitive**: Actions requiring explicit consent
+    - **placement_change**: Changes to student placement
+    - **service_change**: Modifications to services
+
+    ## Approval Workflow
+    1. Create approval request with required roles
+    2. Required approvers make decisions
+    3. Any rejection immediately rejects the request
+    4. All approvals required for final approval
+    5. Automatic expiration after TTL
+    6. Webhook notification on final decision
+
+  version: 1.0.0
+  contact:
+    name: AIVO Development Team
+    url: https://github.com/aivo-ai/aivo-virtual-brain
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.aivo.ai/approval-svc
+    description: Production server
+
+tags:
+  - name: approvals
+    description: Approval request management
+  - name: decisions
+    description: Approval decision making
+  - name: stats
+    description: Statistics and metrics
+  - name: health
+    description: Health check endpoints
+
+paths:
+  /api/v1/approvals:
+    post:
+      tags:
+        - approvals
+      summary: Create approval request
+      description: |
+        Create a new approval request with TTL and required roles.
+        Automatically schedules reminders and expiration handling.
+      operationId: createApprovalRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalRequestCreate"
+            examples:
+              iep_change:
+                summary: IEP Change Request
+                value:
+                  tenant_id: "123e4567-e89b-12d3-a456-426614174000"
+                  approval_type: "iep_change"
+                  resource_id: "iep_12345"
+                  resource_type: "iep"
+                  title: "IEP Goals Update for Student John Doe"
+                  description: "Updating annual goals based on Q2 assessment results"
+                  context_data:
+                    student_id: "student_456"
+                    changes: ["goal_1_modified", "goal_2_added"]
+                  expires_in_hours: 72
+                  requested_by: "teacher_789"
+                  requested_by_role: "case_manager"
+                  required_roles: ["guardian", "teacher"]
+                  webhook_url: "https://orchestrator.example.com/webhooks/approval"
+              level_change:
+                summary: Level Change Request
+                value:
+                  tenant_id: "123e4567-e89b-12d3-a456-426614174000"
+                  approval_type: "level_change"
+                  resource_id: "level_change_789"
+                  resource_type: "level"
+                  title: "Promote Student to Advanced Math"
+                  description: "Student demonstrates readiness for advanced coursework"
+                  expires_in_hours: 48
+                  requested_by: "teacher_456"
+                  required_roles: ["teacher", "district_admin"]
+      responses:
+        "201":
+          description: Approval request created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequestResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags:
+        - approvals
+      summary: List approval requests
+      description: |
+        List approval requests with filtering and pagination.
+        Supports filtering by tenant, type, status, dates, and approver roles.
+      operationId: listApprovalRequests
+      parameters:
+        - name: tenant_id
+          in: query
+          description: Filter by tenant ID
+          schema:
+            type: string
+            format: uuid
+        - name: approval_type
+          in: query
+          description: Filter by approval type
+          schema:
+            $ref: "#/components/schemas/ApprovalType"
+        - name: resource_type
+          in: query
+          description: Filter by resource type
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            $ref: "#/components/schemas/ApprovalStatus"
+        - name: requested_by
+          in: query
+          description: Filter by requester
+          schema:
+            type: string
+        - name: approver_role
+          in: query
+          description: Filter by pending approver role
+          schema:
+            $ref: "#/components/schemas/ApproverRole"
+        - name: created_after
+          in: query
+          description: Filter by creation date (after)
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          in: query
+          description: Filter by creation date (before)
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          description: Page number (1-based)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+        - name: sort_by
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            default: "created_at"
+        - name: sort_order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: "desc"
+      responses:
+        "200":
+          description: List of approval requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequestListResponse"
+
+  /api/v1/approvals/{request_id}:
+    get:
+      tags:
+        - approvals
+      summary: Get approval request
+      description: Get a specific approval request by ID. Automatically checks for expiration.
+      operationId: getApprovalRequest
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: Approval request ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Approval request details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequestResponse"
+        "404":
+          description: Approval request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/approvals/{request_id}/decision:
+    post:
+      tags:
+        - decisions
+      summary: Make approval decision
+      description: |
+        Make an approval decision on a pending request.
+
+        ## Rules
+        - Only roles in required_roles can make decisions
+        - Each role can only approve once
+        - Any rejection immediately rejects the entire request
+        - All approvals required for final approval
+        - Cannot decide on expired or already decided requests
+
+        ## State Transitions
+        - Approval by all required roles → APPROVED
+        - Any rejection → REJECTED
+        - Timeout → EXPIRED
+      operationId: makeApprovalDecision
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: Approval request ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalDecisionCreate"
+            examples:
+              approval:
+                summary: Approve Request
+                value:
+                  approver_id: "guardian_123"
+                  approver_role: "guardian"
+                  approver_name: "Jane Doe (Parent)"
+                  approved: true
+                  comments: "I approve these changes based on our meeting discussion"
+                  decision_metadata:
+                    meeting_date: "2024-12-15"
+                    contact_method: "phone"
+              rejection:
+                summary: Reject Request
+                value:
+                  approver_id: "teacher_456"
+                  approver_role: "teacher"
+                  approved: false
+                  comments: "Need more time to review assessment data"
+      responses:
+        "200":
+          description: Decision recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequestResponse"
+        "400":
+          description: Invalid decision (expired, already decided, unauthorized role, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Approval request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/approvals/stats:
+    get:
+      tags:
+        - stats
+      summary: Get approval statistics
+      description: Get approval statistics and metrics, optionally filtered by tenant.
+      operationId: getApprovalStats
+      parameters:
+        - name: tenant_id
+          in: query
+          description: Filter stats by tenant
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Approval statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalStatsResponse"
+
+  /health:
+    get:
+      tags:
+        - health
+      summary: Basic health check
+      description: Basic health check endpoint
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "approval-svc"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /health/detailed:
+    get:
+      tags:
+        - health
+      summary: Detailed health check
+      description: Detailed health check including database connectivity
+      operationId: detailedHealthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "approval-svc"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: "healthy"
+        "503":
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "unhealthy"
+                  checks:
+                    type: object
+
+components:
+  schemas:
+    ApprovalType:
+      type: string
+      enum:
+        - level_change
+        - iep_change
+        - consent_sensitive
+        - placement_change
+        - service_change
+      description: Type of approval needed
+
+    ApprovalStatus:
+      type: string
+      enum:
+        - pending
+        - approved
+        - rejected
+        - expired
+      description: Current status of approval request
+
+    ApproverRole:
+      type: string
+      enum:
+        - guardian
+        - teacher
+        - case_manager
+        - district_admin
+        - administrator
+        - service_provider
+      description: Role of the approver
+
+    ApprovalRequestCreate:
+      type: object
+      required:
+        - tenant_id
+        - approval_type
+        - resource_id
+        - resource_type
+        - title
+        - requested_by
+        - required_roles
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID for the request
+        approval_type:
+          $ref: "#/components/schemas/ApprovalType"
+        resource_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: ID of resource being approved
+        resource_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Type of resource (e.g., 'iep', 'level')
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Human-readable title
+        description:
+          type: string
+          description: Detailed description of what needs approval
+        context_data:
+          type: object
+          additionalProperties: true
+          description: Additional context data
+        expires_in_hours:
+          type: integer
+          minimum: 1
+          maximum: 8760
+          default: 72
+          description: Hours until expiration (1 hour to 1 year)
+        requested_by:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: ID of user requesting approval
+        requested_by_role:
+          type: string
+          maxLength: 100
+          description: Role of requester
+        required_roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApproverRole"
+          minItems: 1
+          maxItems: 10
+          description: Roles that must approve
+        webhook_url:
+          type: string
+          format: uri
+          maxLength: 1000
+          description: URL to call when decision is made
+        webhook_headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Headers for webhook call
+
+    ApprovalDecisionCreate:
+      type: object
+      required:
+        - approver_id
+        - approver_role
+        - approved
+      properties:
+        approver_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: ID of user making decision
+        approver_role:
+          $ref: "#/components/schemas/ApproverRole"
+        approver_name:
+          type: string
+          maxLength: 255
+          description: Display name of approver
+        approved:
+          type: boolean
+          description: True for approval, False for rejection
+        comments:
+          type: string
+          description: Optional comments about the decision
+        decision_metadata:
+          type: object
+          additionalProperties: true
+          description: Additional decision context
+
+    ApprovalDecisionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        approver_id:
+          type: string
+        approver_role:
+          $ref: "#/components/schemas/ApproverRole"
+        approver_name:
+          type: string
+        approved:
+          type: boolean
+        comments:
+          type: string
+        decided_at:
+          type: string
+          format: date-time
+        decision_metadata:
+          type: object
+          additionalProperties: true
+
+    ApprovalRequestResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        approval_type:
+          $ref: "#/components/schemas/ApprovalType"
+        resource_id:
+          type: string
+        resource_type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        context_data:
+          type: object
+          additionalProperties: true
+        status:
+          $ref: "#/components/schemas/ApprovalStatus"
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        decided_at:
+          type: string
+          format: date-time
+        requested_by:
+          type: string
+        requested_by_role:
+          type: string
+        decision_reason:
+          type: string
+        webhook_sent:
+          type: boolean
+        webhook_sent_at:
+          type: string
+          format: date-time
+        approvals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalDecisionResponse"
+        required_approvals:
+          type: array
+          items:
+            type: string
+        pending_approvals:
+          type: array
+          items:
+            type: string
+        all_approvals_received:
+          type: boolean
+        is_expired:
+          type: boolean
+
+    ApprovalRequestListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalRequestResponse"
+        total:
+          type: integer
+          description: Total number of items matching query
+        page:
+          type: integer
+          description: Current page number (1-based)
+        per_page:
+          type: integer
+          description: Items per page
+        pages:
+          type: integer
+          description: Total number of pages
+        has_next:
+          type: boolean
+          description: Whether there are more pages
+        has_prev:
+          type: boolean
+          description: Whether there are previous pages
+
+    ApprovalStatsResponse:
+      type: object
+      properties:
+        total_requests:
+          type: integer
+          default: 0
+        pending_requests:
+          type: integer
+          default: 0
+        approved_requests:
+          type: integer
+          default: 0
+        rejected_requests:
+          type: integer
+          default: 0
+        expired_requests:
+          type: integer
+          default: 0
+        level_change_requests:
+          type: integer
+          default: 0
+        iep_change_requests:
+          type: integer
+          default: 0
+        consent_sensitive_requests:
+          type: integer
+          default: 0
+        approval_rate:
+          type: number
+          format: float
+          default: 0.0
+          description: Percentage of requests approved
+        average_approval_time_hours:
+          type: number
+          format: float
+          description: Average time to approval in hours
+        median_approval_time_hours:
+          type: number
+          format: float
+          description: Median time to approval in hours
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+        request_id:
+          type: string
+          description: Request ID for tracking
+        timestamp:
+          type: string
+          format: date-time
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
