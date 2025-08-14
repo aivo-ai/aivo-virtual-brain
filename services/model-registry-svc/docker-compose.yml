@@ -1,0 +1,115 @@
+# AIVO Model Registry Service - Docker Compose
+# S2-02 Implementation: Development environment with PostgreSQL
+
+version: "3.8"
+
+services:
+  # PostgreSQL database for model registry
+  model-registry-db:
+    image: postgres:15-alpine
+    container_name: aivo-model-registry-db
+    environment:
+      POSTGRES_DB: model_registry
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432" # Use 5433 to avoid conflicts with system PostgreSQL
+    volumes:
+      - model_registry_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d model_registry"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aivo-network
+
+  # Model Registry Service
+  model-registry-svc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aivo-model-registry-svc
+    environment:
+      # Application settings
+      ENVIRONMENT: development
+      HOST: 0.0.0.0
+      PORT: 8003
+      DEBUG: "true"
+
+      # Database configuration
+      POSTGRES_HOST: model-registry-db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: model_registry
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+      # Database connection pool
+      DB_POOL_SIZE: 10
+      DB_MAX_OVERFLOW: 20
+      DB_POOL_TIMEOUT: 30
+      DB_POOL_RECYCLE: 3600
+
+      # OpenTelemetry configuration
+      OTEL_SERVICE_NAME: model-registry-svc
+      OTEL_RESOURCE_ATTRIBUTES: service.name=model-registry-svc,service.version=1.0.0,deployment.environment=development
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+
+      # Logging
+      LOG_LEVEL: INFO
+      SQL_DEBUG: "false"
+
+      # Retention policy
+      DEFAULT_RETENTION_COUNT: 3
+      MAX_RETENTION_COUNT: 10
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./app:/app/app
+      - ./migrations:/app/migrations
+    depends_on:
+      model-registry-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # Test database (separate from main DB)
+  test-model-registry-db:
+    image: postgres:15-alpine
+    container_name: aivo-test-model-registry-db
+    environment:
+      POSTGRES_DB: test_model_registry
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - test_model_registry_data:/var/lib/postgresql/data
+    profiles:
+      - testing
+    networks:
+      - aivo-network
+
+# Volumes for persistent data
+volumes:
+  model_registry_data:
+    driver: local
+    name: aivo-model-registry-data
+
+  test_model_registry_data:
+    driver: local
+    name: aivo-test-model-registry-data
+
+# Network for service communication
+networks:
+  aivo-network:
+    external: true
+    name: aivo-network
