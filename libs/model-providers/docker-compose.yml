@@ -1,0 +1,52 @@
+# Docker Compose for development
+
+version: "3.8"
+
+services:
+  model-providers:
+    build: .
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      # Mock API keys for testing
+      - OPENAI_API_KEY=test-key-for-development
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - AWS_ACCESS_KEY_ID=test-access-key
+      - AWS_SECRET_ACCESS_KEY=test-secret-key
+    command: bash -c "make dev-setup && bash"
+
+  test:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+      # Mock credentials for testing
+      - OPENAI_API_KEY=test-key-for-testing
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - AWS_ACCESS_KEY_ID=test-access-key
+      - AWS_SECRET_ACCESS_KEY=test-secret-key
+    command: make test-cov
+
+  lint:
+    build: .
+    volumes:
+      - .:/app
+    command: make lint
+
+  examples:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+      # Set actual API keys here for real testing
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+      # - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    command: python examples.py
