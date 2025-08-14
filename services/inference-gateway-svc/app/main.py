@@ -28,7 +28,7 @@ from .providers.vertex_gemini import VertexGeminiProvider
 from .providers.bedrock_anthropic import BedrockAnthropicProvider
 from .policy import PolicyEngine
 from .pii import PIIScrubber, DEFAULT_CONFIG as DEFAULT_PII_CONFIG
-from .routers import generate, embed, moderate
+from .routers import generate, embed, moderate, checkpoints
 
 # Configure logging
 logging.basicConfig(
@@ -324,6 +324,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(generate.router)
 app.include_router(embed.router) 
 app.include_router(moderate.router)
+app.include_router(checkpoints.router)
 
 
 @app.get("/")
@@ -337,6 +338,7 @@ async def root():
             "generation": "/v1/generate/chat/completions",
             "embeddings": "/v1/embeddings", 
             "moderation": "/v1/moderations",
+            "checkpoints": "/v1/checkpoints/{learner_id}/{subject}",
             "health": "/health",
             "metrics": "/metrics"
         }
