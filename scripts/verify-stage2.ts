@@ -3,7 +3,15 @@
  *
  * Validates complete system integration including:
  * - Model fabric and AI inference gateway
- * - Learning engines and assessment flows
+ * -    return this.logResult("Service Health Check", {
+      healthy: healthyServices,
+      total: services.length,
+      services: results.map((r, i) => ({
+        service: services[i].name,
+        status: r.status,
+        ...(r.status === "fulfilled" ? r.value : { error: r.reason }),
+      })),
+    }); engines and assessment flows
  * - Data pipelines and real-time processing
  * - Multi-service workflows and SLOs
  */
@@ -150,7 +158,7 @@ class Stage2Verifier {
       healthy: healthyServices,
       total: services.length,
       services: results.map((r, i) => ({
-        name: services[i].name,
+        service: services[i].name,
         status: r.status,
         ...(r.status === "fulfilled" ? r.value : { error: r.reason }),
       })),
@@ -694,12 +702,11 @@ class Stage2Verifier {
 
     // Inference Gateway SLO: p95 < 300ms
     await this.timeStep("Inference Gateway SLO (p95 < 300ms)", async () => {
-      const requests = [];
-      const startTime = performance.now();
+      const requestPromises: Promise<number>[] = [];
 
       // Generate 20 concurrent requests
       for (let i = 0; i < 20; i++) {
-        requests.push(
+        requestPromises.push(
           this.measureRequestTime(
             `${this.baseUrl}:3006/api/generate/quick-lesson`,
             {
@@ -715,7 +722,7 @@ class Stage2Verifier {
         );
       }
 
-      const results = await Promise.all(requests);
+      const results = await Promise.all(requestPromises);
       const sortedTimes = results.sort((a, b) => a - b);
       const p95 = sortedTimes[Math.floor(sortedTimes.length * 0.95)];
 
@@ -731,10 +738,10 @@ class Stage2Verifier {
 
     // Search Service SLO: p95 < 100ms
     await this.timeStep("Search Service SLO (p95 < 100ms)", async () => {
-      const requests = [];
+      const requestPromises: Promise<number>[] = [];
 
       for (let i = 0; i < 20; i++) {
-        requests.push(
+        requestPromises.push(
           this.measureRequestTime(
             `${this.baseUrl}:3007/api/search?q=mathematics&limit=10`,
             {
@@ -745,7 +752,7 @@ class Stage2Verifier {
         );
       }
 
-      const results = await Promise.all(requests);
+      const results = await Promise.all(requestPromises);
       const sortedTimes = results.sort((a, b) => a - b);
       const p95 = sortedTimes[Math.floor(sortedTimes.length * 0.95)];
 
