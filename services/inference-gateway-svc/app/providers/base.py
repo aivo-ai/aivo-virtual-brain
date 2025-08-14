@@ -16,6 +16,12 @@ class ProviderType(str, Enum):
     BEDROCK_ANTHROPIC = "bedrock"
 
 
+class SLATier(str, Enum):
+    STANDARD = "standard"
+    PREMIUM = "premium"
+    ENTERPRISE = "enterprise"
+
+
 class GenerateRequest(BaseModel):
     """Unified generation request schema"""
     messages: List[Dict[str, str]]
