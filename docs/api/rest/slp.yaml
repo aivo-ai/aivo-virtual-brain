@@ -1,0 +1,919 @@
+# AIVO SLP Service API Documentation
+# S2-11 Implementation - RESTful API Reference
+
+openapi: 3.0.3
+info:
+  title: AIVO Speech & Language Pathology (SLP) Service API
+  description: |
+    Comprehensive SLP service providing screening assessments, therapy planning, 
+    exercise generation, and session management with voice integration capabilities.
+
+    ## Workflow Overview
+
+    1. **Screening Assessment** - Evaluate speech and language capabilities
+    2. **Therapy Planning** - Generate individualized treatment plans
+    3. **Exercise Generation** - Create adaptive therapy exercises
+    4. **Session Management** - Track progress and outcomes
+
+    ## Features
+
+    - AI-powered content generation via inference gateway
+    - Voice analysis integration (ASR/TTS)
+    - Progress tracking and event emission
+    - Comprehensive healthcare workflow modeling
+
+  version: "1.0.0"
+  contact:
+    name: AIVO Development Team
+    email: dev@aivo.com
+  license:
+    name: Proprietary
+    url: https://aivo.com/license
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.aivo.com
+    description: Production server
+
+paths:
+  # Root Endpoints
+  /:
+    get:
+      summary: Service Information
+      description: Get basic service information and metadata
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                    example: "slp-svc"
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  version:
+                    type: string
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+
+  /health:
+    get:
+      summary: Health Check
+      description: Detailed health status of service components
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # Screening Assessment Endpoints
+  /api/v1/slp/screen:
+    post:
+      summary: Create Screening Assessment
+      description: |
+        Create and process a new screening assessment to evaluate 
+        speech and language capabilities across multiple domains.
+      tags: [Screening]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScreeningRequest"
+            example:
+              tenant_id: "550e8400-e29b-41d4-a716-446655440000"
+              patient_id: "patient_123"
+              patient_name: "John Doe"
+              patient_age: 6
+              date_of_birth: "2017-05-15"
+              assessment_type: "comprehensive"
+              assessment_data:
+                articulation_tasks:
+                  - word: "cat"
+                    phoneme: "/k/"
+                    accuracy: 0.85
+                    attempts: 3
+                language_comprehension:
+                  - instruction: "Point to the red ball"
+                    correct: true
+                    response_time: 2.1
+                voice_sample:
+                  recording_url: "https://example.com/voice/sample1.wav"
+                  duration: 15.3
+      responses:
+        "201":
+          description: Screening assessment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      summary: List Screening Assessments
+      description: Retrieve screening assessments with filtering and pagination
+      tags: [Screening]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/PatientId"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [in_progress, completed, failed]
+        - name: assessment_type
+          in: query
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: List of screening assessments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScreeningResponse"
+
+  /api/v1/slp/screen/{assessment_id}:
+    get:
+      summary: Get Screening Assessment
+      description: Retrieve a specific screening assessment by ID
+      tags: [Screening]
+      parameters:
+        - $ref: "#/components/parameters/AssessmentId"
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Screening assessment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningResponse"
+        "404":
+          description: Assessment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Therapy Planning Endpoints
+  /api/v1/slp/plan:
+    post:
+      summary: Create Therapy Plan
+      description: |
+        Generate individualized therapy plan based on completed screening results.
+        Uses AI-powered analysis to create goals, objectives, and exercise sequences.
+      tags: [Therapy Planning]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TherapyPlanRequest"
+            example:
+              tenant_id: "550e8400-e29b-41d4-a716-446655440000"
+              screening_id: "660e8400-e29b-41d4-a716-446655440001"
+              plan_name: "John's Articulation Plan"
+              priority_level: "medium"
+              sessions_per_week: 2
+              session_duration: 30
+      responses:
+        "201":
+          description: Therapy plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TherapyPlanResponse"
+        "400":
+          description: Screening not completed or invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      summary: List Therapy Plans
+      description: Retrieve therapy plans with filtering and pagination
+      tags: [Therapy Planning]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/PatientId"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, paused, completed, cancelled]
+        - name: priority_level
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, urgent]
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: List of therapy plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TherapyPlanResponse"
+
+  /api/v1/slp/plan/{plan_id}:
+    get:
+      summary: Get Therapy Plan
+      description: Retrieve a specific therapy plan by ID
+      tags: [Therapy Planning]
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Therapy plan details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TherapyPlanResponse"
+        "404":
+          description: Plan not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Exercise Generation Endpoints
+  /api/v1/slp/exercise/next:
+    post:
+      summary: Generate Next Exercise
+      description: |
+        Generate next exercise in therapy sequence using AI-powered content generation.
+        Adapts difficulty and content based on patient progress and preferences.
+      tags: [Exercises]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseRequest"
+            example:
+              tenant_id: "550e8400-e29b-41d4-a716-446655440000"
+              therapy_plan_id: "770e8400-e29b-41d4-a716-446655440002"
+              exercise_type: "articulation_drill"
+              difficulty_preference: "adaptive"
+      responses:
+        "201":
+          description: Exercise generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+        "400":
+          description: Invalid therapy plan or request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/slp/exercise/{exercise_id}:
+    get:
+      summary: Get Exercise
+      description: Retrieve a specific exercise by ID
+      tags: [Exercises]
+      parameters:
+        - $ref: "#/components/parameters/ExerciseId"
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Exercise details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+        "404":
+          description: Exercise not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Session Management Endpoints
+  /api/v1/slp/session:
+    post:
+      summary: Create Session
+      description: Create a new exercise session for a therapy plan
+      tags: [Sessions]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: therapy_plan_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: session_type
+          in: query
+          schema:
+            type: string
+            default: "regular"
+      responses:
+        "201":
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+
+  /api/v1/slp/session/submit:
+    post:
+      summary: Submit Session Results
+      description: |
+        Submit session results and update progress.
+        Processes performance data and generates analytics.
+      tags: [Sessions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionSubmitRequest"
+            example:
+              tenant_id: "550e8400-e29b-41d4-a716-446655440000"
+              session_id: "880e8400-e29b-41d4-a716-446655440003"
+              exercise_results:
+                - exercise_id: "990e8400-e29b-41d4-a716-446655440004"
+                  completed: true
+                  accuracy_score: 0.85
+                  time_spent: 5
+                  attempts: 3
+              actual_duration: 28
+              session_notes: "Good progress on articulation"
+              audio_recordings: ["recording1.wav"]
+      responses:
+        "200":
+          description: Session results submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: Invalid session or already completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/slp/session/{session_id}:
+    get:
+      summary: Get Session
+      description: Retrieve a specific session by ID
+      tags: [Sessions]
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Progress Tracking Endpoints
+  /api/v1/slp/progress/{patient_id}:
+    get:
+      summary: Get Progress Events
+      description: Retrieve progress events and milestones for a patient
+      tags: [Progress]
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/TenantId"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        "200":
+          description: List of progress events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProgressEventResponse"
+
+components:
+  parameters:
+    TenantId:
+      name: tenant_id
+      in: query
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Tenant identifier
+
+    PatientId:
+      name: patient_id
+      in: query
+      schema:
+        type: string
+      description: Patient identifier
+
+    AssessmentId:
+      name: assessment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Screening assessment identifier
+
+    PlanId:
+      name: plan_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Therapy plan identifier
+
+    ExerciseId:
+      name: exercise_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Exercise identifier
+
+    SessionId:
+      name: session_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Session identifier
+
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: Page number for pagination
+
+    PerPage:
+      name: per_page
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: Items per page
+
+  schemas:
+    # Request Schemas
+    ScreeningRequest:
+      type: object
+      required:
+        - tenant_id
+        - patient_id
+        - patient_name
+        - patient_age
+        - assessment_type
+        - assessment_data
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        patient_id:
+          type: string
+        patient_name:
+          type: string
+        patient_age:
+          type: integer
+          minimum: 1
+          maximum: 120
+        date_of_birth:
+          type: string
+          format: date
+        assessment_type:
+          type: string
+          enum: [comprehensive, targeted, brief]
+        assessment_data:
+          type: object
+          description: Domain-specific assessment data
+
+    TherapyPlanRequest:
+      type: object
+      required:
+        - tenant_id
+        - screening_id
+        - plan_name
+        - sessions_per_week
+        - session_duration
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        screening_id:
+          type: string
+          format: uuid
+        plan_name:
+          type: string
+        priority_level:
+          type: string
+          enum: [low, medium, high, urgent]
+        sessions_per_week:
+          type: integer
+          minimum: 1
+          maximum: 7
+        session_duration:
+          type: integer
+          minimum: 15
+          maximum: 120
+          description: Session duration in minutes
+
+    ExerciseRequest:
+      type: object
+      required:
+        - tenant_id
+        - therapy_plan_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        therapy_plan_id:
+          type: string
+          format: uuid
+        exercise_type:
+          type: string
+        difficulty_preference:
+          type: string
+          enum: [easy, adaptive, challenging]
+
+    SessionSubmitRequest:
+      type: object
+      required:
+        - tenant_id
+        - session_id
+        - exercise_results
+        - actual_duration
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        exercise_results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExerciseResult"
+        actual_duration:
+          type: integer
+          description: Actual session duration in minutes
+        session_notes:
+          type: string
+        audio_recordings:
+          type: array
+          items:
+            type: string
+            description: Audio file references
+
+    # Response Schemas
+    ScreeningResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        patient_id:
+          type: string
+        patient_name:
+          type: string
+        patient_age:
+          type: integer
+        date_of_birth:
+          type: string
+          format: date
+        assessment_type:
+          type: string
+        assessment_data:
+          type: object
+        status:
+          type: string
+          enum: [in_progress, completed, failed]
+        scores:
+          type: object
+          description: Domain-specific scores
+        risk_factors:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        overall_score:
+          type: number
+          format: float
+        priority_areas:
+          type: array
+          items:
+            type: string
+        therapy_recommended:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    TherapyPlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        screening_id:
+          type: string
+          format: uuid
+        patient_id:
+          type: string
+        plan_name:
+          type: string
+        priority_level:
+          type: string
+        goals:
+          type: array
+          items:
+            type: object
+        objectives:
+          type: array
+          items:
+            type: object
+        exercise_sequence:
+          type: array
+          items:
+            type: string
+        sessions_per_week:
+          type: integer
+        session_duration:
+          type: integer
+        estimated_duration_weeks:
+          type: integer
+        progress_data:
+          type: object
+        current_phase:
+          type: string
+        status:
+          type: string
+          enum: [active, paused, completed, cancelled]
+        started_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    ExerciseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        therapy_plan_id:
+          type: string
+          format: uuid
+        patient_id:
+          type: string
+        exercise_name:
+          type: string
+        exercise_type:
+          type: string
+        difficulty_level:
+          type: string
+        estimated_duration:
+          type: integer
+          description: Estimated duration in minutes
+        exercise_content:
+          type: object
+          description: Exercise-specific content and instructions
+        voice_config:
+          type: object
+          description: Voice integration configuration
+        created_at:
+          type: string
+          format: date-time
+
+    SessionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        therapy_plan_id:
+          type: string
+          format: uuid
+        patient_id:
+          type: string
+        session_number:
+          type: integer
+        session_type:
+          type: string
+        planned_duration:
+          type: integer
+        actual_duration:
+          type: integer
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+        session_notes:
+          type: string
+        exercises_completed:
+          type: integer
+        overall_score:
+          type: number
+          format: float
+        engagement_score:
+          type: number
+          format: float
+        accuracy_rate:
+          type: number
+          format: float
+        completion_rate:
+          type: number
+          format: float
+        audio_recordings:
+          type: array
+          items:
+            type: string
+        voice_analysis:
+          type: object
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    ProgressEventResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        patient_id:
+          type: string
+        event_type:
+          type: string
+        source:
+          type: string
+        source_id:
+          type: string
+          format: uuid
+        event_data:
+          type: object
+        triggered_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # Supporting Schemas
+    ExerciseResult:
+      type: object
+      required:
+        - exercise_id
+        - completed
+      properties:
+        exercise_id:
+          type: string
+          format: uuid
+        completed:
+          type: boolean
+        accuracy_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        time_spent:
+          type: integer
+          description: Time spent in minutes
+        attempts:
+          type: integer
+          minimum: 1
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        service:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        components:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [healthy, unhealthy]
+            slp_engine:
+              type: string
+              enum: [healthy, unhealthy, not_initialized]
+        uptime_seconds:
+          type: number
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          description: Additional error details
+        request_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+
+tags:
+  - name: Screening
+    description: Speech and language screening assessments
+  - name: Therapy Planning
+    description: Individualized therapy plan generation
+  - name: Exercises
+    description: AI-powered exercise generation
+  - name: Sessions
+    description: Session management and progress tracking
+  - name: Progress
+    description: Progress events and milestone tracking

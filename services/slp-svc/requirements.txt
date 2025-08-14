@@ -1,0 +1,40 @@
+# AIVO SLP Service Dependencies
+# S2-11 Implementation
+
+# Core FastAPI and web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Database and ORM
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# HTTP client for inference gateway
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Audio processing and voice analysis
+librosa==0.10.1
+soundfile==0.12.1
+numpy==1.24.4
+
+# Data processing and validation
+python-multipart==0.0.6
+python-dateutil==2.8.2
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+httpx==0.25.2
+
+# Development
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Logging and monitoring
+structlog==23.2.0
