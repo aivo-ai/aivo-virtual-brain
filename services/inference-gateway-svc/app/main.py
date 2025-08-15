@@ -14,13 +14,13 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.httpx import HTTPXInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.resources import Resource
+# from opentelemetry import trace
+# from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+# from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+# from opentelemetry.instrumentation.httpx import HTTPXInstrumentor
+# from opentelemetry.sdk.trace import TracerProvider
+# from opentelemetry.sdk.trace.export import BatchSpanProcessor
+# from opentelemetry.sdk.resources import Resource
 
 from .providers.base import ProviderType
 from .providers.openai import OpenAIProvider
@@ -83,28 +83,40 @@ async def lifespan(app: FastAPI):
 
 
 async def initialize_telemetry():
-    """Initialize OpenTelemetry tracing"""
+    """Initialize OpenTelemetry tracing - temporarily disabled"""
     try:
-        # Configure resource
-        resource = Resource.create({
-            "service.name": "aivo-inference-gateway",
-            "service.version": "1.0.0",
-            "deployment.environment": os.getenv("ENVIRONMENT", "development")
-        })
+        logger.info("OpenTelemetry temporarily disabled for development")
+        # Commented out to avoid import issues during startup
+        # resource = Resource.create({
+        #     "service.name": "aivo-inference-gateway", 
+        #     "service.version": "1.0.0",
+        #     "deployment.environment": os.getenv("ENVIRONMENT", "development")
+        # })
         
-        # Configure tracer provider
-        tracer_provider = TracerProvider(resource=resource)
-        trace.set_tracer_provider(tracer_provider)
+        # tracer_provider = TracerProvider(resource=resource)
+        # trace.set_tracer_provider(tracer_provider)
         
-        # Configure OTLP exporter if endpoint is provided
-        otlp_endpoint = os.getenv("OTLP_ENDPOINT")
-        if otlp_endpoint:
-            otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
-            span_processor = BatchSpanProcessor(otlp_exporter)
-            tracer_provider.add_span_processor(span_processor)
-            logger.info(f"Configured OTLP exporter: {otlp_endpoint}")
+        # otlp_endpoint = os.getenv("OTLP_ENDPOINT")
+        # if otlp_endpoint:
+        #     otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
+        #     span_processor = BatchSpanProcessor(otlp_exporter)
+        #     tracer_provider.add_span_processor(span_processor)
+        #     logger.info(f"Configured OTLP exporter: {otlp_endpoint}")
         
-        logger.info("OpenTelemetry initialized")
+        logger.info("OpenTelemetry setup skipped")
+    
+    except Exception as e:
+        logger.warning(f"Failed to initialize OpenTelemetry: {e}")
+        
+        # Configure OTLP exporter if endpoint is provided  
+        # otlp_endpoint = os.getenv("OTLP_ENDPOINT")
+        # if otlp_endpoint:
+        #     otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
+        #     span_processor = BatchSpanProcessor(otlp_exporter)
+        #     tracer_provider.add_span_processor(span_processor)
+        #     logger.info(f"Configured OTLP exporter: {otlp_endpoint}")
+        
+        # logger.info("OpenTelemetry initialized")
     
     except Exception as e:
         logger.warning(f"Failed to initialize OpenTelemetry: {e}")
@@ -420,9 +432,9 @@ async def list_providers():
 
 # Configure telemetry instrumentation
 if __name__ == "__main__":
-    # Auto-instrument FastAPI and httpx
-    FastAPIInstrumentor.instrument_app(app)
-    HTTPXInstrumentor().instrument()
+    # Auto-instrument FastAPI and httpx - temporarily disabled
+    # FastAPIInstrumentor.instrument_app(app)
+    # HTTPXInstrumentor().instrument()
     
     import uvicorn
     uvicorn.run(

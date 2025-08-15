@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from opensearchpy.exceptions import NotFoundError, RequestError
 import httpx
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
 
