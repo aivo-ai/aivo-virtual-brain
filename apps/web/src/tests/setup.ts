@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { afterEach, beforeAll } from 'vitest'
+import { afterEach, beforeAll, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 // Runs a cleanup after each test case (e.g. clearing jsdom)
@@ -23,14 +23,19 @@ beforeAll(() => {
     }),
   })
 
-  // Mock localStorage
+  // Mock localStorage with spyable methods
+  const localStorageMock = {
+    getItem: vi.fn(() => null),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  }
+
   Object.defineProperty(window, 'localStorage', {
-    value: {
-      getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {},
-      clear: () => {},
-    },
+    value: localStorageMock,
     writable: true,
   })
+
+  // Expose the mock so tests can access it
+  ;(globalThis as any).localStorageMock = localStorageMock
 })

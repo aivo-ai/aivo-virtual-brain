@@ -1,0 +1,284 @@
+/* Grade Band Theming Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* OpenDyslexic font - loaded conditionally based on user preferences */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/gh/antijingoist/opendyslexic@master/otf/OpenDyslexic-Regular.otf')
+    format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/gh/antijingoist/opendyslexic@master/otf/OpenDyslexic-Bold.otf')
+    format('opentype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: var(--font-body, 'Inter', system-ui, sans-serif);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  body {
+    @apply antialiased;
+    font-family: inherit;
+    transition: font-family 200ms ease-out;
+  }
+
+  /* Default font family override for dyslexia-friendly option */
+  .font-dyslexic,
+  .font-dyslexic * {
+    font-family: var(
+      --font-dyslexic,
+      'OpenDyslexic',
+      'Noto Sans',
+      system-ui,
+      sans-serif
+    ) !important;
+  }
+
+  /* Focus styles for accessibility - enhanced for grade bands */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-gb-primary-600;
+  }
+
+  /* Skip link for screen readers */
+  .skip-link {
+    @apply absolute top-0 left-0 z-50 px-gb-lg py-gb-sm text-white bg-gb-primary-600 transform -translate-y-full focus:translate-y-0 transition-transform duration-gb-normal;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --color-primary-500: #0000ff;
+      --color-primary-600: #0000cc;
+      --color-primary-700: #000099;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Grade band button variants */
+  .btn-gb {
+    @apply inline-flex items-center justify-center font-medium transition-all duration-gb-normal ease-gb-ease-out;
+    @apply rounded-gb-md px-gb-lg py-gb-sm text-gb-base;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gb-primary-600;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-gb-primary {
+    @apply bg-gb-primary-600 text-white hover:bg-gb-primary-700 active:bg-gb-primary-800;
+    @apply hover:scale-gb-sm active:scale-95;
+  }
+
+  .btn-gb-secondary {
+    @apply bg-gb-secondary-100 text-gb-secondary-900 hover:bg-gb-secondary-200 active:bg-gb-secondary-300;
+    @apply hover:scale-gb-sm active:scale-95;
+  }
+
+  .btn-gb-accent {
+    @apply bg-gb-accent-500 text-white hover:bg-gb-accent-600 active:bg-gb-accent-700;
+    @apply hover:scale-gb-sm active:scale-95;
+  }
+
+  /* Grade band card variants */
+  .card-gb {
+    @apply bg-white rounded-gb-lg border border-gb-neutral-200 shadow-sm;
+    @apply transition-all duration-gb-normal ease-gb-ease-out;
+    @apply hover:shadow-md hover:border-gb-neutral-300;
+  }
+
+  .card-gb-interactive {
+    @apply card-gb cursor-pointer;
+    @apply hover:scale-gb-sm focus-within:scale-gb-sm;
+    @apply focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-gb-primary-600;
+  }
+
+  /* Grade band form inputs */
+  .input-gb {
+    @apply w-full rounded-gb-md border border-gb-neutral-300 px-gb-md py-gb-sm text-gb-base;
+    @apply transition-all duration-gb-fast ease-gb-ease-out;
+    @apply focus:border-gb-primary-500 focus:ring-2 focus:ring-gb-primary-500 focus:ring-opacity-20;
+    @apply placeholder-gb-neutral-400;
+  }
+
+  /* Grade band navigation */
+  .nav-gb-item {
+    @apply flex items-center gap-gb-sm px-gb-md py-gb-sm text-gb-base;
+    @apply rounded-gb-md transition-all duration-gb-fast ease-gb-ease-out;
+    @apply hover:bg-gb-neutral-100 focus:bg-gb-neutral-100;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gb-primary-600;
+  }
+
+  .nav-gb-item-active {
+    @apply bg-gb-primary-50 text-gb-primary-700 border-l-4 border-gb-primary-600;
+  }
+
+  /* Grade band typography */
+  .heading-gb-1 {
+    @apply font-display font-bold text-gb-4xl text-gb-neutral-900 tracking-tight;
+  }
+
+  .heading-gb-2 {
+    @apply font-display font-bold text-gb-3xl text-gb-neutral-900 tracking-tight;
+  }
+
+  .heading-gb-3 {
+    @apply font-display font-semibold text-gb-2xl text-gb-neutral-900;
+  }
+
+  .heading-gb-4 {
+    @apply font-display font-semibold text-gb-xl text-gb-neutral-900;
+  }
+
+  .body-gb {
+    @apply font-body text-gb-base text-gb-neutral-700 leading-relaxed;
+  }
+
+  .caption-gb {
+    @apply font-body text-gb-sm text-gb-neutral-500;
+  }
+
+  /* Grade band spacing utilities */
+  .space-gb-y > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--spacing-md);
+  }
+
+  .space-gb-y-sm > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--spacing-sm);
+  }
+
+  .space-gb-y-lg > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--spacing-lg);
+  }
+}
+
+@layer utilities {
+  /* Grade band responsive text utilities */
+  .text-responsive-gb {
+    @apply text-gb-sm sm:text-gb-base lg:text-gb-lg;
+  }
+
+  .text-responsive-heading-gb {
+    @apply text-gb-xl sm:text-gb-2xl lg:text-gb-3xl xl:text-gb-4xl;
+  }
+
+  /* Animation utilities */
+  .animate-gb-bounce {
+    animation: gb-bounce 1s infinite;
+  }
+
+  .animate-gb-pulse {
+    animation: gb-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-gb-fade-in {
+    animation: gb-fade-in var(--duration-normal) ease-out;
+  }
+
+  .animate-gb-slide-up {
+    animation: gb-slide-up var(--duration-normal) ease-out;
+  }
+
+  /* Grade band specific utilities */
+  .grade-band-k2 {
+    --grade-band: 'k-2';
+  }
+
+  .grade-band-35 {
+    --grade-band: '3-5';
+  }
+
+  .grade-band-68 {
+    --grade-band: '6-8';
+  }
+
+  .grade-band-912 {
+    --grade-band: '9-12';
+  }
+}
+
+/* Grade band animations */
+@keyframes gb-bounce {
+  0%,
+  100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes gb-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes gb-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gb-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode support for grade bands */
+@media (prefers-color-scheme: dark) {
+  [data-grade-band] {
+    --color-neutral-50: #0a0a0a;
+    --color-neutral-100: #171717;
+    --color-neutral-200: #262626;
+    --color-neutral-300: #404040;
+    --color-neutral-400: #525252;
+    --color-neutral-500: #737373;
+    --color-neutral-600: #a3a3a3;
+    --color-neutral-700: #d4d4d4;
+    --color-neutral-800: #e5e5e5;
+    --color-neutral-900: #f5f5f5;
+  }
+}
+
+/* Print styles */
+@media print {
+  .grade-band-theme {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
