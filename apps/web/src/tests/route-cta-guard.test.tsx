@@ -2,13 +2,42 @@ import { describe, test, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import { validateAllCTAs } from '@/utils/cta-guard'
 import { getAllRoutes } from '@/types/routes'
-import App from '@/App'
+import App from '@/app/App'
+
+// Mock analytics
+vi.mock('@/utils/analytics', () => ({
+  analytics: {
+    initialize: vi.fn(),
+    trackPageView: vi.fn(),
+    trackNavigation: vi.fn(),
+    track: vi.fn(),
+    trackInteraction: vi.fn(),
+    trackRouteGuard: vi.fn(),
+    trackAuth: vi.fn(),
+    updateContext: vi.fn(),
+    getSessionInfo: vi.fn(),
+  },
+  useAnalytics: () => ({
+    trackPageView: vi.fn(),
+    trackNavigation: vi.fn(),
+    track: vi.fn(),
+    trackInteraction: vi.fn(),
+    trackRouteGuard: vi.fn(),
+    trackAuth: vi.fn(),
+    updateContext: vi.fn(),
+    getSessionInfo: vi.fn(),
+  }),
+  trackLinkClick: vi.fn(),
+  trackButtonClick: vi.fn(),
+  trackFormSubmission: vi.fn(),
+}))
 
 // Mock i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
     i18n: {
+      language: 'en',
       changeLanguage: () => new Promise(() => {}),
     },
   }),
@@ -22,10 +51,12 @@ describe('Route CTA Guard', () => {
   test('should validate that all routes in manifest are strings', () => {
     const routes = getAllRoutes()
 
-    expect(routes).toHaveLength(3)
+    expect(routes.length).toBeGreaterThan(3) // We now have many more routes
     expect(routes).toContain('/')
     expect(routes).toContain('/health')
     expect(routes).toContain('/_dev/mocks')
+    expect(routes).toContain('/login')
+    expect(routes).toContain('/dashboard')
 
     routes.forEach(route => {
       expect(typeof route).toBe('string')
