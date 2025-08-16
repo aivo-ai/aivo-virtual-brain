@@ -310,7 +310,7 @@ class PaymentClient {
   }
 
   getTrialDuration(): number {
-    return 14 // 14-day trial
+    return 30 // 30-day trial
   }
 }
 

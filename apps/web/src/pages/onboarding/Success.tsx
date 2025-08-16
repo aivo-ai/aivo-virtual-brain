@@ -247,7 +247,7 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({
               <p>
                 <span className="text-gray-600 dark:text-gray-400">Plan:</span>{' '}
                 {plan?.planType === 'trial'
-                  ? '14-Day Free Trial'
+                  ? '30-Day Free Trial'
                   : `${plan?.planType} Plan`}
               </p>
               <p>

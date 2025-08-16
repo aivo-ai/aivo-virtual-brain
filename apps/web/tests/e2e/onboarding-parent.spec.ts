@@ -221,7 +221,7 @@ test.describe('Parent Onboarding Wizard', () => {
     await expect(page.locator('[data-testid="plan-trial"]')).toHaveClass(
       /selected|active/
     )
-    await expect(page.locator('text=14-Day Free Trial')).toBeVisible()
+    await expect(page.locator('text=30-Day Free Trial')).toBeVisible()
     await expect(page.locator('text=Free')).toBeVisible()
   })
 })

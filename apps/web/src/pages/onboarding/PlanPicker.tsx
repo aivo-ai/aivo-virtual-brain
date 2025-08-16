@@ -39,11 +39,11 @@ export const PlanPickerStep: React.FC<PlanPickerStepProps> = ({
   const planOptions: PlanOption[] = [
     {
       type: 'trial',
-      name: '14-Day Free Trial',
+      name: '30-Day Free Trial',
       description: 'Full access to all features',
       monthlyPrice: 0,
       discountPercent: 0,
-      trialDays: 14,
+      trialDays: 30,
     },
     {
       type: 'monthly',
@@ -383,7 +383,7 @@ export const PlanPickerStep: React.FC<PlanPickerStepProps> = ({
                 Start with a Free Trial
               </h3>
               <p className="text-blue-800 dark:text-blue-200 text-sm">
-                Try AIVO risk-free for 14 days with full access to all features.
+                Try AIVO risk-free for 30 days with full access to all features.
                 No credit card required during trial. Cancel anytime.
               </p>
             </div>
