@@ -136,7 +136,7 @@ export function Signatures({
       let signatureData: string
 
       switch (signatureType) {
-        case 'draw':
+        case 'draw': {
           const canvasData = getCanvasSignature()
           if (!canvasData) {
             setSignatureError('Please draw your signature')
@@ -144,6 +144,7 @@ export function Signatures({
           }
           signatureData = canvasData
           break
+        }
 
         case 'type':
           if (!typedSignature.trim()) {
@@ -154,7 +155,7 @@ export function Signatures({
           signatureData = generateTypedSignature(typedSignature)
           break
 
-        case 'upload':
+        case 'upload': {
           const file = fileInputRef.current?.files?.[0]
           if (!file) {
             setSignatureError('Please select a signature file')
@@ -162,6 +163,7 @@ export function Signatures({
           }
           signatureData = await fileToBase64(file)
           break
+        }
 
         default:
           setSignatureError('Invalid signature type')

@@ -24,7 +24,7 @@ export interface IEP {
   isCurrent: boolean
   effectiveDate?: string
   expirationDate?: string
-  crdtState: Record<string, any>
+  crdtState: Record<string, unknown>
   signatureRequiredRoles: string[]
   createdBy: string
   createdAt: string
@@ -44,7 +44,7 @@ export interface IEPSection {
   operationCounter: number
   isRequired: boolean
   isLocked: boolean
-  validationRules: Record<string, any>
+  validationRules: Record<string, unknown>
   createdAt: string
   updatedAt: string
 }
@@ -61,7 +61,7 @@ export interface ESignature {
   signatureData?: string
   signatureIpAddress?: string
   signatureUserAgent?: string
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 }
 
 export interface EvidenceAttachment {
@@ -78,6 +78,24 @@ export interface EvidenceAttachment {
   uploadedBy: string
   uploadedAt: string
   signedUrl?: string
+}
+
+export interface IEPEvidence {
+  id: string
+  filename: string
+  contentType: string
+  fileSize: number
+  evidenceType: string
+  description?: string
+  uploadedAt: string
+  uploadedBy: string
+  url?: string
+}
+
+export interface S3UploadResponse {
+  uploadUrl: string
+  fileKey: string
+  fields: Record<string, string>
 }
 
 export enum IEPStatus {
@@ -177,7 +195,7 @@ export interface IEPUpdateEvent {
   userId: string
   timestamp: string
   crdtOperations?: CRDTOperation[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 // GraphQL client class
@@ -191,7 +209,7 @@ class IEPGraphQLClient {
 
   private async request<T>(
     query: string,
-    variables?: Record<string, any>
+    variables?: Record<string, unknown>
   ): Promise<T> {
     const response = await fetch(this.baseURL, {
       method: 'POST',
@@ -212,7 +230,7 @@ class IEPGraphQLClient {
     const result = await response.json()
     if (result.errors) {
       throw new Error(
-        `GraphQL errors: ${result.errors.map((e: any) => e.message).join(', ')}`
+        `GraphQL errors: ${result.errors.map((e: { message: string }) => e.message).join(', ')}`
       )
     }
 
@@ -336,9 +354,7 @@ class IEPGraphQLClient {
     return this.request(query, { input })
   }
 
-  async attachEvidence(
-    input: EvidenceAttachmentInput
-  ): Promise<{
+  async attachEvidence(input: EvidenceAttachmentInput): Promise<{
     attachEvidence: {
       attachment: EvidenceAttachment
       signedUrl: string
@@ -367,9 +383,7 @@ class IEPGraphQLClient {
     return this.request(query, { input })
   }
 
-  async requestSignature(
-    input: SignatureRequestInput
-  ): Promise<{
+  async requestSignature(input: SignatureRequestInput): Promise<{
     requestSignature: { signature: ESignature; success: boolean }
   }> {
     const query = `
@@ -407,6 +421,73 @@ class IEPGraphQLClient {
       }
     `
     return this.request(query, { iepId, status })
+  }
+
+  async getUploadUrl(
+    filename: string,
+    contentType: string
+  ): Promise<S3UploadResponse> {
+    const query = `
+      mutation GetUploadUrl($filename: String!, $contentType: String!) {
+        getUploadUrl(filename: $filename, contentType: $contentType) {
+          uploadUrl
+          fileKey
+          fields
+        }
+      }
+    `
+    const result = await this.request<{ getUploadUrl: S3UploadResponse }>(
+      query,
+      {
+        filename,
+        contentType,
+      }
+    )
+    return result.getUploadUrl
+  }
+
+  async uploadToS3(
+    uploadUrl: string,
+    fields: Record<string, string>,
+    file: File
+  ): Promise<void> {
+    const formData = new FormData()
+    Object.entries(fields).forEach(([key, value]) => {
+      formData.append(key, value)
+    })
+    formData.append('file', file)
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`)
+    }
+  }
+
+  async addEvidence(
+    iepId: string,
+    evidence: Omit<EvidenceAttachmentInput, 'iepId'>
+  ): Promise<EvidenceAttachment> {
+    const input = { ...evidence, iepId }
+    const result = await this.attachEvidence(input)
+    return result.attachEvidence.attachment
+  }
+
+  async removeEvidence(
+    iepId: string,
+    evidenceId: string
+  ): Promise<{ success: boolean }> {
+    const query = `
+      mutation RemoveEvidence($iepId: String!, $evidenceId: String!) {
+        removeEvidence(iepId: $iepId, evidenceId: $evidenceId) {
+          success
+        }
+      }
+    `
+    return this.request(query, { iepId, evidenceId })
   }
 
   subscribeToIEPUpdates(
@@ -595,11 +676,87 @@ export function useIEPMutations() {
     }
   }, [])
 
+  const getUploadUrl = useCallback(
+    async (filename: string, contentType: string) => {
+      try {
+        setLoading(true)
+        setError(null)
+        return await iepClient.getUploadUrl(filename, contentType)
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to get upload URL'
+        setError(errorMessage)
+        throw new Error(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
+
+  const uploadToS3 = useCallback(
+    async (uploadUrl: string, fields: Record<string, string>, file: File) => {
+      try {
+        setLoading(true)
+        setError(null)
+        await iepClient.uploadToS3(uploadUrl, fields, file)
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to upload file'
+        setError(errorMessage)
+        throw new Error(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
+
+  const addEvidence = useCallback(
+    async (iepId: string, evidence: Omit<EvidenceAttachmentInput, 'iepId'>) => {
+      try {
+        setLoading(true)
+        setError(null)
+        return await iepClient.addEvidence(iepId, evidence)
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to add evidence'
+        setError(errorMessage)
+        throw new Error(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
+
+  const removeEvidence = useCallback(
+    async (iepId: string, evidenceId: string) => {
+      try {
+        setLoading(true)
+        setError(null)
+        return await iepClient.removeEvidence(iepId, evidenceId)
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to remove evidence'
+        setError(errorMessage)
+        throw new Error(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
+
   return {
     upsertSection,
     attachEvidence,
     requestSignature,
     setStatus,
+    getUploadUrl,
+    uploadToS3,
+    addEvidence,
+    removeEvidence,
     loading,
     error,
   }

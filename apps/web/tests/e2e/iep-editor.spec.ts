@@ -3,7 +3,8 @@
  * Comprehensive testing for collaborative IEP editor with GraphQL, CRDT, and approvals
  */
 
-import { test, expect, Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { Buffer } from 'buffer'
 
 test.describe('IEP Editor - Collaborative Features', () => {
   test.beforeEach(async ({ page }) => {
