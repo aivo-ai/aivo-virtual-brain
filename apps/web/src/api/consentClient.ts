@@ -1,6 +1,7 @@
 import { ConsentSettings } from '../hooks/useOnboarding'
 
-const API_BASE = process.env.VITE_API_BASE_URL || '/api'
+// Base API URL
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export interface ConsentRecord {
   id: string

@@ -76,8 +76,8 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({
             Setting Up Your AIVO Experience
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-8">
-            We're personalizing everything just for you. This will only take a
-            moment...
+            We&apos;re personalizing everything just for you. This will only
+            take a moment...
           </p>
 
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4">
@@ -314,7 +314,7 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({
       <FadeInWhenVisible delay={0.5}>
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-6 mb-8">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            🚀 What's Next?
+            🚀 What&apos;s Next?
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="flex items-start space-x-3">

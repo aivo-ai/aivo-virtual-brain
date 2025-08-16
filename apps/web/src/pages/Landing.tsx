@@ -131,7 +131,7 @@ export default function Landing() {
 
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
                   No credit card required. Keep every IEP, lesson, and progress
-                  record — even if you don't upgrade.
+                  record — even if you don&apos;t upgrade.
                 </p>
 
                 <motion.button
@@ -524,7 +524,7 @@ export default function Landing() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.8, type: 'spring' }}
                 >
-                  "
+                  &ldquo;
                 </motion.div>
 
                 <blockquote className="text-2xl md:text-3xl text-gray-600 dark:text-gray-300 italic mb-8 relative z-10 leading-relaxed">

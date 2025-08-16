@@ -1,3 +1,4 @@
+import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/app/providers/AuthProvider'
@@ -7,7 +8,7 @@ import { analytics, trackLinkClick } from '@/utils/analytics'
 interface NavItem {
   label: string
   path: string
-  icon: JSX.Element
+  icon: React.ReactElement
   roles: UserRole[]
   children?: NavItem[]
 }

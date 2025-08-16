@@ -1,4 +1,4 @@
-import { Component, ReactNode, ErrorInfo } from 'react'
+import React, { Component, ReactNode, ErrorInfo } from 'react'
 import { analytics } from '@/utils/analytics'
 
 interface ErrorBoundaryState {
@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<
     this.props.onError?.(error, errorInfo)
 
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.error('ErrorBoundary caught an error:', error, errorInfo)
     }
 
@@ -108,12 +108,12 @@ export class ErrorBoundary extends Component<
 
             <div className="mb-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                We're sorry, but something unexpected happened. Our team has
-                been notified.
+                We&apos;re sorry, but something unexpected happened. Our team
+                has been notified.
               </p>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded">
                 <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
                   Error Details (Development)
@@ -175,7 +175,7 @@ export function useErrorHandler() {
     })
 
     // Log in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.error(`Error in ${context || 'component'}:`, error)
     }
 

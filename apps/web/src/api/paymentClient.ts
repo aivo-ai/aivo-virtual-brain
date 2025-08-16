@@ -1,6 +1,7 @@
 import { PlanSelection } from '../hooks/useOnboarding'
 
-const API_BASE = process.env.VITE_API_BASE_URL || '/api'
+// Base API URL
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export interface PaymentPlan {
   id: string
@@ -228,6 +229,7 @@ class PaymentClient {
 
   async addPaymentMethod(
     userId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     paymentMethodData: any
   ): Promise<PaymentMethod> {
     const response = await fetch(`${API_BASE}/payment-svc/payment-methods`, {
@@ -294,6 +296,7 @@ class PaymentClient {
     // Sibling discount: 10% off for 2+ learners
     if (siblingDiscount && learnerCount >= 2) {
       finalPrice *= 0.9
+      // Update discount tracking (discountPercent used for display)
       discountPercent = Math.max(discountPercent, 10)
     }
 

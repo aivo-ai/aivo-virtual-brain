@@ -36,7 +36,7 @@ export interface UserContext {
 class Analytics {
   private context: UserContext = {}
   private isEnabled = true
-  private isDebug = process.env.NODE_ENV === 'development'
+  private isDebug = import.meta.env.DEV
 
   /**
    * Initialize analytics with user context

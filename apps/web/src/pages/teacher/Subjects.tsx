@@ -6,7 +6,7 @@ import {
   Learner,
   SubjectAssignment,
 } from '../../api/teacherClient'
-import { SubjectCard } from '../../components/cards/SubjectCard'
+import { SubjectCard } from '../../components/cards/SubjectCard.tsx'
 
 interface SubjectFilter {
   learner: 'all' | string

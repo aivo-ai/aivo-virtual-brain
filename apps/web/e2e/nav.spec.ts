@@ -1,3 +1,4 @@
+/// <reference path="../src/types/global.d.ts" />
 import { test, expect } from '@playwright/test'
 
 test.describe('Navigation', () => {
@@ -132,7 +133,7 @@ test.describe('Navigation', () => {
         window.analyticsEvents = []
         window.analytics = {
           track: (event, properties) => {
-            window.analyticsEvents.push({ event, properties })
+            window.analyticsEvents?.push({ event, properties })
           },
         }
       })
@@ -141,7 +142,7 @@ test.describe('Navigation', () => {
 
       // Check that analytics events were tracked
       const events = await page.evaluate(() => window.analyticsEvents)
-      expect(events.length).toBeGreaterThan(0)
+      expect(events?.length || 0).toBeGreaterThan(0)
     })
   })
 

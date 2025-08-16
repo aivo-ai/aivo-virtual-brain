@@ -9,6 +9,9 @@ import type {
   RefreshTokenResponse,
 } from '@/types/sdk'
 
+// Type definitions for fetch API
+type RequestInit = globalThis.RequestInit
+
 // Auth service configuration
 const AUTH_BASE_URL =
   import.meta.env.VITE_AUTH_SERVICE_URL || 'http://localhost:8001'

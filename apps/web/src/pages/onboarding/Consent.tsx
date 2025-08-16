@@ -270,7 +270,8 @@ export const ConsentStep: React.FC<ConsentStepProps> = ({
             Privacy & Consent
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Help us understand how you'd like your child to interact with AIVO
+            Help us understand how you&apos;d like your child to interact with
+            AIVO
           </p>
         </div>
       </FadeInWhenVisible>
@@ -296,7 +297,7 @@ export const ConsentStep: React.FC<ConsentStepProps> = ({
                 Your Privacy Matters
               </h3>
               <p className="text-blue-800 dark:text-blue-200 text-sm">
-                AIVO is committed to protecting your family's privacy. Some
+                AIVO is committed to protecting your family&apos;s privacy. Some
                 permissions are required for basic functionality, while others
                 are optional but enhance the learning experience. You can change
                 these settings anytime in your account preferences.

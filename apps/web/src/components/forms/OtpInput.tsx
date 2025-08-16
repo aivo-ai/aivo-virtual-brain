@@ -1,4 +1,10 @@
-import { forwardRef, useRef, useEffect, useState, KeyboardEvent } from 'react'
+import React, {
+  forwardRef,
+  useRef,
+  useEffect,
+  useState,
+  KeyboardEvent,
+} from 'react'
 import { UseFormRegisterReturn } from 'react-hook-form'
 
 export interface OtpInputProps {
@@ -66,6 +72,7 @@ export const OtpInput = forwardRef<HTMLInputElement, OtpInputProps>(
             name: registration.name,
             value: otpString,
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
       }
 
@@ -117,6 +124,7 @@ export const OtpInput = forwardRef<HTMLInputElement, OtpInputProps>(
               name: registration.name,
               value: otpString,
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any)
         }
       } else if (e.key === 'ArrowLeft' && index > 0) {
@@ -158,6 +166,7 @@ export const OtpInput = forwardRef<HTMLInputElement, OtpInputProps>(
               name: registration.name,
               value: otpString,
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any)
         }
 

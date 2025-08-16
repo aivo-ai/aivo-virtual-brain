@@ -30,7 +30,9 @@ export interface RegisterRequest {
   acceptPrivacy: boolean
 }
 
-export interface RegisterResponse extends LoginResponse {}
+export interface RegisterResponse extends LoginResponse {
+  // Add any additional properties specific to register response
+}
 
 export interface RequestPasswordResetRequest {
   email: string

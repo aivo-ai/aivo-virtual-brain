@@ -25,6 +25,8 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.es2020,
+        React: 'readonly',
+        JSX: 'readonly',
       },
     },
     plugins: {
@@ -54,6 +56,23 @@ export default [
     settings: {
       react: {
         version: 'detect',
+      },
+    },
+  },
+  {
+    files: [
+      '**/*.config.{ts,js}',
+      '**/vite.config.ts',
+      '**/vitest.config.ts',
+      '**/playwright*.config.ts',
+      'scripts/**/*.{ts,js}',
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        __dirname: 'readonly',
+        process: 'readonly',
+        global: 'readonly',
       },
     },
   },

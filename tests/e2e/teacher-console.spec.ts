@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { test, expect, type Page } from "@playwright/test";
 
 // Test configuration

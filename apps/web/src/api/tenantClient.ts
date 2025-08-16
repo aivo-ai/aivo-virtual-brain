@@ -1,3 +1,6 @@
+// Type definitions for fetch API
+type RequestInit = globalThis.RequestInit
+
 export interface School {
   id: string
   name: string

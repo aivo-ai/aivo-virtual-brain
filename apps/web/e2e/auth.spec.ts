@@ -476,8 +476,8 @@ test.describe('Authentication Flow E2E', () => {
       await page.goto('/login')
 
       // Check for proper form labels
-      await expect(page.getByLabelText(/email/i)).toBeVisible()
-      await expect(page.getByLabelText(/password/i)).toBeVisible()
+      await expect(page.getByLabel(/email/i)).toBeVisible()
+      await expect(page.getByLabel(/password/i)).toBeVisible()
 
       // Check for proper roles
       await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
@@ -495,11 +495,11 @@ test.describe('Authentication Flow E2E', () => {
       await page.goto('/register')
 
       // Check for proper form labels
-      await expect(page.getByLabelText(/first name/i)).toBeVisible()
-      await expect(page.getByLabelText(/last name/i)).toBeVisible()
-      await expect(page.getByLabelText(/email/i)).toBeVisible()
-      await expect(page.getByLabelText(/^password/i)).toBeVisible()
-      await expect(page.getByLabelText(/confirm password/i)).toBeVisible()
+      await expect(page.getByLabel(/first name/i)).toBeVisible()
+      await expect(page.getByLabel(/last name/i)).toBeVisible()
+      await expect(page.getByLabel(/email/i)).toBeVisible()
+      await expect(page.getByLabel(/^password/i)).toBeVisible()
+      await expect(page.getByLabel(/confirm password/i)).toBeVisible()
 
       // Check required field indicators
       await expect(page.locator('text=*')).toHaveCount(6) // All required fields marked with *

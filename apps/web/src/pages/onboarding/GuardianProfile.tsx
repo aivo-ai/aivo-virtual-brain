@@ -67,7 +67,7 @@ export const GuardianProfileStep: React.FC<GuardianProfileStepProps> = ({
       newErrors.email = 'Please enter a valid email address'
     }
 
-    if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone)) {
+    if (formData.phone && !/^\+?[\d\s\-()]+$/.test(formData.phone)) {
       newErrors.phone = 'Please enter a valid phone number'
     }
 
@@ -132,7 +132,7 @@ export const GuardianProfileStep: React.FC<GuardianProfileStepProps> = ({
             Welcome to AIVO!
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Let's start by setting up your parent/guardian profile
+            Let&apos;s start by setting up your parent/guardian profile
           </p>
         </div>
       </FadeInWhenVisible>

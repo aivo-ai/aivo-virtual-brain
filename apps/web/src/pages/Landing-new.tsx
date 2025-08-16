@@ -76,7 +76,7 @@ export default function Landing() {
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               No credit card required. Keep every IEP, lesson, and progress
-              record — even if you don't upgrade.
+              record — even if you don&apos;t upgrade.
             </p>
           </div>
         </div>
@@ -197,8 +197,8 @@ export default function Landing() {
                 Adaptive AI Tutors
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                "Main Brain" coordinates subject‑specific learning from ELA to
-                SEL, Science, Math, Languages, and more
+                &ldquo;Main Brain&rdquo; coordinates subject‑specific learning
+                from ELA to SEL, Science, Math, Languages, and more
               </p>
             </div>
 
@@ -249,8 +249,8 @@ export default function Landing() {
                 Engaging Enrichment
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Games, videos, and activities tailored to each learner's pace
-                and preferences
+                Games, videos, and activities tailored to each learner&apos;s
+                pace and preferences
               </p>
             </div>
 
@@ -400,7 +400,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="relative">
             <div className="text-6xl text-primary-200 dark:text-primary-800 absolute -top-4 -left-4">
-              "
+              &ldquo;
             </div>
             <blockquote className="text-2xl text-gray-600 dark:text-gray-300 italic mb-8 relative z-10">
               I spend more time chasing signatures than helping my son read.

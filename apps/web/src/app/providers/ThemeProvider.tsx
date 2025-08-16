@@ -183,11 +183,3 @@ export const themeColors = {
     info: '#60a5fa',
   },
 } as const
-
-declare global {
-  interface Window {
-    analytics?: {
-      track: (event: string, properties?: Record<string, unknown>) => void
-    }
-  }
-}
