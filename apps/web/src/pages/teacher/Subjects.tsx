@@ -42,6 +42,7 @@ export const Subjects: React.FC = () => {
 
   useEffect(() => {
     applyFilters()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignments, filters])
 
   const loadData = async () => {

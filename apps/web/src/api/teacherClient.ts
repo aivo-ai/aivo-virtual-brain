@@ -116,16 +116,35 @@ export interface LearnerStats {
   subjectDistribution: Record<string, number>
 }
 
+export interface RecentActivity {
+  id: string
+  type:
+    | 'assignment_completed'
+    | 'approval_pending'
+    | 'parent_message'
+    | 'progress_milestone'
+  title: string
+  description: string
+  timestamp: string
+  learnerId?: string
+  learnerName?: string
+  urgent?: boolean
+}
+
 class TeacherClient {
   private baseURL: string
 
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
+    this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
   }
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: {
+      method?: string
+      body?: string
+      headers?: Record<string, string>
+    } = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`
     const token = localStorage.getItem('authToken')
@@ -136,7 +155,7 @@ class TeacherClient {
         'Content-Type': 'application/json',
         Authorization: token ? `Bearer ${token}` : '',
         'X-Context': 'teacher',
-        ...options.headers,
+        ...(options.headers || {}),
       },
     })
 
@@ -180,8 +199,8 @@ class TeacherClient {
     return this.request<LearnerStats>('/api/v1/teacher/dashboard/stats')
   }
 
-  async getRecentActivity(): Promise<any[]> {
-    return this.request<any[]>('/api/v1/teacher/dashboard/activity')
+  async getRecentActivity(): Promise<RecentActivity[]> {
+    return this.request<RecentActivity[]>('/api/v1/teacher/dashboard/activity')
   }
 
   // Learner Management
