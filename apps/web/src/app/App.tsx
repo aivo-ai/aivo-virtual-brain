@@ -24,9 +24,12 @@ import { ROUTES, canAccessRoute, isPublicRoute } from './routes'
 import { analytics } from '@/utils/analytics'
 
 // Pages (these would be created separately)
+import Landing from '@/pages/Landing'
 import HomePage from '@/pages/HomePage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
+import TwoFASetupPage from '@/pages/TwoFASetupPage'
 import DashboardPage from '@/pages/DashboardPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import HealthPage from '@/pages/HealthPage'
@@ -64,11 +67,7 @@ interface RouteGuardProps {
   redirectTo?: string
 }
 
-function RouteGuard({
-  children,
-  requiredRole,
-  redirectTo = ROUTES.LOGIN,
-}: RouteGuardProps) {
+function RouteGuard({ children, redirectTo = ROUTES.LOGIN }: RouteGuardProps) {
   const { user, isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
 
@@ -148,9 +147,13 @@ function AppShell() {
             <Suspense fallback={<PageLoading />}>
               <Routes>
                 {/* Public routes */}
-                <Route path={ROUTES.HOME} element={<HomePage />} />
+                <Route path={ROUTES.HOME} element={<Landing />} />
                 <Route path={ROUTES.LOGIN} element={<LoginPage />} />
                 <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+                <Route
+                  path={ROUTES.RESET_PASSWORD}
+                  element={<ResetPasswordPage />}
+                />
                 <Route path={ROUTES.HEALTH} element={<HealthPage />} />
                 <Route path={ROUTES.DEV_MOCKS} element={<DevMocksPage />} />
 
@@ -160,6 +163,16 @@ function AppShell() {
                   element={
                     <RouteGuard>
                       <DashboardPage />
+                    </RouteGuard>
+                  }
+                />
+
+                {/* 2FA Setup - Protected route */}
+                <Route
+                  path={ROUTES.TWO_FA_SETUP}
+                  element={
+                    <RouteGuard>
+                      <TwoFASetupPage />
                     </RouteGuard>
                   }
                 />

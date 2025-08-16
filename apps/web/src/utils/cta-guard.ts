@@ -1,4 +1,4 @@
-import { isValidRoute, type RouteManifest } from '@/types/routes'
+import { isValidRoute } from '@/types/routes'
 
 /**
  * CTA Guard - Validates that all interactive elements have proper handlers or routes

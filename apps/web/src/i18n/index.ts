@@ -13,7 +13,7 @@ const resources = {
         back_to_home: 'Back to Home',
       },
       nav: {
-        brand: 'Aivo',
+        brand: 'AIVO',
         home: 'Home',
         dashboard: 'Dashboard',
         search: 'Search',
@@ -42,14 +42,16 @@ const resources = {
         parent_context: 'Parent Dashboard',
         teacher_context: 'Teacher Dashboard',
         district_context: 'District Dashboard',
-        parent_description: "Manage your children's learning journey",
-        teacher_description: 'Teach and track student progress',
+        parent_description: "Support your child's unique learning needs",
+        teacher_description: 'Empower special needs education with AI',
         district_admin_description:
-          'Oversee district-wide educational programs',
+          'Advanced tools for inclusive education programs',
       },
       auth: {
-        sign_in_title: 'Sign in to your account',
-        register_title: 'Create your account',
+        sign_in_title: 'Welcome back to AIVO',
+        register_title: 'Join the AIVO Community',
+        sign_in: 'Sign In',
+        get_started: 'Get Started',
       },
       dashboard: {
         welcome_back: 'Welcome back, {{name}}!',
@@ -59,7 +61,48 @@ const resources = {
           'Oversee district performance and analytics',
       },
       onboarding: {
-        title: 'Welcome to Aivo',
+        title: 'Welcome to AIVO',
+      },
+      landing: {
+        hero: {
+          title_line1: 'Empowering Every Child',
+          title_line2: 'with AI-Driven Learning',
+          description:
+            'AIVO is an innovative agentic AI platform designed to help children with Autism and special needs learn, grow, and thrive through personalized, adaptive educational experiences.',
+          cta_primary: 'Start Your Journey',
+          cta_secondary: 'Learn More',
+          trust_indicator:
+            'Trusted by educators, therapists, and families worldwide',
+        },
+        features: {
+          title: 'How AIVO Makes a Difference',
+          subtitle:
+            'Comprehensive AI-powered tools designed specifically for special needs education',
+          feature1: {
+            title: 'Personalized Learning Paths',
+            description:
+              "AI agents create custom learning experiences tailored to each child's unique needs, abilities, and learning style.",
+          },
+          feature2: {
+            title: 'Adaptive Assessments',
+            description:
+              'Continuous, gentle assessments that adapt in real-time to support progress without causing stress or anxiety.',
+          },
+          feature3: {
+            title: 'Progress Insights',
+            description:
+              'Detailed analytics and insights for parents, teachers, and therapists to track growth and adjust support strategies.',
+          },
+        },
+        testimonials: {
+          title: 'Success Stories from Our Community',
+        },
+        final_cta: {
+          title: 'Ready to Transform Learning?',
+          subtitle:
+            "Join thousands of families and educators using AIVO to unlock every child's potential.",
+          button: 'Get Started Today',
+        },
       },
       learners: {
         title: 'My Learners',
@@ -78,11 +121,12 @@ const resources = {
       },
       pages: {
         home: {
-          title: 'Aivo Virtual Brains',
-          subtitle: 'AI-powered platform for personalized learning',
+          title: 'AIVO - Agentic AI for Special Needs',
+          subtitle:
+            'Empowering children with Autism and special needs through personalized AI-driven learning experiences',
           cta: 'Get Started',
           features: {
-            title: 'Key Features',
+            title: 'How AIVO Helps',
           },
         },
         health: {

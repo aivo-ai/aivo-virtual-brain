@@ -7,6 +7,8 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  RESET_PASSWORD: '/reset-password',
+  TWO_FA_SETUP: '/2fa-setup',
 
   // Onboarding
   ONBOARDING: '/onboarding',

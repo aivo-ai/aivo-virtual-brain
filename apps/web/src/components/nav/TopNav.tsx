@@ -5,6 +5,7 @@ import { useAuth } from '@/app/providers/AuthProvider'
 import { useTheme } from '@/app/providers/ThemeProvider'
 import { ROUTES } from '@/app/routes'
 import { analytics, trackLinkClick } from '@/utils/analytics'
+import { AivoLogo } from '@/components/ui/AivoLogo'
 
 export function TopNav() {
   const { t } = useTranslation()
@@ -133,15 +134,7 @@ export function TopNav() {
                 )
               }
             >
-              <svg
-                className="w-8 h-8"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M12 2L3 7l9 5 9-5-9-5zM3 17l9 5 9-5M3 12l9 5 9-5" />
-              </svg>
-              <span>{t('nav.brand')}</span>
+              <AivoLogo className="w-8 h-8" textClassName="text-xl font-bold" />
             </Link>
           </div>
 
