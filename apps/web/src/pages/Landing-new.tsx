@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/types/routes'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useEffect } from 'react'
-import { AivoLogo, AivoIcon } from '@/components/ui/AivoLogo'
+import { AivoLogo } from '@/components/ui/AivoLogo'
 
 export default function Landing() {
   const { t } = useTranslation()
@@ -22,10 +22,7 @@ export default function Landing() {
       {/* Navigation */}
       <nav className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-6">
-          <AivoLogo
-            className="w-10 h-10"
-            textClassName="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-          />
+          <AivoLogo className="w-10 h-10" />
           <div className="flex items-center space-x-4">
             <Link
               to={ROUTES.LOGIN}

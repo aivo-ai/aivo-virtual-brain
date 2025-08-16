@@ -2,13 +2,18 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { ScaleOnHover } from './Animations'
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
   size?: 'sm' | 'md' | 'lg' | 'xl'
   children: React.ReactNode
   loading?: boolean
   icon?: React.ReactNode
   href?: string
+  className?: string
+  disabled?: boolean
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
+  type?: 'button' | 'submit' | 'reset'
+  form?: string
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -20,7 +25,9 @@ export const Button: React.FC<ButtonProps> = ({
   href,
   className = '',
   disabled,
-  ...props
+  onClick,
+  type = 'button',
+  form,
 }) => {
   const baseClasses =
     'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
@@ -93,9 +100,11 @@ export const Button: React.FC<ButtonProps> = ({
       <motion.button
         className={classes}
         disabled={disabled || loading}
+        onClick={onClick}
+        type={type}
+        form={form}
         whileHover={{ y: -2 }}
         whileTap={{ y: 0 }}
-        {...props}
       >
         {content}
       </motion.button>

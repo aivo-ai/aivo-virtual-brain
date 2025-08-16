@@ -134,7 +134,7 @@ export function TopNav() {
                 )
               }
             >
-              <AivoLogo className="w-8 h-8" textClassName="text-xl font-bold" />
+              <AivoLogo className="w-8 h-8" />
             </Link>
           </div>
 
