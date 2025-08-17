@@ -236,6 +236,20 @@ export const getRelativeTime = (
   }
 };
 
+// Additional utility functions
+export const getLocaleConfig = (iso: string) => {
+  return getLanguageByIso(iso);
+};
+
+export const getSupportedLanguages = (): Language[] => {
+  return languages;
+};
+
+export const getLanguageDisplayName = (iso: string): string => {
+  const language = getLanguageByIso(iso);
+  return language?.displayName || iso;
+};
+
 // Re-export components
 export { RTLProvider, useRTL } from "./RTLProvider";
 export { default as LanguageSwitcher } from "./LanguageSwitcher";

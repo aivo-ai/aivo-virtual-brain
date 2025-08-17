@@ -1,15 +1,59 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronDownIcon,
-  CheckIcon,
-  GlobeAltIcon,
-} from "@heroicons/react/24/outline";
-import {
   getLocaleConfig,
   getSupportedLanguages,
   getLanguageDisplayName,
 } from "../index";
+
+// Simple SVG icons to avoid React version conflicts
+const GlobeIcon = ({ className }: { className: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"
+    />
+  </svg>
+);
+
+const ChevronDownIcon = ({ className }: { className: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="m19.5 8.25-7.5 7.5-7.5-7.5"
+    />
+  </svg>
+);
+
+const CheckIcon = ({ className }: { className: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="m4.5 12.75 6 6 9-13.5"
+    />
+  </svg>
+);
 
 interface LanguageSwitcherProps {
   variant?: "button" | "dropdown" | "inline";
@@ -56,7 +100,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       // Update document direction
       const locale = getLocaleConfig(languageCode);
       if (locale) {
-        document.documentElement.dir = locale.rtl ? "rtl" : "ltr";
+        document.documentElement.dir = locale.isRTL ? "rtl" : "ltr";
         document.documentElement.lang = languageCode;
       }
 
@@ -65,7 +109,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         // Could integrate with a toast system here
         console.log(
           t("language.languageChanged", {
-            language: getLanguageDisplayName(languageCode, languageCode),
+            language: getLanguageDisplayName(languageCode),
           }),
         );
       }, 100);
@@ -94,13 +138,13 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     return (
       <div className={`flex flex-wrap gap-2 ${className}`}>
         {supportedLanguages.map((lang) => {
-          const locale = getLocaleConfig(lang);
-          const isActive = lang === currentLanguage;
+          const locale = getLocaleConfig(lang.iso);
+          const isActive = lang.iso === currentLanguage;
 
           return (
             <button
-              key={lang}
-              onClick={() => handleLanguageChange(lang)}
+              key={lang.iso}
+              onClick={() => handleLanguageChange(lang.iso)}
               className={`
                 px-3 py-1 rounded-md text-sm font-medium transition-colors
                 ${
@@ -109,11 +153,11 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                 }
               `}
-              title={getLanguageDisplayName(lang, currentLanguage)}
+              title={getLanguageDisplayName(lang.iso)}
             >
               {showNativeNames && locale?.nativeName
                 ? locale.nativeName
-                : locale?.name || lang}
+                : locale?.displayName || lang.iso}
             </button>
           );
         })}
@@ -130,7 +174,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             inline-flex items-center px-3 py-2 border border-gray-300 rounded-md 
             bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 
             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-            ${currentLocale?.rtl ? "flex-row-reverse" : ""}
+            ${currentLocale?.isRTL ? "flex-row-reverse" : ""}
             ${className}
           `}
           aria-expanded={isOpen}
@@ -138,17 +182,17 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           aria-label={t("language.selectLanguage")}
         >
           {showIcon && (
-            <GlobeAltIcon
-              className={`h-4 w-4 ${currentLocale?.rtl ? "ml-2" : "mr-2"}`}
+            <GlobeIcon
+              className={`h-4 w-4 ${currentLocale?.isRTL ? "ml-2" : "mr-2"}`}
             />
           )}
           <span className="truncate">
             {showNativeNames && currentLocale?.nativeName
               ? currentLocale.nativeName
-              : currentLocale?.name || currentLanguage}
+              : currentLocale?.displayName || currentLanguage}
           </span>
           <ChevronDownIcon
-            className={`h-4 w-4 ${currentLocale?.rtl ? "mr-2" : "ml-2"} transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`h-4 w-4 ${currentLocale?.isRTL ? "mr-2" : "ml-2"} transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
         </button>
 
@@ -156,13 +200,13 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           <div className={getPlacementClasses()}>
             <div className="py-1">
               {supportedLanguages.map((lang) => {
-                const locale = getLocaleConfig(lang);
-                const isActive = lang === currentLanguage;
+                const locale = getLocaleConfig(lang.iso);
+                const isActive = lang.iso === currentLanguage;
 
                 return (
                   <button
-                    key={lang}
-                    onClick={() => handleLanguageChange(lang)}
+                    key={lang.iso}
+                    onClick={() => handleLanguageChange(lang.iso)}
                     className={`
                       w-full px-4 py-2 text-left text-sm flex items-center justify-between
                       ${
@@ -170,23 +214,23 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                           ? "bg-blue-50 text-blue-700"
                           : "text-gray-700 hover:bg-gray-50"
                       }
-                      ${locale?.rtl ? "flex-row-reverse text-right" : ""}
+                      ${locale?.isRTL ? "flex-row-reverse text-right" : ""}
                     `}
                     role="menuitem"
                   >
                     <div
-                      className={`flex flex-col ${locale?.rtl ? "items-end" : "items-start"}`}
+                      className={`flex flex-col ${locale?.isRTL ? "items-end" : "items-start"}`}
                     >
                       <span className="font-medium">
                         {showNativeNames && locale?.nativeName
                           ? locale.nativeName
-                          : locale?.name || lang}
+                          : locale?.displayName || lang.iso}
                       </span>
                       {showNativeNames &&
                         locale?.nativeName &&
-                        locale?.name !== locale?.nativeName && (
+                        locale?.displayName !== locale?.nativeName && (
                           <span className="text-xs text-gray-500">
-                            {locale?.name}
+                            {locale?.displayName}
                           </span>
                         )}
                     </div>
@@ -213,19 +257,19 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           block w-full px-3 py-2 border border-gray-300 rounded-md 
           bg-white text-sm text-gray-700 
           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-          ${currentLocale?.rtl ? "text-right" : "text-left"}
+          ${currentLocale?.isRTL ? "text-right" : "text-left"}
           ${className}
         `}
         aria-label={t("language.selectLanguage")}
       >
         {supportedLanguages.map((lang) => {
-          const locale = getLocaleConfig(lang);
+          const locale = getLocaleConfig(lang.iso);
 
           return (
-            <option key={lang} value={lang}>
+            <option key={lang.iso} value={lang.iso}>
               {showNativeNames && locale?.nativeName
-                ? `${locale.nativeName}${locale?.name !== locale?.nativeName ? ` (${locale?.name})` : ""}`
-                : locale?.name || lang}
+                ? `${locale.nativeName}${locale?.displayName !== locale?.nativeName ? ` (${locale?.displayName})` : ""}`
+                : locale?.displayName || lang.iso}
             </option>
           );
         })}
