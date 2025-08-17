@@ -54,6 +54,11 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "@heroicons/react": "^2.2.0",
+    "i18next": "^23.15.0",
+    "i18next-browser-languagedetector": "^8.0.0",
+    "i18next-http-backend": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "react-i18next": "^15.0.2"
   }
 }

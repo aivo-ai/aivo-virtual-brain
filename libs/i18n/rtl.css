@@ -1,0 +1,436 @@
+/* RTL-aware utility classes */
+
+/* Direction-aware margins */
+.ms-1 {
+  margin-inline-start: 0.25rem;
+}
+.ms-2 {
+  margin-inline-start: 0.5rem;
+}
+.ms-3 {
+  margin-inline-start: 0.75rem;
+}
+.ms-4 {
+  margin-inline-start: 1rem;
+}
+.ms-5 {
+  margin-inline-start: 1.25rem;
+}
+.ms-6 {
+  margin-inline-start: 1.5rem;
+}
+.ms-8 {
+  margin-inline-start: 2rem;
+}
+.ms-10 {
+  margin-inline-start: 2.5rem;
+}
+.ms-12 {
+  margin-inline-start: 3rem;
+}
+.ms-auto {
+  margin-inline-start: auto;
+}
+
+.me-1 {
+  margin-inline-end: 0.25rem;
+}
+.me-2 {
+  margin-inline-end: 0.5rem;
+}
+.me-3 {
+  margin-inline-end: 0.75rem;
+}
+.me-4 {
+  margin-inline-end: 1rem;
+}
+.me-5 {
+  margin-inline-end: 1.25rem;
+}
+.me-6 {
+  margin-inline-end: 1.5rem;
+}
+.me-8 {
+  margin-inline-end: 2rem;
+}
+.me-10 {
+  margin-inline-end: 2.5rem;
+}
+.me-12 {
+  margin-inline-end: 3rem;
+}
+.me-auto {
+  margin-inline-end: auto;
+}
+
+/* Direction-aware padding */
+.ps-1 {
+  padding-inline-start: 0.25rem;
+}
+.ps-2 {
+  padding-inline-start: 0.5rem;
+}
+.ps-3 {
+  padding-inline-start: 0.75rem;
+}
+.ps-4 {
+  padding-inline-start: 1rem;
+}
+.ps-5 {
+  padding-inline-start: 1.25rem;
+}
+.ps-6 {
+  padding-inline-start: 1.5rem;
+}
+.ps-8 {
+  padding-inline-start: 2rem;
+}
+.ps-10 {
+  padding-inline-start: 2.5rem;
+}
+.ps-12 {
+  padding-inline-start: 3rem;
+}
+
+.pe-1 {
+  padding-inline-end: 0.25rem;
+}
+.pe-2 {
+  padding-inline-end: 0.5rem;
+}
+.pe-3 {
+  padding-inline-end: 0.75rem;
+}
+.pe-4 {
+  padding-inline-end: 1rem;
+}
+.pe-5 {
+  padding-inline-end: 1.25rem;
+}
+.pe-6 {
+  padding-inline-end: 1.5rem;
+}
+.pe-8 {
+  padding-inline-end: 2rem;
+}
+.pe-10 {
+  padding-inline-end: 2.5rem;
+}
+.pe-12 {
+  padding-inline-end: 3rem;
+}
+
+/* Direction-aware borders */
+.border-s {
+  border-inline-start-width: 1px;
+}
+.border-e {
+  border-inline-end-width: 1px;
+}
+.border-s-2 {
+  border-inline-start-width: 2px;
+}
+.border-e-2 {
+  border-inline-end-width: 2px;
+}
+.border-s-4 {
+  border-inline-start-width: 4px;
+}
+.border-e-4 {
+  border-inline-end-width: 4px;
+}
+
+/* Direction-aware text alignment */
+.text-start {
+  text-align: start;
+}
+.text-end {
+  text-align: end;
+}
+
+/* Direction-aware positioning */
+.start-0 {
+  inset-inline-start: 0;
+}
+.start-1 {
+  inset-inline-start: 0.25rem;
+}
+.start-2 {
+  inset-inline-start: 0.5rem;
+}
+.start-3 {
+  inset-inline-start: 0.75rem;
+}
+.start-4 {
+  inset-inline-start: 1rem;
+}
+.start-6 {
+  inset-inline-start: 1.5rem;
+}
+.start-8 {
+  inset-inline-start: 2rem;
+}
+.start-12 {
+  inset-inline-start: 3rem;
+}
+.start-auto {
+  inset-inline-start: auto;
+}
+
+.end-0 {
+  inset-inline-end: 0;
+}
+.end-1 {
+  inset-inline-end: 0.25rem;
+}
+.end-2 {
+  inset-inline-end: 0.5rem;
+}
+.end-3 {
+  inset-inline-end: 0.75rem;
+}
+.end-4 {
+  inset-inline-end: 1rem;
+}
+.end-6 {
+  inset-inline-end: 1.5rem;
+}
+.end-8 {
+  inset-inline-end: 2rem;
+}
+.end-12 {
+  inset-inline-end: 3rem;
+}
+.end-auto {
+  inset-inline-end: auto;
+}
+
+/* Direction-aware rounded corners */
+.rounded-s {
+  border-start-start-radius: 0.25rem;
+  border-end-start-radius: 0.25rem;
+}
+.rounded-e {
+  border-start-end-radius: 0.25rem;
+  border-end-end-radius: 0.25rem;
+}
+.rounded-s-md {
+  border-start-start-radius: 0.375rem;
+  border-end-start-radius: 0.375rem;
+}
+.rounded-e-md {
+  border-start-end-radius: 0.375rem;
+  border-end-end-radius: 0.375rem;
+}
+.rounded-s-lg {
+  border-start-start-radius: 0.5rem;
+  border-end-start-radius: 0.5rem;
+}
+.rounded-e-lg {
+  border-start-end-radius: 0.5rem;
+  border-end-end-radius: 0.5rem;
+}
+
+/* Font stacks for different languages */
+.font-latin {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+.font-arabic {
+  font-family:
+    "Noto Sans Arabic", "Dubai", "Tahoma", "Arial Unicode MS", sans-serif;
+  font-feature-settings:
+    "liga" 1,
+    "calt" 1,
+    "ccmp" 1;
+}
+
+.font-chinese {
+  font-family:
+    "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    sans-serif;
+}
+
+.font-hindi {
+  font-family: "Noto Sans Devanagari", "Mangal", "Kokila", sans-serif;
+}
+
+.font-african {
+  font-family: "Noto Sans", "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
+}
+
+/* RTL-specific adjustments */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .tooltip {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .modal {
+  direction: rtl;
+}
+
+[dir="rtl"] .progress-bar {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .breadcrumb {
+  direction: rtl;
+}
+
+[dir="rtl"] .nav-pills .nav-link.active {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+/* Form controls RTL support */
+[dir="rtl"] .form-control,
+[dir="rtl"] .form-select {
+  background-position: left 0.75rem center;
+  padding-left: 2.25rem;
+  padding-right: 0.75rem;
+}
+
+[dir="rtl"] .form-check {
+  padding-left: 0;
+  padding-right: 1.25em;
+}
+
+[dir="rtl"] .form-check-input {
+  margin-left: 0;
+  margin-right: -1.25em;
+}
+
+[dir="rtl"] .form-switch .form-check-input {
+  margin-right: -2.25em;
+}
+
+/* Navigation RTL support */
+[dir="rtl"] .navbar-nav {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .navbar-toggler {
+  border: none;
+  order: -1;
+}
+
+[dir="rtl"] .dropdown-menu {
+  left: auto;
+  right: 0;
+  text-align: right;
+}
+
+[dir="rtl"] .dropdown-toggle::after {
+  margin-left: 0;
+  margin-right: 0.255em;
+}
+
+/* Table RTL support */
+[dir="rtl"] .table {
+  direction: rtl;
+}
+
+[dir="rtl"] .table th,
+[dir="rtl"] .table td {
+  text-align: right;
+}
+
+[dir="rtl"] .table-responsive {
+  direction: rtl;
+}
+
+/* Card RTL support */
+[dir="rtl"] .card-header {
+  text-align: right;
+}
+
+[dir="rtl"] .card-body {
+  text-align: right;
+}
+
+/* Button group RTL support */
+[dir="rtl"] .btn-group {
+  direction: rtl;
+}
+
+[dir="rtl"] .btn-group > .btn:first-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+
+[dir="rtl"] .btn-group > .btn:last-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: var(--bs-border-radius);
+  border-bottom-left-radius: var(--bs-border-radius);
+}
+
+/* Pagination RTL support */
+[dir="rtl"] .pagination {
+  flex-direction: row-reverse;
+}
+
+/* Accessibility improvements for RTL */
+[dir="rtl"] .sr-only {
+  direction: rtl;
+}
+
+/* Animation adjustments for RTL */
+[dir="rtl"] .slide-fade-enter-active {
+  transform: translateX(100%);
+}
+
+[dir="rtl"] .slide-fade-leave-active {
+  transform: translateX(-100%);
+}
+
+/* Chart and graph RTL support */
+[dir="rtl"] .chart-container {
+  direction: ltr; /* Charts usually work better in LTR */
+}
+
+[dir="rtl"] .chart-legend {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Print styles for RTL */
+@media print {
+  [dir="rtl"] {
+    direction: rtl;
+  }
+
+  [dir="rtl"] .page-break {
+    page-break-after: always;
+    direction: rtl;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  [dir="rtl"] .form-control,
+  [dir="rtl"] .form-select {
+    border: 2px solid;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  [dir="rtl"] .slide-fade-enter-active,
+  [dir="rtl"] .slide-fade-leave-active {
+    transition: none;
+  }
+}
