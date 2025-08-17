@@ -2,18 +2,13 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { ScaleOnHover } from './Animations'
 
-interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive'
   size?: 'sm' | 'md' | 'lg' | 'xl'
-  children: React.ReactNode
   loading?: boolean
   icon?: React.ReactNode
   href?: string
-  className?: string
-  disabled?: boolean
-  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
-  type?: 'button' | 'submit' | 'reset'
-  form?: string
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -40,6 +35,8 @@ export const Button: React.FC<ButtonProps> = ({
     outline:
       'border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white focus:ring-blue-500',
     ghost: 'text-blue-600 hover:bg-blue-50 focus:ring-blue-500',
+    destructive:
+      'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-lg hover:shadow-xl',
   }
 
   const sizeClasses = {

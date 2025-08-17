@@ -195,8 +195,9 @@ export const Play: React.FC = () => {
 
       // Set initial scene
       const firstScene =
-        manifest.game_scenes.find(scene => scene.type === 'intro') ||
-        manifest.game_scenes[0]
+        manifest.game_scenes.find(
+          (scene: GameScene) => scene.type === 'intro'
+        ) || manifest.game_scenes[0]
       if (firstScene) {
         setCurrentScene(firstScene)
         setGameProgress(prev => ({
