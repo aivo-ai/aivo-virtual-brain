@@ -47,14 +47,14 @@ Access to search results is filtered based on user roles:
 /**
  * Type of document
  */
-export type IndexDocumentDocumentType =
-  (typeof IndexDocumentDocumentType)[keyof typeof IndexDocumentDocumentType];
+export type IndexDocumentDocumentType = typeof IndexDocumentDocumentType[keyof typeof IndexDocumentDocumentType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const IndexDocumentDocumentType = {
-  iep: "iep",
-  assessment: "assessment",
-  student: "student",
-  curriculum: "curriculum",
-  resource: "resource",
+  iep: 'iep',
+  assessment: 'assessment',
+  student: 'student',
+  curriculum: 'curriculum',
+  resource: 'resource',
 } as const;

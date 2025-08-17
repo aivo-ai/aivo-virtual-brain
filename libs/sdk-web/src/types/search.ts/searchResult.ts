@@ -43,9 +43,9 @@ Access to search results is filtered based on user roles:
 
  * OpenAPI spec version: 1.0.0
  */
-import type { SearchResultDocumentType } from "./searchResultDocumentType";
-import type { SearchResultHighlight } from "./searchResultHighlight";
-import type { SearchResultMetadata } from "./searchResultMetadata";
+import type { SearchResultDocumentType } from './searchResultDocumentType';
+import type { SearchResultHighlight } from './searchResultHighlight';
+import type { SearchResultMetadata } from './searchResultMetadata';
 
 export interface SearchResult {
   /** Unique document identifier */

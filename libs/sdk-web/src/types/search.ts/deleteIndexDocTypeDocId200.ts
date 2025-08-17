@@ -43,7 +43,7 @@ Access to search results is filtered based on user roles:
 
  * OpenAPI spec version: 1.0.0
  */
-import type { DeleteIndexDocTypeDocId200Result } from "./deleteIndexDocTypeDocId200Result";
+import type { DeleteIndexDocTypeDocId200Result } from './deleteIndexDocTypeDocId200Result';
 
 export type DeleteIndexDocTypeDocId200 = {
   deleted?: boolean;

@@ -43,7 +43,7 @@ Access to search results is filtered based on user roles:
 
  * OpenAPI spec version: 1.0.0
  */
-import type { SuggestionResult } from "./suggestionResult";
+import type { SuggestionResult } from './suggestionResult';
 
 export interface SuggestionResponse {
   /** Array of suggestions */

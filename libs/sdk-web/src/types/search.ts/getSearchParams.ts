@@ -45,29 +45,29 @@ Access to search results is filtered based on user roles:
  */
 
 export type GetSearchParams = {
-  /**
-   * Search query string
-   * @minLength 1
-   * @maxLength 500
-   */
-  q: string;
-  /**
-   * Comma-separated document types to search
-   */
-  doc_types?: string;
-  /**
-   * Number of results to return
-   * @minimum 1
-   * @maximum 100
-   */
-  size?: number;
-  /**
-   * Starting offset for pagination
-   * @minimum 0
-   */
-  from?: number;
-  /**
-   * Sort criteria as 'field:order' pairs
-   */
-  sort?: string;
+/**
+ * Search query string
+ * @minLength 1
+ * @maxLength 500
+ */
+q: string;
+/**
+ * Comma-separated document types to search
+ */
+doc_types?: string;
+/**
+ * Number of results to return
+ * @minimum 1
+ * @maximum 100
+ */
+size?: number;
+/**
+ * Starting offset for pagination
+ * @minimum 0
+ */
+from?: number;
+/**
+ * Sort criteria as 'field:order' pairs
+ */
+sort?: string;
 };

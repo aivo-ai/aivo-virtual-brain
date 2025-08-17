@@ -48,4 +48,4 @@ Access to search results is filtered based on user roles:
  * Highlighted search terms
  * @nullable
  */
-export type SearchResultHighlight = { [key: string]: string[] } | null;
+export type SearchResultHighlight = {[key: string]: string[]} | null;

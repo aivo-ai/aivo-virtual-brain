@@ -43,8 +43,8 @@ Access to search results is filtered based on user roles:
 
  * OpenAPI spec version: 1.0.0
  */
-import type { GetStats200UserContext } from "./getStats200UserContext";
-import type { GetStats200SearchHealth } from "./getStats200SearchHealth";
+import type { GetStats200UserContext } from './getStats200UserContext';
+import type { GetStats200SearchHealth } from './getStats200SearchHealth';
 
 export type GetStats200 = {
   user_context?: GetStats200UserContext;

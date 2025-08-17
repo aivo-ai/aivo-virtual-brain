@@ -43,7 +43,7 @@ Access to search results is filtered based on user roles:
 
  * OpenAPI spec version: 1.0.0
  */
-import type { PostIndex200Result } from "./postIndex200Result";
+import type { PostIndex200Result } from './postIndex200Result';
 
 export type PostIndex200 = {
   indexed?: boolean;

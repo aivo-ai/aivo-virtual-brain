@@ -43,8 +43,8 @@ Access to search results is filtered based on user roles:
 
  * OpenAPI spec version: 1.0.0
  */
-import type { SearchResult } from "./searchResult";
-import type { SearchResponseFilters } from "./searchResponseFilters";
+import type { SearchResult } from './searchResult';
+import type { SearchResponseFilters } from './searchResponseFilters';
 
 export interface SearchResponse {
   /** Array of search results */

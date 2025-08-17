@@ -45,16 +45,16 @@ Access to search results is filtered based on user roles:
  */
 
 export type GetSuggestParams = {
-  /**
-   * Partial query for suggestions
-   * @minLength 1
-   * @maxLength 100
-   */
-  q: string;
-  /**
-   * Number of suggestions to return
-   * @minimum 1
-   * @maximum 20
-   */
-  size?: number;
+/**
+ * Partial query for suggestions
+ * @minLength 1
+ * @maxLength 100
+ */
+q: string;
+/**
+ * Number of suggestions to return
+ * @minimum 1
+ * @maximum 20
+ */
+size?: number;
 };

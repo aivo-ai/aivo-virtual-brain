@@ -43,8 +43,8 @@ Access to search results is filtered based on user roles:
 
  * OpenAPI spec version: 1.0.0
  */
-import type { IndexDocumentDocumentType } from "./indexDocumentDocumentType";
-import type { IndexDocumentMetadata } from "./indexDocumentMetadata";
+import type { IndexDocumentDocumentType } from './indexDocumentDocumentType';
+import type { IndexDocumentMetadata } from './indexDocumentMetadata';
 
 export interface IndexDocument {
   /** Unique document identifier */

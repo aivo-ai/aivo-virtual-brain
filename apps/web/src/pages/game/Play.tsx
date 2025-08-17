@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
+import { 
   gameClient,
   type GameManifest,
   type GameSession,
   type GameScene,
   type GameProgress,
   type PerformanceMetrics,
-  type GameEvent,
+  type GameEvent
 } from '../../api/gameClient'
 import { CanvasStage } from '../../components/game/CanvasStage.tsx'
 import { Hud } from '../../components/game/Hud.tsx'
@@ -18,16 +18,16 @@ export const Play: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-
+  
   const learnerId = searchParams.get('learnerId') || 'default-learner'
-
+  
   // Core state
   const [gameManifest, setGameManifest] = useState<GameManifest | null>(null)
   const [gameSession, setGameSession] = useState<GameSession | null>(null)
   const [currentScene, setCurrentScene] = useState<GameScene | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+  
   // Game state
   const [gameStarted, setGameStarted] = useState(false)
   const [gameCompleted, setGameCompleted] = useState(false)
@@ -39,22 +39,21 @@ export const Play: React.FC = () => {
     interactions_completed: 0,
     hints_used: 0,
     mistakes_made: 0,
-    time_spent_seconds: 0,
+    time_spent_seconds: 0
   })
-
+  
   // Performance tracking
-  const [performanceMetrics, setPerformanceMetrics] =
-    useState<PerformanceMetrics>({
-      accuracy_percentage: 100,
-      speed_score: 0,
-      consistency_score: 100,
-      learning_efficiency: 0,
-      engagement_level: 100,
-      completion_rate: 0,
-      retry_attempts: 0,
-      help_requests: 0,
-    })
-
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
+    accuracy_percentage: 100,
+    speed_score: 0,
+    consistency_score: 100,
+    learning_efficiency: 0,
+    engagement_level: 100,
+    completion_rate: 0,
+    retry_attempts: 0,
+    help_requests: 0
+  })
+  
   // Timing and controls
   const [timeRemaining, setTimeRemaining] = useState<number>(0)
   const [elapsedTime, setElapsedTime] = useState<number>(0)
@@ -80,7 +79,7 @@ export const Play: React.FC = () => {
     const handleKeyPress = (event: KeyboardEvent) => {
       // Only handle if keyboard navigation is enabled
       if (!gameManifest?.game_rules?.keyboard_navigation) return
-
+      
       switch (event.key) {
         case ' ': // Spacebar - pause/resume
           event.preventDefault()
@@ -121,25 +120,20 @@ export const Play: React.FC = () => {
       gameTimer.current = setInterval(() => {
         setElapsedTime(prev => {
           const newElapsed = prev + 1
-          setTimeRemaining(
-            Math.max(
-              0,
-              (gameManifest?.target_duration_minutes || 0) * 60 - newElapsed
-            )
-          )
-
+          setTimeRemaining(Math.max(0, (gameManifest?.target_duration_minutes || 0) * 60 - newElapsed))
+          
           // Auto-complete if time runs out
           if (newElapsed >= (gameManifest?.target_duration_minutes || 0) * 60) {
             handleTimeExpired()
           }
-
+          
           return newElapsed
         })
-
+        
         // Update progress periodically
         setGameProgress(prev => ({
           ...prev,
-          time_spent_seconds: prev.time_spent_seconds + 1,
+          time_spent_seconds: prev.time_spent_seconds + 1
         }))
       }, 1000)
 
@@ -194,15 +188,12 @@ export const Play: React.FC = () => {
       setGameSession(session)
 
       // Set initial scene
-      const firstScene =
-        manifest.game_scenes.find(
-          (scene: GameScene) => scene.type === 'intro'
-        ) || manifest.game_scenes[0]
+      const firstScene = manifest.game_scenes.find(scene => scene.type === 'intro') || manifest.game_scenes[0]
       if (firstScene) {
         setCurrentScene(firstScene)
         setGameProgress(prev => ({
           ...prev,
-          current_scene_id: firstScene.id,
+          current_scene_id: firstScene.id
         }))
       }
 
@@ -227,14 +218,15 @@ export const Play: React.FC = () => {
       // Send game started event
       await sendGameEvent('GAME_STARTED', {
         scene_id: currentScene.id,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       })
 
       // Update session status
       await gameClient.updateGameSession(gameSession.id, {
         status: 'in_progress',
-        started_at: new Date().toISOString(),
+        started_at: new Date().toISOString()
       })
+
     } catch (err) {
       console.error('Failed to start game:', err)
       setError('Failed to start game')
@@ -260,11 +252,12 @@ export const Play: React.FC = () => {
       await sendGameEvent('GAME_PAUSED', {
         scene_id: currentScene?.id,
         elapsed_time: elapsedTime,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       })
 
       // Update session
       await gameClient.pauseGame(gameSession.id)
+
     } catch (err) {
       console.error('Failed to pause game:', err)
     }
@@ -274,10 +267,9 @@ export const Play: React.FC = () => {
     if (!gameSession || !gamePaused) return
 
     try {
-      const pauseDuration = pauseStartTime.current
-        ? Math.floor((Date.now() - pauseStartTime.current) / 1000)
-        : 0
-
+      const pauseDuration = pauseStartTime.current ? 
+        Math.floor((Date.now() - pauseStartTime.current) / 1000) : 0
+      
       totalPauseTime.current += pauseDuration
       setGamePaused(false)
       pauseStartTime.current = null
@@ -286,11 +278,12 @@ export const Play: React.FC = () => {
       await sendGameEvent('GAME_RESUMED', {
         scene_id: currentScene?.id,
         pause_duration: pauseDuration,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       })
 
       // Update session
       await gameClient.resumeGame(gameSession.id, pauseDuration)
+
     } catch (err) {
       console.error('Failed to resume game:', err)
     }
@@ -305,21 +298,15 @@ export const Play: React.FC = () => {
         ...gameProgress,
         completed_scenes: [...gameProgress.completed_scenes, sceneId],
         current_score: sceneResults.score || gameProgress.current_score,
-        interactions_completed:
-          gameProgress.interactions_completed +
-          (sceneResults.interactions || 0),
+        interactions_completed: gameProgress.interactions_completed + (sceneResults.interactions || 0)
       }
       setGameProgress(newProgress)
 
       // Update performance metrics
       const newMetrics = {
         ...performanceMetrics,
-        accuracy_percentage:
-          sceneResults.accuracy || performanceMetrics.accuracy_percentage,
-        completion_rate:
-          (newProgress.completed_scenes.length /
-            gameManifest.game_scenes.length) *
-          100,
+        accuracy_percentage: sceneResults.accuracy || performanceMetrics.accuracy_percentage,
+        completion_rate: (newProgress.completed_scenes.length / gameManifest.game_scenes.length) * 100
       }
       setPerformanceMetrics(newMetrics)
 
@@ -327,13 +314,11 @@ export const Play: React.FC = () => {
       await sendGameEvent('SCENE_COMPLETED', {
         scene_id: sceneId,
         results: sceneResults,
-        progress: newProgress,
+        progress: newProgress
       })
 
       // Find next scene
-      const currentSceneIndex = gameManifest.game_scenes.findIndex(
-        s => s.id === sceneId
-      )
+      const currentSceneIndex = gameManifest.game_scenes.findIndex(s => s.id === sceneId)
       const nextScene = gameManifest.game_scenes[currentSceneIndex + 1]
 
       if (nextScene) {
@@ -341,12 +326,13 @@ export const Play: React.FC = () => {
         setCurrentScene(nextScene)
         setGameProgress(prev => ({
           ...prev,
-          current_scene_id: nextScene.id,
+          current_scene_id: nextScene.id
         }))
       } else {
         // Game completed
         await handleGameComplete()
       }
+
     } catch (err) {
       console.error('Failed to complete scene:', err)
     }
@@ -358,21 +344,15 @@ export const Play: React.FC = () => {
     try {
       setGameCompleted(true)
       const endTime = Date.now()
-      const totalDuration = gameStartTime.current
-        ? Math.floor(
-            (endTime - gameStartTime.current - totalPauseTime.current) / 1000
-          )
-        : elapsedTime
+      const totalDuration = gameStartTime.current ? 
+        Math.floor((endTime - gameStartTime.current - totalPauseTime.current) / 1000) : elapsedTime
 
       // Calculate final metrics
       const finalMetrics: PerformanceMetrics = {
         ...performanceMetrics,
         completion_rate: 100,
-        learning_efficiency: Math.max(
-          0,
-          100 - performanceMetrics.retry_attempts * 10
-        ),
-        speed_score: Math.max(0, 100 - Math.floor((totalDuration / 60) * 2)), // Penalty for longer time
+        learning_efficiency: Math.max(0, 100 - (performanceMetrics.retry_attempts * 10)),
+        speed_score: Math.max(0, 100 - Math.floor((totalDuration / 60) * 2)) // Penalty for longer time
       }
       setPerformanceMetrics(finalMetrics)
 
@@ -384,8 +364,9 @@ export const Play: React.FC = () => {
         total_duration: totalDuration,
         final_score: gameProgress.current_score,
         final_metrics: finalMetrics,
-        completion_timestamp: new Date().toISOString(),
+        completion_timestamp: new Date().toISOString()
       })
+
     } catch (err) {
       console.error('Failed to complete game:', err)
     }
@@ -408,18 +389,19 @@ export const Play: React.FC = () => {
     try {
       setGameProgress(prev => ({
         ...prev,
-        hints_used: prev.hints_used + 1,
+        hints_used: prev.hints_used + 1
       }))
 
       setPerformanceMetrics(prev => ({
         ...prev,
-        help_requests: prev.help_requests + 1,
+        help_requests: prev.help_requests + 1
       }))
 
       await sendGameEvent('INTERACTION_COMPLETED', {
         interaction_type: 'hint_request',
-        scene_id: currentScene.id,
+        scene_id: currentScene.id
       })
+
     } catch (err) {
       console.error('Failed to request hint:', err)
     }
@@ -431,13 +413,14 @@ export const Play: React.FC = () => {
     try {
       setPerformanceMetrics(prev => ({
         ...prev,
-        retry_attempts: prev.retry_attempts + 1,
+        retry_attempts: prev.retry_attempts + 1
       }))
 
       await sendGameEvent('INTERACTION_COMPLETED', {
         interaction_type: 'scene_restart',
-        scene_id: currentScene.id,
+        scene_id: currentScene.id
       })
+
     } catch (err) {
       console.error('Failed to restart scene:', err)
     }
@@ -450,18 +433,18 @@ export const Play: React.FC = () => {
       // Update progress
       setGameProgress(prev => ({
         ...prev,
-        interactions_completed: prev.interactions_completed + 1,
+        interactions_completed: prev.interactions_completed + 1
       }))
 
       // Update performance based on interaction
       if (data?.correct === false) {
         setGameProgress(prev => ({
           ...prev,
-          mistakes_made: prev.mistakes_made + 1,
+          mistakes_made: prev.mistakes_made + 1
         }))
         setPerformanceMetrics(prev => ({
           ...prev,
-          accuracy_percentage: Math.max(0, prev.accuracy_percentage - 5),
+          accuracy_percentage: Math.max(0, prev.accuracy_percentage - 5)
         }))
       }
 
@@ -469,8 +452,9 @@ export const Play: React.FC = () => {
       await sendGameEvent('INTERACTION_COMPLETED', {
         interaction_type: interactionType,
         scene_id: currentScene.id,
-        data,
+        data
       })
+
     } catch (err) {
       console.error('Failed to handle interaction:', err)
     }
@@ -483,17 +467,14 @@ export const Play: React.FC = () => {
       await gameClient.updateGameSession(gameSession.id, {
         progress_data: gameProgress,
         performance_metrics: performanceMetrics,
-        completion_percentage: performanceMetrics.completion_rate,
+        completion_percentage: performanceMetrics.completion_rate
       })
     } catch (err) {
       console.error('Failed to save progress:', err)
     }
   }
 
-  const sendGameEvent = async (
-    eventType: GameEvent['event_type'],
-    data?: any
-  ) => {
+  const sendGameEvent = async (eventType: GameEvent['event_type'], data?: any) => {
     if (!gameSession || !gameManifest) return
 
     await gameClient.sendGameEvent({
@@ -502,15 +483,13 @@ export const Play: React.FC = () => {
       learner_id: learnerId,
       game_id: gameManifest.id,
       timestamp: new Date().toISOString(),
-      data,
+      data
     })
   }
 
   const handleExitGame = () => {
     if (gameStarted && !gameCompleted) {
-      const confirmed = window.confirm(
-        'Are you sure you want to exit? Your progress will be saved.'
-      )
+      const confirmed = window.confirm('Are you sure you want to exit? Your progress will be saved.')
       if (!confirmed) return
     }
 
@@ -527,12 +506,8 @@ export const Play: React.FC = () => {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-white mb-2">
-            Loading Game...
-          </h2>
-          <p className="text-gray-400">
-            Please wait while we prepare your game
-          </p>
+          <h2 className="text-xl font-semibold text-white mb-2">Loading Game...</h2>
+          <p className="text-gray-400">Please wait while we prepare your game</p>
         </div>
       </div>
     )
@@ -560,31 +535,22 @@ export const Play: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-white mb-2">
-            Game Not Found
-          </h2>
-          <p className="text-gray-400">
-            The requested game could not be loaded
-          </p>
+          <h2 className="text-xl font-semibold text-white mb-2">Game Not Found</h2>
+          <p className="text-gray-400">The requested game could not be loaded</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div
-      className="min-h-screen bg-gray-900 relative overflow-hidden"
-      data-testid="game-player"
-    >
+    <div className="min-h-screen bg-gray-900 relative overflow-hidden" data-testid="game-player">
       {/* Background */}
-      <div
+      <div 
         className="absolute inset-0 opacity-20"
         style={{
-          backgroundImage: currentScene.background
-            ? `url(${currentScene.background})`
-            : 'none',
+          backgroundImage: currentScene.background ? `url(${currentScene.background})` : 'none',
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center'
         }}
       />
 
@@ -598,7 +564,7 @@ export const Play: React.FC = () => {
         gameCompleted={gameCompleted}
         progress={{
           current: gameProgress.completed_scenes.length,
-          total: gameManifest.game_scenes.length,
+          total: gameManifest.game_scenes.length
         }}
         onPause={handlePause}
         onResume={handleResume}
@@ -609,9 +575,7 @@ export const Play: React.FC = () => {
       />
 
       {/* Main Game Area */}
-      <div className="relative z-10 h-screen pt-16">
-        {' '}
-        {/* Account for HUD height */}
+      <div className="relative z-10 h-screen pt-16"> {/* Account for HUD height */}
         <AnimatePresence mode="wait">
           {!gameStarted ? (
             // Game Start Screen
@@ -623,19 +587,14 @@ export const Play: React.FC = () => {
               className="h-full flex items-center justify-center"
             >
               <div className="text-center max-w-2xl mx-auto p-8 bg-black bg-opacity-50 rounded-lg">
-                <h1
-                  className="text-4xl font-bold text-white mb-4"
-                  data-testid="game-title"
-                >
+                <h1 className="text-4xl font-bold text-white mb-4" data-testid="game-title">
                   {gameManifest.game_title}
                 </h1>
                 <p className="text-xl text-gray-300 mb-6">
                   {gameManifest.game_description}
                 </p>
                 <div className="text-gray-400 mb-8 space-y-2">
-                  <p>
-                    Duration: {gameManifest.target_duration_minutes} minutes
-                  </p>
+                  <p>Duration: {gameManifest.target_duration_minutes} minutes</p>
                   <p>Difficulty: {gameManifest.difficulty_level}</p>
                   <p>Subject: {gameManifest.subject_area}</p>
                   {gameManifest.game_rules.keyboard_navigation && (
@@ -686,7 +645,7 @@ export const Play: React.FC = () => {
                 isPaused={gamePaused}
                 onSceneComplete={handleSceneComplete}
                 onInteraction={handleInteraction}
-                onError={error => setError(error)}
+                onError={(error) => setError(error)}
               />
             </motion.div>
           )}
@@ -703,12 +662,8 @@ export const Play: React.FC = () => {
             className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
           >
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-white mb-4">
-                Game Paused
-              </h2>
-              <p className="text-gray-300 mb-8">
-                Press space or click resume to continue
-              </p>
+              <h2 className="text-3xl font-bold text-white mb-4">Game Paused</h2>
+              <p className="text-gray-300 mb-8">Press space or click resume to continue</p>
               <div className="space-x-4">
                 <button
                   onClick={handleResume}
