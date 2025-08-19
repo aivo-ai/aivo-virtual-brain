@@ -134,7 +134,7 @@ export function TopNav() {
                 )
               }
             >
-              <AivoLogo className="w-8 h-8" />
+              <AivoLogo className="w-20 h-20" />
             </Link>
           </div>
 
@@ -258,9 +258,9 @@ export function TopNav() {
                   to={ROUTES.LOGIN}
                   className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                   data-testid="nav-login-link"
-                  onClick={() => trackLinkClick(ROUTES.LOGIN, t('nav.login'))}
+                  onClick={() => trackLinkClick(ROUTES.LOGIN, t('navigation.login'))}
                 >
-                  {t('nav.login')}
+                  {t('navigation.login')}
                 </Link>
                 <Link
                   to={ROUTES.REGISTER}
@@ -369,9 +369,9 @@ export function TopNav() {
                   to={ROUTES.LOGIN}
                   className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                   data-testid="nav-mobile-login-link"
-                  onClick={() => trackLinkClick(ROUTES.LOGIN, t('nav.login'))}
+                  onClick={() => trackLinkClick(ROUTES.LOGIN, t('navigation.login'))}
                 >
-                  {t('nav.login')}
+                  {t('navigation.login')}
                 </Link>
                 <Link
                   to={ROUTES.REGISTER}
