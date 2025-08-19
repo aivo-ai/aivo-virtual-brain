@@ -4,7 +4,6 @@ export const AivoLogo = ({ className = 'w-[300px] h-[108px]' }) => (
       src="/assets/logos/aivo-logo.svg"
       alt="AIVO Logo"
       className={`${className} object-contain`}
-      style={{ minWidth: '300px', minHeight: '108px' }}
       onError={e => {
         // Fallback to PNG if SVG fails
         e.currentTarget.src = '/assets/logos/aivo-logo.png'

@@ -22,7 +22,7 @@ export default function Landing() {
       {/* Navigation */}
       <nav className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-6">
-          <AivoLogo className="w-10 h-10" />
+          <AivoLogo className="w-[150px] h-[54px]" />
           <div className="flex items-center space-x-4">
             <Link
               to={ROUTES.LOGIN}
@@ -491,7 +491,7 @@ export default function Landing() {
           <div className="flex flex-col items-center gap-4">
             <Link
               to={ROUTES.REGISTER}
-              className="bg-white hover:bg-gray-100 text-primary-600 px-12 py-4 rounded-lg text-xl font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              className="bg-white border-2 border-white hover:bg-transparent hover:text-white text-primary-600 px-12 py-4 rounded-lg text-xl font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               data-testid="closing-cta-register"
             >
               Get Started — Free 30‑Day Premium Access
