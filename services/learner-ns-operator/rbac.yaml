@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: learner-ns-operator
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: learner-ns-operator
+    app.kubernetes.io/component: operator
+    aivo.dev/managed-by: helm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: learner-ns-operator
+  labels:
+    app.kubernetes.io/name: learner-ns-operator
+    app.kubernetes.io/component: operator
+    aivo.dev/managed-by: helm
+rules:
+# LearnerSpace CRD permissions
+- apiGroups: ["aivo.dev"]
+  resources: ["learnerspaces"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["aivo.dev"]
+  resources: ["learnerspaces/status"]
+  verbs: ["get", "update", "patch"]
+
+# Namespace management
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+# Resource management within namespaces
+- apiGroups: [""]
+  resources: ["resourcequotas", "serviceaccounts", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+# RBAC management
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+# Network policy management
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+# Pod management for monitoring
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "pods/status"]
+  verbs: ["get", "list", "watch"]
+
+# Events for debugging
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+
+# Custom resource definitions (for startup validation)
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: learner-ns-operator
+  labels:
+    app.kubernetes.io/name: learner-ns-operator
+    app.kubernetes.io/component: operator
+    aivo.dev/managed-by: helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: learner-ns-operator
+subjects:
+- kind: ServiceAccount
+  name: learner-ns-operator
+  namespace: aivo-system

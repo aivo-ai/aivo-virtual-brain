@@ -1,0 +1,17 @@
+apiVersion: aivo.dev/v1
+kind: LearnerSpace
+metadata:
+  name: example-student
+  namespace: aivo-system
+spec:
+  learnerId: "student123"
+  subjects: ["mathematics", "science", "programming"]
+  resourceQuota:
+    cpu: "1"
+    memory: "2Gi"
+    storage: "5Gi"
+    pods: 5
+  networkPolicy:
+    egressDeny: true
+    allowedNamespaces: ["aivo-system", "aivo-shared"]
+  vaultRole: "learner-default"

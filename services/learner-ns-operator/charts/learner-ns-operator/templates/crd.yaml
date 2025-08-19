@@ -1,0 +1,137 @@
+{{- if .Values.crd.install }}
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: learnerspaces.aivo.dev
+  labels:
+    {{- include "learner-ns-operator.labels" . | nindent 4 }}
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-10"
+    {{- if not .Values.crd.upgrade }}
+    helm.sh/hook-delete-policy: before-hook-creation
+    {{- end }}
+spec:
+  group: aivo.dev
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required:
+            - learnerId
+            - subjects
+            properties:
+              learnerId:
+                type: string
+                description: "Unique identifier for the learner"
+                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+                minLength: 1
+                maxLength: 63
+              subjects:
+                type: array
+                description: "List of subjects this learner is enrolled in"
+                items:
+                  type: string
+                  pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+                minItems: 1
+              resourceQuota:
+                type: object
+                description: "Resource limits for the learner namespace"
+                properties:
+                  cpu:
+                    type: string
+                    default: {{ .Values.operator.defaultResourceQuota.cpu | quote }}
+                  memory:
+                    type: string
+                    default: {{ .Values.operator.defaultResourceQuota.memory | quote }}
+                  storage:
+                    type: string
+                    default: {{ .Values.operator.defaultResourceQuota.storage | quote }}
+                  pods:
+                    type: integer
+                    default: {{ .Values.operator.defaultResourceQuota.pods }}
+              networkPolicy:
+                type: object
+                description: "Network isolation configuration"
+                properties:
+                  egressDeny:
+                    type: boolean
+                    default: {{ .Values.operator.defaultNetworkPolicy.egressDeny }}
+                    description: "Deny all egress traffic by default"
+                  allowedNamespaces:
+                    type: array
+                    description: "Namespaces allowed for ingress/egress"
+                    items:
+                      type: string
+                    default: {{ .Values.operator.defaultNetworkPolicy.allowedNamespaces | toJson }}
+              vaultRole:
+                type: string
+                description: "Vault role for secret access"
+                default: {{ .Values.operator.defaultVaultRole | quote }}
+          status:
+            type: object
+            properties:
+              phase:
+                type: string
+                enum:
+                - "Pending"
+                - "Creating"
+                - "Ready"
+                - "Deleting"
+                - "Failed"
+                default: "Pending"
+              namespace:
+                type: string
+                description: "Name of the created namespace"
+              conditions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                      enum: ["True", "False", "Unknown"]
+                    lastTransitionTime:
+                      type: string
+                      format: date-time
+                    reason:
+                      type: string
+                    message:
+                      type: string
+              createdAt:
+                type: string
+                format: date-time
+              lastUpdated:
+                type: string
+                format: date-time
+    additionalPrinterColumns:
+    - name: Learner ID
+      type: string
+      jsonPath: .spec.learnerId
+    - name: Namespace
+      type: string
+      jsonPath: .status.namespace
+    - name: Phase
+      type: string
+      jsonPath: .status.phase
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+  scope: Namespaced
+  names:
+    plural: learnerspaces
+    singular: learnerspace
+    kind: LearnerSpace
+    shortNames:
+    - ls
+    - learner
+{{- end }}

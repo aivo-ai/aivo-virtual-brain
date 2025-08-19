@@ -1,0 +1,21 @@
+apiVersion: v2
+name: learner-ns-operator
+description: AIVO Learner Namespace Operator - Creates isolated namespaces per learner
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - kubernetes
+  - operator
+  - namespace
+  - isolation
+  - learner
+home: https://github.com/aivo-virtual-brains/platform
+maintainers:
+  - name: AIVO Platform Team
+    email: platform@aivo.dev
+dependencies:
+  - name: platform
+    version: ^0.1.0
+    repository: file://../../../infra/helm/platform
+    condition: platform.enabled
