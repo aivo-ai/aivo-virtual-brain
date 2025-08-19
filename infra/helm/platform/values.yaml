@@ -1,0 +1,129 @@
+# AIVO Platform shared configuration
+global:
+  domain: aivo.ai
+  environment: production
+  region: us-east-1
+  
+  # Image registry configuration
+  imageRegistry: ghcr.io
+  imageRepository: aivo-ai/aivo-virtual-brain
+  
+  # Security configuration
+  podSecurityStandard: restricted
+  runAsNonRoot: true
+  runAsUser: 65534
+  runAsGroup: 65534
+  fsGroup: 65534
+  
+  # Resource defaults
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Namespace configuration
+namespaces:
+  create: true
+  list:
+    - name: aivo-platform
+      labels:
+        pod-security.kubernetes.io/enforce: restricted
+        pod-security.kubernetes.io/audit: restricted
+        pod-security.kubernetes.io/warn: restricted
+    - name: aivo-services
+      labels:
+        pod-security.kubernetes.io/enforce: restricted
+        pod-security.kubernetes.io/audit: restricted
+        pod-security.kubernetes.io/warn: restricted
+    - name: aivo-monitoring
+      labels:
+        pod-security.kubernetes.io/enforce: baseline
+        pod-security.kubernetes.io/audit: restricted
+        pod-security.kubernetes.io/warn: restricted
+
+# Vault configuration
+vault:
+  enabled: true
+  address: https://vault.aivo.ai
+  authPath: kubernetes
+  role: aivo-platform
+  
+  # Vault Agent Injector configuration
+  agent:
+    image: hashicorp/vault:1.15.6
+    annotations:
+      vault.hashicorp.com/agent-inject: "true"
+      vault.hashicorp.com/role: "aivo-platform"
+      vault.hashicorp.com/agent-pre-populate-only: "true"
+
+# Network policies
+networkPolicies:
+  enabled: true
+  defaultDeny: true
+  
+  # Allow ingress from ingress controller
+  ingress:
+    enabled: true
+    namespaceSelector:
+      matchLabels:
+        name: ingress-nginx
+  
+  # Allow egress to DNS and vault
+  egress:
+    dns: true
+    vault: true
+
+# Pod Security Policies
+podSecurityPolicies:
+  enabled: true
+  
+  restricted:
+    allowPrivilegeEscalation: false
+    allowedCapabilities: []
+    allowedHostPaths: []
+    defaultAddCapabilities: []
+    forbiddenSysctls: ["*"]
+    fsGroup:
+      rule: RunAsAny
+    hostIPC: false
+    hostNetwork: false
+    hostPID: false
+    privileged: false
+    readOnlyRootFilesystem: true
+    requiredDropCapabilities: [ALL]
+    runAsUser:
+      rule: MustRunAsNonRoot
+    seLinux:
+      rule: RunAsAny
+    supplementalGroups:
+      rule: RunAsAny
+    volumes:
+      - configMap
+      - emptyDir
+      - projected
+      - secret
+      - downwardAPI
+      - persistentVolumeClaim
+
+# Service Monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  namespace: aivo-monitoring
+  
+# Priority Classes
+priorityClasses:
+  - name: aivo-critical
+    value: 1000
+    globalDefault: false
+    description: "Critical AIVO services"
+  - name: aivo-high
+    value: 800
+    globalDefault: false
+    description: "High priority AIVO services"
+  - name: aivo-normal
+    value: 500
+    globalDefault: true
+    description: "Normal priority AIVO services"

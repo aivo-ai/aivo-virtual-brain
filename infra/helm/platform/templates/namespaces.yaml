@@ -1,0 +1,19 @@
+{{- if .Values.namespaces.create }}
+{{- range .Values.namespaces.list }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- range $key, $value := .labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    app.kubernetes.io/name: {{ include "aivo-platform.name" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/version: {{ $.Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+{{- end }}
+{{- end }}
