@@ -18,6 +18,7 @@ import { ThemeProvider } from './providers/ThemeProvider'
 // Components
 import { TopNav } from '@/components/nav/TopNav'
 import { SideNav } from '@/components/nav/SideNav'
+import { OfflineToast, ConnectionStatus, PWAInstallPrompt } from '@/components/PWAComponents'
 
 // Routes and utilities
 import { ROUTES, canAccessRoute, isPublicRoute } from './routes'
@@ -131,6 +132,10 @@ function AppShell() {
         Skip to main content
       </a>
 
+      {/* PWA Components */}
+      <OfflineToast />
+      <PWAInstallPrompt />
+
       <RouteTracker />
       <TopNav />
 
@@ -142,6 +147,13 @@ function AppShell() {
           className={`flex-1 ${isAuthenticated ? 'lg:ml-64' : ''} focus:outline-none`}
           tabIndex={-1}
         >
+          {/* Connection status in header */}
+          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2">
+            <div className="flex justify-end">
+              <ConnectionStatus />
+            </div>
+          </div>
+          
           <div className="min-h-screen">
             <Suspense fallback={<PageLoading />}>
               <Routes>

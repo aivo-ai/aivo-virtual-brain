@@ -22,7 +22,7 @@ export default function Landing() {
       {/* Navigation */}
       <nav className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-6">
-          <AivoLogo className="w-[150px] h-[54px]" />
+          <AivoLogo className="w-[200px] h-[72px]" />
           <div className="flex items-center space-x-4">
             <Link
               to={ROUTES.LOGIN}

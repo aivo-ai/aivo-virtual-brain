@@ -40,7 +40,44 @@
     "alreadyHaveAccount": "Already have an account?",
     "dontHaveAccount": "Don't have an account?",
     "resetPassword": "Reset Password",
-    "backToLogin": "Back to Sign In"
+    "backToLogin": "Back to Sign In",
+    
+    "create_account_title": "Create Your Account",
+    "create_account_subtitle": "Join AIVO to personalize your learning experience",
+    "sign_in_link": "Sign in here",
+    "sign_in_title": "Welcome Back",
+    "sign_in_subtitle": "Don't have an account?",
+    "sign_up_link": "Sign up here",
+    
+    "first_name_label": "First Name",
+    "first_name_placeholder": "Enter your first name",
+    "last_name_label": "Last Name", 
+    "last_name_placeholder": "Enter your last name",
+    "email_label": "Email Address",
+    "email_placeholder": "Enter your email address",
+    "password_label": "Password",
+    "password_placeholder": "Create a secure password",
+    "confirm_password_label": "Confirm Password",
+    "confirm_password_placeholder": "Confirm your password",
+    
+    "agree_to": "I agree to the",
+    "terms_of_service": "Terms of Service", 
+    "and": "and",
+    "privacy_policy": "Privacy Policy",
+    "create_account": "Create Account",
+    "or_register_with": "Or sign up with",
+    
+    "verify_2fa_title": "Two-Factor Authentication",
+    "verify_2fa_subtitle": "Enter the 6-digit code from your authenticator app",
+    
+    "errors": {
+      "invalid_credentials": "Invalid email or password",
+      "account_locked": "Your account has been temporarily locked",
+      "email_not_verified": "Please verify your email address",
+      "network_error": "Network error. Please try again.",
+      "invalid_2fa_code": "Invalid verification code",
+      "expired_token": "Session has expired. Please sign in again."
+    }
   },
   "dashboard": {
     "welcome": "Welcome back, {{name}}!",

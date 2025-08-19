@@ -1,3 +1,5 @@
+import { offlineFetch } from '../utils/offlineQueue'
+
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080'
 
 // Event Types
@@ -99,7 +101,7 @@ class EventCollectorClient {
     }
 
     try {
-      const response = await fetch(
+      const response = await offlineFetch(
         `${API_BASE}/event-collector-svc/events/batch`,
         {
           method: 'POST',
@@ -108,7 +110,8 @@ class EventCollectorClient {
             'X-Context': 'learning',
           },
           body: JSON.stringify({ events }),
-        }
+        },
+        'event-collector'
       )
 
       if (!response.ok) {
@@ -251,14 +254,14 @@ class EventCollectorClient {
 
   // Private methods
   private async sendEventToServer(event: LearningEvent): Promise<void> {
-    const response = await fetch(`${API_BASE}/event-collector-svc/events`, {
+    const response = await offlineFetch(`${API_BASE}/event-collector-svc/events`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Context': 'learning',
       },
       body: JSON.stringify(event),
-    })
+    }, 'event-collector')
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)

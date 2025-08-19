@@ -12,18 +12,23 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:a11y": "playwright test --config=playwright-a11y.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:perf": "playwright test --config=playwright-perf.config.ts",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "typecheck": "tsc -b --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "validate-routes": "tsx scripts/validate-routes.ts"
+    "validate-routes": "tsx scripts/validate-routes.ts",
+    "verify-all": "npm run test:e2e && npm run test:a11y && npm run test:perf && npm run validate-routes"
   },
   "dependencies": {
     "@aivo/i18n": "workspace:*",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.1",
     "@tanstack/react-query": "^5.85.3",
+    "dexie": "^4.2.0",
     "framer-motion": "^12.23.12",
     "i18next": "^23.15.0",
     "i18next-browser-languagedetector": "^8.0.0",
@@ -34,6 +39,13 @@
     "react-i18next": "^15.0.2",
     "react-intersection-observer": "^9.16.0",
     "react-router-dom": "^7.0.0",
+    "recharts": "^3.1.2",
+    "workbox-background-sync": "^7.3.0",
+    "workbox-core": "^7.3.0",
+    "workbox-expiration": "^7.3.0",
+    "workbox-precaching": "^7.3.0",
+    "workbox-routing": "^7.3.0",
+    "workbox-strategies": "^7.3.0",
     "zod": "^4.0.17"
   },
   "devDependencies": {

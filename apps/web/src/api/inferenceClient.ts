@@ -1,3 +1,5 @@
+import { offlineFetch } from '../utils/offlineQueue'
+
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080'
 
 // Inference Types
@@ -140,7 +142,7 @@ class InferenceClient {
     }
 
     try {
-      const response = await fetch(
+      const response = await offlineFetch(
         `${API_BASE}/inference-gateway-svc/chat/stream`,
         {
           method: 'POST',
@@ -153,7 +155,8 @@ class InferenceClient {
             ...request,
             stream: true,
           }),
-        }
+        },
+        'inference-gateway'
       )
 
       if (!response.ok) {
