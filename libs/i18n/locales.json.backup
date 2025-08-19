@@ -22,9 +22,15 @@
         "asr": ["azure", "google", "aws"],
         "tts": ["azure", "google", "aws"]
       },
-      "educational_subjects": ["mathematics", "english", "science", "social_studies"],
+      "educational_subjects": [
+        "mathematics",
+        "english",
+        "science",
+        "social_studies"
+      ],
       "status": "active"
     },
+
     "es": {
       "code": "es",
       "iso_639_1": "es",
@@ -44,9 +50,15 @@
         "asr": ["azure", "google", "aws"],
         "tts": ["azure", "google", "aws"]
       },
-      "educational_subjects": ["matemáticas", "español", "ciencias", "estudios_sociales"],
+      "educational_subjects": [
+        "matemáticas",
+        "español",
+        "ciencias",
+        "estudios_sociales"
+      ],
       "status": "active"
     },
+
     "fr": {
       "code": "fr",
       "iso_639_1": "fr",
@@ -66,9 +78,15 @@
         "asr": ["azure", "google", "aws"],
         "tts": ["azure", "google", "aws"]
       },
-      "educational_subjects": ["mathématiques", "français", "sciences", "études_sociales"],
+      "educational_subjects": [
+        "mathématiques",
+        "français",
+        "sciences",
+        "études_sociales"
+      ],
       "status": "active"
     },
+
     "ar": {
       "code": "ar",
       "iso_639_1": "ar",
@@ -88,9 +106,27 @@
         "asr": ["azure", "google"],
         "tts": ["azure", "google"]
       },
-      "educational_subjects": ["الرياضيات", "العربية", "العلوم", "الدراسات_الاجتماعية"],
+      "educational_subjects": [
+        "الرياضيات",
+        "العربية",
+        "العلوم",
+        "الدراسات_الاجتماعية"
+      ],
       "status": "active"
     },
+      "speech_support": {
+        "asr": ["azure", "google"],
+        "tts": ["azure", "google"]
+      },
+      "educational_subjects": [
+        "الرياضيات",
+        "العربية",
+        "العلوم",
+        "الدراسات_الاجتماعية"
+      ],
+      "status": "active"
+    },
+
     "zh-Hans": {
       "code": "zh-Hans",
       "iso_639_1": "zh",
@@ -113,6 +149,7 @@
       "educational_subjects": ["数学", "中文", "科学", "社会研究"],
       "status": "active"
     },
+
     "hi": {
       "code": "hi",
       "iso_639_1": "hi",
@@ -135,6 +172,7 @@
       "educational_subjects": ["गणित", "हिन्दी", "विज्ञान", "सामाजिक_अध्ययन"],
       "status": "active"
     },
+
     "pt": {
       "code": "pt",
       "iso_639_1": "pt",
@@ -154,9 +192,15 @@
         "asr": ["azure", "google", "aws"],
         "tts": ["azure", "google", "aws"]
       },
-      "educational_subjects": ["matemática", "português", "ciências", "estudos_sociais"],
+      "educational_subjects": [
+        "matemática",
+        "português",
+        "ciências",
+        "estudos_sociais"
+      ],
       "status": "active"
     },
+
     "ig": {
       "code": "ig",
       "iso_639_1": "ig",
@@ -179,6 +223,7 @@
       "educational_subjects": ["mgbakọ", "igbo", "sayensị", "ọmụmụ_obodo"],
       "status": "beta"
     },
+
     "yo": {
       "code": "yo",
       "iso_639_1": "yo",
@@ -201,6 +246,7 @@
       "educational_subjects": ["mathimátìkì", "yoruba", "sáyẹ́nsì", "ẹ̀kọ́_àwùjọ"],
       "status": "beta"
     },
+
     "ha": {
       "code": "ha",
       "iso_639_1": "ha",
@@ -220,9 +266,15 @@
         "asr": ["google"],
         "tts": ["google"]
       },
-      "educational_subjects": ["lissafi", "hausa", "kimiyya", "karatun_al'umma"],
+      "educational_subjects": [
+        "lissafi",
+        "hausa",
+        "kimiyya",
+        "karatun_al'umma"
+      ],
       "status": "beta"
     },
+
     "efi": {
       "code": "efi",
       "iso_639_1": "efi",
@@ -242,9 +294,15 @@
         "asr": [],
         "tts": []
       },
-      "educational_subjects": ["mathematics", "efik", "science", "social_studies"],
+      "educational_subjects": [
+        "mathematics",
+        "efik",
+        "science",
+        "social_studies"
+      ],
       "status": "experimental"
     },
+
     "sw": {
       "code": "sw",
       "iso_639_1": "sw",
@@ -264,9 +322,15 @@
         "asr": ["google"],
         "tts": ["google"]
       },
-      "educational_subjects": ["hisabati", "kiswahili", "sayansi", "maarifa_ya_kijamii"],
+      "educational_subjects": [
+        "hisabati",
+        "kiswahili",
+        "sayansi",
+        "maarifa_ya_kijamii"
+      ],
       "status": "active"
     },
+
     "xh": {
       "code": "xh",
       "iso_639_1": "xh",
@@ -286,9 +350,15 @@
         "asr": [],
         "tts": []
       },
-      "educational_subjects": ["izibalo", "isixhosa", "inzululwazi", "izifundo_zentlalo"],
+      "educational_subjects": [
+        "izibalo",
+        "isixhosa",
+        "inzululwazi",
+        "izifundo_zentlalo"
+      ],
       "status": "experimental"
     },
+
     "ki": {
       "code": "ki",
       "iso_639_1": "ki",
@@ -308,16 +378,24 @@
         "asr": [],
         "tts": []
       },
-      "educational_subjects": ["thabiti", "gikuyu", "ũtaũgĩ", "mĩthiori_ya_gĩkamĩrũ"],
+      "educational_subjects": [
+        "thabiti",
+        "gikuyu",
+        "ũtaũgĩ",
+        "mĩthiori_ya_gĩkamĩrũ"
+      ],
       "status": "experimental"
     }
   },
+
   "locale_groups": {
     "tier_1": ["en", "es", "fr", "ar", "zh-Hans", "hi", "pt"],
     "tier_2": ["ig", "yo", "ha", "sw"],
     "experimental": ["efi", "xh", "ki"]
   },
+
   "rtl_locales": ["ar"],
+
   "speech_matrix": {
     "providers": {
       "azure": {
@@ -335,7 +413,19 @@
         "name": "Google Cloud Speech",
         "priority": 2,
         "capabilities": ["asr", "tts"],
-        "supported_locales": ["en", "es", "fr", "ar", "zh-Hans", "hi", "pt", "ig", "yo", "ha", "sw"],
+        "supported_locales": [
+          "en",
+          "es",
+          "fr",
+          "ar",
+          "zh-Hans",
+          "hi",
+          "pt",
+          "ig",
+          "yo",
+          "ha",
+          "sw"
+        ],
         "rate_limits": {
           "asr": 15,
           "tts": 30
@@ -354,6 +444,7 @@
         "quality_score": 85
       }
     },
+
     "fallback_chains": {
       "asr": {
         "en": ["azure", "google", "aws"],
@@ -385,6 +476,7 @@
       }
     }
   },
+
   "regional_preferences": {
     "africa": ["en", "sw", "yo", "ha", "ig", "fr", "ar"],
     "europe": ["en", "fr", "es", "ar"],

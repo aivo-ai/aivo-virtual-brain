@@ -112,6 +112,8 @@
   "language": {
     "selectLanguage": "اختيار اللغة",
     "changeLanguage": "تغيير اللغة",
-    "languageChanged": "تم تغيير اللغة إلى {{language}}"
+    "languageChanged": "تم تغيير اللغة إلى {{language}}",
+    "currentLanguage": "اللغة الحالية",
+    "switchTo": "التبديل إلى {{language}}"
   }
 }

@@ -434,3 +434,90 @@
     transition: none;
   }
 }
+
+/* Language switcher specific styles */
+.language-switcher[dir="rtl"] {
+  text-align: right;
+}
+
+.language-switcher[dir="rtl"] .dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+.language-switcher[dir="rtl"] .flag-icon {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+/* Navigation breadcrumbs RTL */
+[dir="rtl"] .breadcrumb-item + .breadcrumb-item::before {
+  content: "\\";
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .breadcrumb {
+  flex-direction: row-reverse;
+}
+
+/* Form field groups RTL */
+[dir="rtl"] .form-group .form-label {
+  text-align: right;
+}
+
+[dir="rtl"] .input-group .input-group-text:first-child {
+  border-radius: 0 0.375rem 0.375rem 0;
+  border-left: 0;
+  border-right: 1px solid #ced4da;
+}
+
+[dir="rtl"] .input-group .form-control:last-child {
+  border-radius: 0.375rem 0 0 0.375rem;
+}
+
+/* Accessibility improvements for RTL */
+[dir="rtl"] .sr-only-rtl {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Font loading and fallbacks */
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  font-display: swap;
+  src: local('Noto Sans Arabic'), local('NotoSansArabic');
+}
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-display: swap;
+  src: local('Noto Sans SC'), local('NotoSansSC');
+}
+
+@font-face {
+  font-family: 'Noto Sans Devanagari';
+  font-display: swap;
+  src: local('Noto Sans Devanagari'), local('NotoSansDevanagari');
+}
+
+/* Language-specific font rendering */
+.lang-ar {
+  font-family: 'Noto Sans Arabic', 'Arabic Typesetting', 'Geeza Pro', 'Traditional Arabic', 'Simplified Arabic', Tahoma, Arial, sans-serif;
+  direction: rtl;
+  text-align: right;
+}
+
+.lang-zh-hans {
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'SimHei', sans-serif;
+}
+
+.lang-hi {
+  font-family: 'Noto Sans Devanagari', 'Mangal', 'Aparajita', 'Kokila', sans-serif;
+}

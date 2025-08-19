@@ -112,6 +112,8 @@
   "language": {
     "selectLanguage": "Select Language",
     "changeLanguage": "Change Language",
-    "languageChanged": "Language changed to {{language}}"
+    "languageChanged": "Language changed to {{language}}",
+    "currentLanguage": "Current Language",
+    "switchTo": "Switch to {{language}}"
   }
 }

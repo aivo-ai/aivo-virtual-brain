@@ -33,23 +33,25 @@ export interface Language {
   decimalSeparator: string;
   thousandsSeparator: string;
   speechSupported: boolean;
+  region: string;
 }
 
 // Extract languages from locales data
 export const languages: Language[] = Object.entries(
-  localesData.supported_locales,
+  (localesData as any).supported_locales,
 ).map(([iso, config]: [string, any]) => ({
   iso,
   displayName: config.display_name,
   nativeName: config.native_name,
-  isRTL: localesData.rtl_locales.includes(iso),
+  isRTL: (localesData as any).rtl_locales.includes(iso),
   fontStack: config.font_stack,
   currency: config.currency,
   dateFormat: config.date_format,
   timeFormat: config.time_format,
   decimalSeparator: config.decimal_separator,
   thousandsSeparator: config.thousands_separator,
-  speechSupported: config.speech_supported,
+  speechSupported: config.speech_support,
+  region: config.region,
 }));
 
 const resources = {
