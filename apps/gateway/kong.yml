@@ -1,0 +1,492 @@
+# Kong Gateway Configuration for AIVO Platform
+# Enhanced with rate limiting and security plugins
+
+_format_version: "3.0"
+_transform: true
+
+# Services Configuration
+services:
+  # Authentication Service
+  - name: auth-svc
+    url: http://auth-svc.aivo-system.svc.cluster.local:80
+    tags:
+      - auth
+      - microservice
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    retries: 3
+
+  # User Management Service
+  - name: user-svc
+    url: http://user-svc.aivo-system.svc.cluster.local:80
+    tags:
+      - user
+      - microservice
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    retries: 3
+
+  # Inference Gateway Service
+  - name: inference-gateway-svc
+    url: http://inference-gateway-svc.aivo-system.svc.cluster.local:80
+    tags:
+      - inference
+      - ai
+      - microservice
+    connect_timeout: 10000
+    read_timeout: 120000 # Longer timeout for AI inference
+    write_timeout: 120000
+    retries: 2
+
+  # Analytics Service
+  - name: analytics-svc
+    url: http://analytics-svc.aivo-system.svc.cluster.local:80
+    tags:
+      - analytics
+      - microservice
+    connect_timeout: 5000
+    read_timeout: 60000
+    write_timeout: 60000
+    retries: 3
+
+  # Notification Service
+  - name: notification-svc
+    url: http://notification-svc.aivo-system.svc.cluster.local:80
+    tags:
+      - notification
+      - microservice
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    retries: 3
+
+# Routes Configuration
+routes:
+  # Authentication Routes
+  - name: auth-login
+    service: auth-svc
+    paths:
+      - /api/auth/login
+    methods:
+      - POST
+    strip_path: false
+    preserve_host: true
+    tags:
+      - auth
+      - login
+      - sensitive
+
+  - name: auth-logout
+    service: auth-svc
+    paths:
+      - /api/auth/logout
+    methods:
+      - POST
+    strip_path: false
+    preserve_host: true
+    tags:
+      - auth
+      - logout
+
+  - name: auth-refresh
+    service: auth-svc
+    paths:
+      - /api/auth/refresh
+    methods:
+      - POST
+    strip_path: false
+    preserve_host: true
+    tags:
+      - auth
+      - refresh
+
+  - name: auth-reset-password
+    service: auth-svc
+    paths:
+      - /api/auth/reset-password
+    methods:
+      - POST
+    strip_path: false
+    preserve_host: true
+    tags:
+      - auth
+      - password-reset
+      - sensitive
+
+  # User Management Routes
+  - name: user-profile
+    service: user-svc
+    paths:
+      - /api/users/profile
+    methods:
+      - GET
+      - PUT
+    strip_path: false
+    preserve_host: true
+    tags:
+      - user
+      - profile
+
+  - name: user-registration
+    service: user-svc
+    paths:
+      - /api/users/register
+    methods:
+      - POST
+    strip_path: false
+    preserve_host: true
+    tags:
+      - user
+      - registration
+
+  # Inference Routes
+  - name: inference-generate
+    service: inference-gateway-svc
+    paths:
+      - /api/inference/generate
+    methods:
+      - POST
+    strip_path: false
+    preserve_host: true
+    tags:
+      - inference
+      - generate
+      - sensitive
+      - high-cost
+
+  - name: inference-models
+    service: inference-gateway-svc
+    paths:
+      - /api/inference/models
+    methods:
+      - GET
+    strip_path: false
+    preserve_host: true
+    tags:
+      - inference
+      - models
+
+  # Analytics Routes
+  - name: analytics-events
+    service: analytics-svc
+    paths:
+      - /api/analytics/events
+    methods:
+      - POST
+    strip_path: false
+    preserve_host: true
+    tags:
+      - analytics
+      - events
+
+  # Notification Routes
+  - name: notifications
+    service: notification-svc
+    paths:
+      - /api/notifications
+    methods:
+      - GET
+      - POST
+    strip_path: false
+    preserve_host: true
+    tags:
+      - notifications
+
+# Plugins Configuration
+plugins:
+  # Global Rate Limiting Plugin
+  - name: rate-limiting-advanced
+    config:
+      limit:
+        - 1000 # 1000 requests
+      window_size:
+        - 60 # per 60 seconds
+      identifier: ip
+      sync_rate: 10
+      strategy: redis
+      redis:
+        host: redis.aivo-system.svc.cluster.local
+        port: 6379
+        database: 0
+        timeout: 2000
+      hide_client_headers: false
+      header_name: X-RateLimit-Remaining
+    tags:
+      - global
+      - rate-limiting
+
+  # IP Restriction Plugin for Admin Routes
+  - name: ip-restriction
+    route: auth-login
+    config:
+      deny:
+        - 0.0.0.0/8 # Block local networks from external access
+        - 10.0.0.0/8 # Block RFC 1918 private networks
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 169.254.0.0/16 # Block link-local
+      message: "Access denied from this IP address"
+    tags:
+      - security
+      - ip-restriction
+
+  # Request Size Limiting
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1048576 # 1MB limit
+      size_unit: bytes
+      require_content_length: false
+    tags:
+      - global
+      - security
+
+  # CORS Plugin
+  - name: cors
+    config:
+      origins:
+        - "https://aivo.dev"
+        - "https://app.aivo.dev"
+        - "https://admin.aivo.dev"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - Authorization
+        - X-User-ID
+        - X-Request-ID
+      exposed_headers:
+        - X-RateLimit-Remaining
+        - X-RateLimit-Limit
+        - X-Response-Time
+      credentials: true
+      max_age: 3600
+      preflight_continue: false
+    tags:
+      - global
+      - cors
+
+  # Security Headers Plugin
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Frame-Options: DENY"
+          - "X-Content-Type-Options: nosniff"
+          - "X-XSS-Protection: 1; mode=block"
+          - "Referrer-Policy: strict-origin-when-cross-origin"
+          - "X-Gateway: Kong"
+    tags:
+      - global
+      - security-headers
+
+  # Route-Specific Plugins
+
+  # Login Route Rate Limiting (Strict)
+  - name: rate-limiting-advanced
+    route: auth-login
+    config:
+      limit:
+        - 5 # 5 login attempts
+        - 15 # 15 per hour
+      window_size:
+        - 60 # per minute
+        - 3600 # per hour
+      identifier: ip
+      strategy: redis
+      redis:
+        host: redis.aivo-system.svc.cluster.local
+        port: 6379
+        database: 1
+      hide_client_headers: false
+      header_name: X-Login-RateLimit-Remaining
+      fault_tolerant: true
+    tags:
+      - auth
+      - rate-limiting
+      - strict
+
+  # Login Route Rate Limiting by Credential
+  - name: rate-limiting-advanced
+    route: auth-login
+    config:
+      limit:
+        - 10 # 10 attempts per credential
+      window_size:
+        - 3600 # per hour
+      identifier: header
+      header_name: X-Credential-Hash
+      strategy: redis
+      redis:
+        host: redis.aivo-system.svc.cluster.local
+        port: 6379
+        database: 2
+      hide_client_headers: false
+      fault_tolerant: true
+    tags:
+      - auth
+      - credential-limiting
+
+  # Inference Generation Rate Limiting
+  - name: rate-limiting-advanced
+    route: inference-generate
+    config:
+      limit:
+        - 10 # 10 generations per minute
+        - 100 # 100 per hour
+      window_size:
+        - 60 # per minute
+        - 3600 # per hour
+      identifier: ip
+      strategy: redis
+      redis:
+        host: redis.aivo-system.svc.cluster.local
+        port: 6379
+        database: 3
+      hide_client_headers: false
+      header_name: X-Generate-RateLimit-Remaining
+      fault_tolerant: true
+    tags:
+      - inference
+      - rate-limiting
+      - generation
+
+  # Inference Generation Rate Limiting by User
+  - name: rate-limiting-advanced
+    route: inference-generate
+    config:
+      limit:
+        - 50 # 50 generations per user per hour
+        - 500 # 500 per day
+      window_size:
+        - 3600 # per hour
+        - 86400 # per day
+      identifier: header
+      header_name: X-User-ID
+      strategy: redis
+      redis:
+        host: redis.aivo-system.svc.cluster.local
+        port: 6379
+        database: 4
+      hide_client_headers: false
+      fault_tolerant: true
+    tags:
+      - inference
+      - user-limiting
+
+  # Bot Detection Plugin for Sensitive Routes
+  - name: bot-detection
+    route: auth-login
+    config:
+      deny:
+        - "sqlmap"
+        - "nikto"
+        - "nessus"
+        - "masscan"
+        - "zmap"
+        - "w3af"
+      allow:
+        - "googlebot"
+        - "bingbot"
+      message: "Bot access denied"
+    tags:
+      - security
+      - bot-detection
+
+  # Request Termination for Maintenance
+  - name: request-termination
+    route: inference-generate
+    enabled: false # Disabled by default, enable during maintenance
+    config:
+      status_code: 503
+      message: "Inference service temporarily unavailable for maintenance"
+      content_type: "application/json"
+      body: '{"error": "Service Unavailable", "message": "Inference service is under maintenance. Please try again later.", "retry_after": 300}'
+      echo: false
+    tags:
+      - maintenance
+
+  # Prometheus Metrics Plugin
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+    tags:
+      - monitoring
+      - metrics
+
+  # Request/Response Logging
+  - name: file-log
+    config:
+      path: "/tmp/kong-access.log"
+      reopen: true
+      custom_fields_by_lua:
+        user_id: "return kong.request.get_header('X-User-ID')"
+        request_id: "return kong.request.get_header('X-Request-ID')"
+        bot_score: "return kong.request.get_header('CF-Bot-Score')"
+    tags:
+      - logging
+      - audit
+
+# Consumer Configuration (for API key auth if needed)
+consumers:
+  - username: admin-user
+    custom_id: admin-001
+    tags:
+      - admin
+      - internal
+
+  - username: service-account
+    custom_id: service-001
+    tags:
+      - service
+      - internal
+
+# Upstream Configuration
+upstreams:
+  - name: auth-svc-upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        type: http
+        http_path: "/health"
+        healthy:
+          interval: 10
+          successes: 3
+        unhealthy:
+          interval: 10
+          http_failures: 3
+          timeouts: 3
+    targets:
+      - target: auth-svc.aivo-system.svc.cluster.local:80
+        weight: 100
+
+  - name: inference-gateway-upstream
+    algorithm: least-connections
+    healthchecks:
+      active:
+        type: http
+        http_path: "/health"
+        healthy:
+          interval: 30
+          successes: 2
+        unhealthy:
+          interval: 30
+          http_failures: 5
+          timeouts: 5
+    targets:
+      - target: inference-gateway-svc.aivo-system.svc.cluster.local:80
+        weight: 100
