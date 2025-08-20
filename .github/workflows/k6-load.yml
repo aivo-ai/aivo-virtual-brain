@@ -1,0 +1,438 @@
+name: K6 Load Testing
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/**"
+      - "apps/gateway/**"
+      - "tests/load/**"
+  schedule:
+    # Nightly load tests at 2 AM UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: "Type of load test to run"
+        required: true
+        default: "smoke"
+        type: choice
+        options:
+          - smoke
+          - load
+          - stress
+      target_environment:
+        description: "Environment to test against"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - local
+          - staging
+          - production
+
+env:
+  K6_VERSION: "0.47.0"
+  NODE_VERSION: "18"
+
+jobs:
+  determine-test-scope:
+    runs-on: ubuntu-latest
+    outputs:
+      test-gateway: ${{ steps.changes.outputs.gateway }}
+      test-assessment: ${{ steps.changes.outputs.assessment }}
+      test-search: ${{ steps.changes.outputs.search }}
+      test-type: ${{ steps.test-type.outputs.type }}
+      base-url: ${{ steps.environment.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect file changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            gateway:
+              - 'apps/gateway/**'
+              - 'services/inference-gateway-svc/**'
+              - 'tests/load/k6/gateway-generate.js'
+            assessment:
+              - 'services/assessment-svc/**'
+              - 'tests/load/k6/assessment.js'
+            search:
+              - 'services/search-svc/**'
+              - 'tests/load/k6/search.js'
+
+      - name: Determine test type
+        id: test-type
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "type=smoke" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "type=load" >> $GITHUB_OUTPUT
+          else
+            echo "type=${{ github.event.inputs.test_type }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set environment URL
+        id: environment
+        run: |
+          if [ "${{ github.event.inputs.target_environment }}" = "production" ]; then
+            echo "url=https://api.aivo.ai" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.target_environment }}" = "staging" ]; then
+            echo "url=https://api-staging.aivo.ai" >> $GITHUB_OUTPUT
+          else
+            echo "url=http://localhost:8080" >> $GITHUB_OUTPUT
+          fi
+
+  setup-test-environment:
+    runs-on: ubuntu-latest
+    needs: determine-test-scope
+    if: needs.determine-test-scope.outputs.base-url == 'http://localhost:8080'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start test services
+        run: |
+          # Start required services for local testing
+          docker-compose -f docker-compose.test.yml up -d \
+            postgres \
+            kong \
+            gateway \
+            assessment-svc \
+            search-svc
+
+          # Wait for services to be ready
+          timeout 120s bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
+
+      - name: Verify service health
+        run: |
+          services=("gateway" "assessment" "search")
+          for service in "${services[@]}"; do
+            echo "Checking $service health..."
+            curl -f "http://localhost:8080/api/v1/$service/health" || exit 1
+          done
+
+  k6-gateway-test:
+    runs-on: ubuntu-latest
+    needs: [determine-test-scope, setup-test-environment]
+    if: always() && (needs.determine-test-scope.outputs.test-gateway == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          curl -L https://github.com/grafana/k6/releases/download/v${{ env.K6_VERSION }}/k6-v${{ env.K6_VERSION }}-linux-amd64.tar.gz | tar xz
+          sudo mv k6-v${{ env.K6_VERSION }}-linux-amd64/k6 /usr/local/bin/
+
+      - name: Run Gateway Load Test
+        env:
+          BASE_URL: ${{ needs.determine-test-scope.outputs.base-url }}
+          API_KEY: ${{ secrets.LOAD_TEST_API_KEY }}
+          TENANT_ID: ${{ secrets.LOAD_TEST_TENANT_ID }}
+          TEST_TYPE: ${{ needs.determine-test-scope.outputs.test-type }}
+        run: |
+          cd tests/load/k6
+          k6 run \
+            --out json=gateway-results.json \
+            --summary-export=gateway-summary.json \
+            gateway-generate.js
+
+      - name: Parse SLO Results
+        id: slo-check
+        run: |
+          cd tests/load/k6
+
+          # Extract SLO compliance from results
+          generate_p95=$(jq '.metrics.generate_duration.values["p(95)"]' gateway-summary.json 2>/dev/null || echo "0")
+          embeddings_p95=$(jq '.metrics.embeddings_duration.values["p(95)"]' gateway-summary.json 2>/dev/null || echo "0")
+          error_rate=$(jq '.metrics.errors.values.rate' gateway-summary.json 2>/dev/null || echo "0")
+
+          echo "generate_p95=$generate_p95" >> $GITHUB_OUTPUT
+          echo "embeddings_p95=$embeddings_p95" >> $GITHUB_OUTPUT
+          echo "error_rate=$error_rate" >> $GITHUB_OUTPUT
+
+          # Check SLO compliance
+          slo_failed=false
+
+          if (( $(echo "$generate_p95 > 300" | bc -l) )); then
+            echo "❌ Gateway Generate SLO violated: ${generate_p95}ms > 300ms"
+            slo_failed=true
+          else
+            echo "✅ Gateway Generate SLO met: ${generate_p95}ms ≤ 300ms"
+          fi
+
+          if (( $(echo "$embeddings_p95 > 200" | bc -l) )); then
+            echo "❌ Gateway Embeddings SLO violated: ${embeddings_p95}ms > 200ms"
+            slo_failed=true
+          else
+            echo "✅ Gateway Embeddings SLO met: ${embeddings_p95}ms ≤ 200ms"
+          fi
+
+          if (( $(echo "$error_rate > 0.01" | bc -l) )); then
+            echo "❌ Gateway Error Rate SLO violated: ${error_rate} > 1%"
+            slo_failed=true
+          else
+            echo "✅ Gateway Error Rate SLO met: ${error_rate} ≤ 1%"
+          fi
+
+          echo "slo_failed=$slo_failed" >> $GITHUB_OUTPUT
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: gateway-load-test-results
+          path: tests/load/k6/gateway-*.json
+
+      - name: Fail on SLO violation (PR only)
+        if: github.event_name == 'pull_request' && steps.slo-check.outputs.slo_failed == 'true'
+        run: |
+          echo "🚨 Gateway service SLO violations detected!"
+          echo "This PR introduces performance regressions that violate our SLOs."
+          echo "Please review and optimize the changes before merging."
+          exit 1
+
+  k6-assessment-test:
+    runs-on: ubuntu-latest
+    needs: [determine-test-scope, setup-test-environment]
+    if: always() && (needs.determine-test-scope.outputs.test-assessment == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          curl -L https://github.com/grafana/k6/releases/download/v${{ env.K6_VERSION }}/k6-v${{ env.K6_VERSION }}-linux-amd64.tar.gz | tar xz
+          sudo mv k6-v${{ env.K6_VERSION }}-linux-amd64/k6 /usr/local/bin/
+
+      - name: Run Assessment Load Test
+        env:
+          BASE_URL: ${{ needs.determine-test-scope.outputs.base-url }}
+          API_KEY: ${{ secrets.LOAD_TEST_API_KEY }}
+          TENANT_ID: ${{ secrets.LOAD_TEST_TENANT_ID }}
+          LEARNER_ID: ${{ secrets.LOAD_TEST_LEARNER_ID }}
+          TEST_TYPE: ${{ needs.determine-test-scope.outputs.test-type }}
+        run: |
+          cd tests/load/k6
+          k6 run \
+            --out json=assessment-results.json \
+            --summary-export=assessment-summary.json \
+            assessment.js
+
+      - name: Parse SLO Results
+        id: slo-check
+        run: |
+          cd tests/load/k6
+
+          answer_p95=$(jq '.metrics.assessment_answer_duration.values["p(95)"]' assessment-summary.json 2>/dev/null || echo "0")
+          error_rate=$(jq '.metrics.assessment_errors.values.rate' assessment-summary.json 2>/dev/null || echo "0")
+
+          echo "answer_p95=$answer_p95" >> $GITHUB_OUTPUT
+          echo "error_rate=$error_rate" >> $GITHUB_OUTPUT
+
+          slo_failed=false
+
+          if (( $(echo "$answer_p95 > 150" | bc -l) )); then
+            echo "❌ Assessment Answer SLO violated: ${answer_p95}ms > 150ms"
+            slo_failed=true
+          else
+            echo "✅ Assessment Answer SLO met: ${answer_p95}ms ≤ 150ms"
+          fi
+
+          if (( $(echo "$error_rate > 0.01" | bc -l) )); then
+            echo "❌ Assessment Error Rate SLO violated: ${error_rate} > 1%"
+            slo_failed=true
+          else
+            echo "✅ Assessment Error Rate SLO met: ${error_rate} ≤ 1%"
+          fi
+
+          echo "slo_failed=$slo_failed" >> $GITHUB_OUTPUT
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: assessment-load-test-results
+          path: tests/load/k6/assessment-*.json
+
+      - name: Fail on SLO violation (PR only)
+        if: github.event_name == 'pull_request' && steps.slo-check.outputs.slo_failed == 'true'
+        run: |
+          echo "🚨 Assessment service SLO violations detected!"
+          exit 1
+
+  k6-search-test:
+    runs-on: ubuntu-latest
+    needs: [determine-test-scope, setup-test-environment]
+    if: always() && (needs.determine-test-scope.outputs.test-search == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          curl -L https://github.com/grafana/k6/releases/download/v${{ env.K6_VERSION }}/k6-v${{ env.K6_VERSION }}-linux-amd64.tar.gz | tar xz
+          sudo mv k6-v${{ env.K6_VERSION }}-linux-amd64/k6 /usr/local/bin/
+
+      - name: Run Search Load Test
+        env:
+          BASE_URL: ${{ needs.determine-test-scope.outputs.base-url }}
+          API_KEY: ${{ secrets.LOAD_TEST_API_KEY }}
+          TENANT_ID: ${{ secrets.LOAD_TEST_TENANT_ID }}
+          TEST_TYPE: ${{ needs.determine-test-scope.outputs.test-type }}
+        run: |
+          cd tests/load/k6
+          k6 run \
+            --out json=search-results.json \
+            --summary-export=search-summary.json \
+            search.js
+
+      - name: Parse SLO Results
+        id: slo-check
+        run: |
+          cd tests/load/k6
+
+          suggest_p95=$(jq '.metrics.search_suggest_duration.values["p(95)"]' search-summary.json 2>/dev/null || echo "0")
+          search_p95=$(jq '.metrics.search_query_duration.values["p(95)"]' search-summary.json 2>/dev/null || echo "0")
+          error_rate=$(jq '.metrics.search_errors.values.rate' search-summary.json 2>/dev/null || echo "0")
+
+          echo "suggest_p95=$suggest_p95" >> $GITHUB_OUTPUT
+          echo "search_p95=$search_p95" >> $GITHUB_OUTPUT
+          echo "error_rate=$error_rate" >> $GITHUB_OUTPUT
+
+          slo_failed=false
+
+          if (( $(echo "$suggest_p95 > 120" | bc -l) )); then
+            echo "❌ Search Suggest SLO violated: ${suggest_p95}ms > 120ms"
+            slo_failed=true
+          else
+            echo "✅ Search Suggest SLO met: ${suggest_p95}ms ≤ 120ms"
+          fi
+
+          if (( $(echo "$search_p95 > 200" | bc -l) )); then
+            echo "❌ Search Query SLO violated: ${search_p95}ms > 200ms"
+            slo_failed=true
+          else
+            echo "✅ Search Query SLO met: ${search_p95}ms ≤ 200ms"
+          fi
+
+          if (( $(echo "$error_rate > 0.01" | bc -l) )); then
+            echo "❌ Search Error Rate SLO violated: ${error_rate} > 1%"
+            slo_failed=true
+          else
+            echo "✅ Search Error Rate SLO met: ${error_rate} ≤ 1%"
+          fi
+
+          echo "slo_failed=$slo_failed" >> $GITHUB_OUTPUT
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: search-load-test-results
+          path: tests/load/k6/search-*.json
+
+      - name: Fail on SLO violation (PR only)
+        if: github.event_name == 'pull_request' && steps.slo-check.outputs.slo_failed == 'true'
+        run: |
+          echo "🚨 Search service SLO violations detected!"
+          exit 1
+
+  aggregate-results:
+    runs-on: ubuntu-latest
+    needs: [k6-gateway-test, k6-assessment-test, k6-search-test]
+    if: always()
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v3
+        with:
+          path: test-results/
+
+      - name: Generate Performance Report
+        run: |
+          echo "# 📊 Load Test Performance Report" > performance-report.md
+          echo "" >> performance-report.md
+          echo "**Test Type:** ${{ needs.determine-test-scope.outputs.test-type }}" >> performance-report.md
+          echo "**Environment:** ${{ needs.determine-test-scope.outputs.base-url }}" >> performance-report.md
+          echo "**Timestamp:** $(date -u)" >> performance-report.md
+          echo "" >> performance-report.md
+
+          echo "## 🎯 SLO Compliance Summary" >> performance-report.md
+          echo "" >> performance-report.md
+
+          # Gateway results
+          if [ -f "test-results/gateway-load-test-results/gateway-summary.json" ]; then
+            generate_p95=$(jq '.metrics.generate_duration.values["p(95)"]' test-results/gateway-load-test-results/gateway-summary.json 2>/dev/null || echo "N/A")
+            embeddings_p95=$(jq '.metrics.embeddings_duration.values["p(95)"]' test-results/gateway-load-test-results/gateway-summary.json 2>/dev/null || echo "N/A")
+            
+            echo "### 🚀 Gateway Service" >> performance-report.md
+            echo "- **Generate p95:** ${generate_p95}ms (SLO: ≤300ms)" >> performance-report.md
+            echo "- **Embeddings p95:** ${embeddings_p95}ms (SLO: ≤200ms)" >> performance-report.md
+            echo "" >> performance-report.md
+          fi
+
+          # Assessment results
+          if [ -f "test-results/assessment-load-test-results/assessment-summary.json" ]; then
+            answer_p95=$(jq '.metrics.assessment_answer_duration.values["p(95)"]' test-results/assessment-load-test-results/assessment-summary.json 2>/dev/null || echo "N/A")
+            
+            echo "### 📊 Assessment Service" >> performance-report.md
+            echo "- **Answer p95:** ${answer_p95}ms (SLO: ≤150ms)" >> performance-report.md
+            echo "" >> performance-report.md
+          fi
+
+          # Search results
+          if [ -f "test-results/search-load-test-results/search-summary.json" ]; then
+            suggest_p95=$(jq '.metrics.search_suggest_duration.values["p(95)"]' test-results/search-load-test-results/search-summary.json 2>/dev/null || echo "N/A")
+            search_p95=$(jq '.metrics.search_query_duration.values["p(95)"]' test-results/search-load-test-results/search-summary.json 2>/dev/null || echo "N/A")
+            
+            echo "### 🔍 Search Service" >> performance-report.md
+            echo "- **Suggest p95:** ${suggest_p95}ms (SLO: ≤120ms)" >> performance-report.md
+            echo "- **Search p95:** ${search_p95}ms (SLO: ≤200ms)" >> performance-report.md
+            echo "" >> performance-report.md
+          fi
+
+          echo "## 📈 Performance Trends" >> performance-report.md
+          echo "" >> performance-report.md
+          echo "For detailed metrics and trends, check the [Grafana Performance Dashboard](https://grafana.aivo.ai/d/performance)" >> performance-report.md
+
+      - name: Upload Performance Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-report
+          path: performance-report.md
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'performance-report.md';
+
+            if (fs.existsSync(reportPath)) {
+              const report = fs.readFileSync(reportPath, 'utf8');
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: report
+              });
+            }
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [aggregate-results]
+    if: always()
+    steps:
+      - name: Stop test services
+        run: |
+          if [ "${{ needs.determine-test-scope.outputs.base-url }}" = "http://localhost:8080" ]; then
+            docker-compose -f docker-compose.test.yml down -v
+          fi
