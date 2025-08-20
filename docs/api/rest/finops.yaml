@@ -1,0 +1,1890 @@
+openapi: 3.0.0
+info:
+  title: FinOps Service API
+  description: |
+    Cost metering, budget management, and financial operations for AI inference services.
+
+    This service provides comprehensive cost tracking and budget management for AI model usage across multiple providers including OpenAI, Google Gemini, and AWS Bedrock. It offers per-service cost estimation, per-learner/tenant budgets, and real-time budget alerts via Slack/Email.
+
+    ## Key Features
+    - **Real-time Cost Tracking**: Track AI inference costs across all providers
+    - **Budget Management**: Set budgets at global, tenant, learner, or service levels
+    - **Alert System**: Automated budget alerts via email, Slack, webhooks, or SMS
+    - **Cost Optimization**: Recommendations for reducing AI inference costs
+    - **Usage Analytics**: Detailed usage statistics and cost breakdowns
+    - **Forecasting**: Predict future costs based on usage trends
+    - **Provider Integration**: Support for OpenAI, Gemini, Bedrock, and more
+
+    ## Authentication
+    All endpoints require JWT authentication via the Authorization header.
+
+  version: 1.0.0
+  contact:
+    name: FinOps Team
+    email: finops@aivo.com
+  license:
+    name: Proprietary
+    url: https://aivo.com/license
+
+servers:
+  - url: https://api.aivo.com/finops/v1
+    description: Production FinOps API
+  - url: https://staging-api.aivo.com/finops/v1
+    description: Staging FinOps API
+  - url: http://localhost:8000/api/v1
+    description: Development FinOps API
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Health and System Endpoints
+  /health:
+    get:
+      tags: [Health]
+      summary: Health Check
+      description: Get detailed service health status including component status and metrics
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinOpsHealth"
+              example:
+                status: "healthy"
+                timestamp: "2024-08-20T10:30:00Z"
+                database_connected: true
+                pricing_data_current: true
+                last_usage_sync: "2024-08-20T10:29:45Z"
+                latest_usage_event: "2024-08-20T10:29:50Z"
+                budgets_monitored: 157
+                alerts_pending: 3
+                avg_cost_calculation_time_ms: 12.5
+                daily_events_processed: 45230
+                version: "1.0.0"
+                uptime_seconds: 86400
+        "503":
+          description: Service unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /metrics:
+    get:
+      tags: [Metrics]
+      summary: Prometheus Metrics
+      description: Get Prometheus-formatted metrics for monitoring and alerting
+      operationId: getMetrics
+      security: []
+      responses:
+        "200":
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                finops_uptime_seconds 86400
+                finops_cost_calculator_status 1
+                finops_budget_monitor_status 1
+                finops_pricing_updater_status 1
+                finops_background_tasks 3
+                finops_database_connected 1
+                finops_budgets_monitored 157
+                finops_alerts_pending 3
+                finops_daily_events_processed 45230
+
+  # Usage Events and Cost Tracking
+  /usage-events:
+    post:
+      tags: [Usage Events]
+      summary: Record Usage Event
+      description: |
+        Record a single usage event for cost calculation. The service will automatically calculate costs based on current provider pricing and check budget implications.
+      operationId: recordUsageEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsageEvent"
+            example:
+              tenant_id: "school-district-1"
+              learner_id: "learner-emma-123"
+              service_name: "inference-gateway-svc"
+              session_id: "session-abc123"
+              provider: "openai"
+              model_name: "gpt-4"
+              model_type: "text_generation"
+              input_tokens: 1500
+              output_tokens: 750
+              request_count: 1
+              metadata:
+                subject: "mathematics"
+                grade: "5th"
+      responses:
+        "200":
+          description: Usage event recorded with calculated cost
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageEvent"
+              example:
+                id: "event-xyz789"
+                tenant_id: "school-district-1"
+                learner_id: "learner-emma-123"
+                service_name: "inference-gateway-svc"
+                provider: "openai"
+                model_name: "gpt-4"
+                input_tokens: 1500
+                output_tokens: 750
+                calculated_cost: "0.09"
+                currency: "USD"
+                timestamp: "2024-08-20T10:30:15Z"
+        "400":
+          description: Invalid usage event data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Access denied to tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Failed to record usage event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /usage-events/batch:
+    post:
+      tags: [Usage Events]
+      summary: Record Batch Usage Events
+      description: Record multiple usage events in a single request for better performance
+      operationId: recordBatchUsageEvents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/UsageEvent"
+              maxItems: 1000
+            example:
+              - tenant_id: "school-district-1"
+                service_name: "inference-gateway-svc"
+                provider: "openai"
+                model_name: "gpt-3.5-turbo"
+                input_tokens: 500
+                output_tokens: 200
+              - tenant_id: "school-district-1"
+                service_name: "tutoring-svc"
+                provider: "gemini"
+                model_name: "gemini-1.5-flash"
+                input_tokens: 800
+                output_tokens: 400
+      responses:
+        "200":
+          description: Batch usage events recorded
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UsageEvent"
+        "400":
+          description: Invalid batch data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # Cost Queries and Reporting
+  /costs/query:
+    post:
+      tags: [Costs]
+      summary: Query Costs
+      description: |
+        Query cost data with flexible filtering and aggregation options. Supports grouping by provider, model, service, learner, or time periods.
+      operationId: queryCosts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CostQueryRequest"
+            example:
+              start_date: "2024-08-01T00:00:00Z"
+              end_date: "2024-08-20T23:59:59Z"
+              tenant_id: "school-district-1"
+              provider: "openai"
+              group_by: ["provider", "model", "day"]
+              include_breakdown: true
+              limit: 100
+      responses:
+        "200":
+          description: Cost query results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CostResponse"
+              example:
+                total_cost: "1247.85"
+                total_tokens: 2500000
+                total_requests: 15430
+                period_start: "2024-08-01T00:00:00Z"
+                period_end: "2024-08-20T23:59:59Z"
+                cost_by_provider:
+                  openai: "856.45"
+                  gemini: "241.20"
+                  bedrock: "150.20"
+                cost_by_model:
+                  "gpt-4": "456.30"
+                  "gpt-3.5-turbo": "400.15"
+                  "gemini-1.5-flash": "241.20"
+                  "claude-3-haiku": "150.20"
+                cost_by_day:
+                  "2024-08-19": "78.45"
+                  "2024-08-20": "65.20"
+                has_more: false
+                total_count: 85
+        "403":
+          description: Access denied to tenant data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /costs/summary:
+    get:
+      tags: [Costs]
+      summary: Get Cost Summaries
+      description: Get pre-calculated cost summaries for reporting and dashboards
+      operationId: getCostSummaries
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          example: "2024-08-01T00:00:00Z"
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          example: "2024-08-20T23:59:59Z"
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+          example: "school-district-1"
+        - name: service_name
+          in: query
+          schema:
+            type: string
+          example: "inference-gateway-svc"
+        - name: group_by
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+          example: "day"
+      responses:
+        "200":
+          description: Cost summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CostSummary"
+
+  /costs/usage-stats:
+    get:
+      tags: [Costs]
+      summary: Get Usage Statistics
+      description: Get usage statistics for cost efficiency analysis
+      operationId: getUsageStatistics
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - name: learner_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageStatsResponse"
+              example:
+                period_start: "2024-08-01T00:00:00Z"
+                period_end: "2024-08-20T23:59:59Z"
+                total_tokens: 2500000
+                input_tokens: 1600000
+                output_tokens: 900000
+                avg_tokens_per_request: 162.1
+                total_requests: 15430
+                unique_sessions: 3250
+                avg_requests_per_session: 4.7
+                cost_per_token: "0.0004995"
+                cost_per_request: "0.0809"
+                cost_per_session: "0.384"
+
+  # Budget Management
+  /budgets:
+    get:
+      tags: [Budgets]
+      summary: List Budgets
+      description: List budgets with optional filtering
+      operationId: listBudgets
+      parameters:
+        - name: budget_type
+          in: query
+          schema:
+            $ref: "#/components/schemas/BudgetType"
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: List of budgets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Budget"
+              example:
+                - id: "budget-global-2024"
+                  budget_type: "global"
+                  name: "Global AI Budget 2024"
+                  amount: "100000.00"
+                  period: "yearly"
+                  current_spend: "45230.75"
+                  is_exceeded: false
+                  alert_thresholds: [75.0, 90.0, 100.0]
+                - id: "budget-district-1"
+                  budget_type: "tenant"
+                  name: "School District 1 Monthly Budget"
+                  tenant_id: "school-district-1"
+                  amount: "5000.00"
+                  period: "monthly"
+                  current_spend: "3825.40"
+                  is_exceeded: false
+    post:
+      tags: [Budgets]
+      summary: Create Budget
+      description: Create a new budget with alert configuration
+      operationId: createBudget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBudgetRequest"
+            example:
+              budget_type: "learner"
+              name: "Emma's Monthly AI Budget"
+              amount: "25.00"
+              period: "monthly"
+              tenant_id: "school-district-1"
+              learner_id: "learner-emma-123"
+              alert_thresholds: [80.0, 95.0]
+              alert_channels: ["email"]
+              alert_recipients: ["teacher@school.edu", "parent@family.com"]
+              is_recurring: true
+      responses:
+        "200":
+          description: Budget created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Budget"
+        "400":
+          description: Invalid budget data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /budgets/{budget_id}:
+    get:
+      tags: [Budgets]
+      summary: Get Budget
+      description: Get a specific budget by ID
+      operationId: getBudget
+      parameters:
+        - name: budget_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "budget-learner-emma-123"
+      responses:
+        "200":
+          description: Budget details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Budget"
+        "404":
+          description: Budget not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Access denied to budget
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      tags: [Budgets]
+      summary: Update Budget
+      description: Update an existing budget
+      operationId: updateBudget
+      parameters:
+        - name: budget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBudgetRequest"
+      responses:
+        "200":
+          description: Budget updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Budget"
+        "404":
+          description: Budget not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      tags: [Budgets]
+      summary: Delete Budget
+      description: Delete a budget
+      operationId: deleteBudget
+      parameters:
+        - name: budget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Budget deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Budget deleted successfully"
+
+  /budgets/{budget_id}/status:
+    get:
+      tags: [Budgets]
+      summary: Get Budget Status
+      description: Get current budget status with spending and projections
+      operationId: getBudgetStatus
+      parameters:
+        - name: budget_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Budget status with projections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  budget_id:
+                    type: string
+                  current_spend:
+                    type: string
+                    format: decimal
+                  budget_amount:
+                    type: string
+                    format: decimal
+                  percentage_used:
+                    type: string
+                    format: decimal
+                  days_remaining:
+                    type: integer
+                  projected_spend:
+                    type: string
+                    format: decimal
+                  projected_overage:
+                    type: string
+                    format: decimal
+                  next_alert_threshold:
+                    type: string
+                    format: decimal
+                example:
+                  budget_id: "budget-learner-emma-123"
+                  current_spend: "18.75"
+                  budget_amount: "25.00"
+                  percentage_used: "75.0"
+                  days_remaining: 8
+                  projected_spend: "26.40"
+                  projected_overage: "1.40"
+                  next_alert_threshold: "95.0"
+
+  # Budget Alerts
+  /alerts:
+    get:
+      tags: [Alerts]
+      summary: List Budget Alerts
+      description: List budget alerts with filtering and pagination
+      operationId: listBudgetAlerts
+      parameters:
+        - name: severity
+          in: query
+          schema:
+            $ref: "#/components/schemas/AlertSeverity"
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - name: is_acknowledged
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: List of budget alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BudgetAlert"
+              example:
+                - id: "alert-critical-001"
+                  budget_id: "budget-learner-emma-123"
+                  budget_name: "Emma's Monthly AI Budget"
+                  severity: "critical"
+                  threshold_percentage: "100.0"
+                  current_spend: "26.40"
+                  budget_amount: "25.00"
+                  percentage_used: "105.6"
+                  tenant_id: "school-district-1"
+                  learner_id: "learner-emma-123"
+                  alert_title: "Budget Exceeded: Emma's Monthly AI Budget"
+                  alert_message: "Budget has been exceeded by $1.40 (105.6% usage)"
+                  is_acknowledged: false
+                  created_at: "2024-08-20T10:30:00Z"
+
+  /alerts/{alert_id}/acknowledge:
+    put:
+      tags: [Alerts]
+      summary: Acknowledge Alert
+      description: Acknowledge a budget alert
+      operationId: acknowledgeAlert
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Alert acknowledged successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Alert acknowledged successfully"
+        "404":
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # Provider Pricing Management
+  /pricing:
+    get:
+      tags: [Pricing]
+      summary: List Provider Pricing
+      description: List current provider pricing information
+      operationId: listProviderPricing
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            $ref: "#/components/schemas/ProviderType"
+        - name: model_type
+          in: query
+          schema:
+            $ref: "#/components/schemas/ModelType"
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Provider pricing data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderPricing"
+              example:
+                - id: "pricing-openai-gpt4"
+                  provider: "openai"
+                  model_name: "gpt-4"
+                  model_type: "text_generation"
+                  input_token_price: "0.00003"
+                  output_token_price: "0.00006"
+                  currency: "USD"
+                  effective_date: "2024-08-01T00:00:00Z"
+                  is_active: true
+
+  /pricing/refresh:
+    post:
+      tags: [Pricing]
+      summary: Refresh Pricing Data
+      description: Manually refresh provider pricing data
+      operationId: refreshPricingData
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            $ref: "#/components/schemas/ProviderType"
+          description: Refresh specific provider (optional)
+      responses:
+        "200":
+          description: Pricing data refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Pricing data refreshed successfully"
+                  updated_count:
+                    type: integer
+                    example: 15
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # Cost Forecasting
+  /forecasts/{tenant_id}:
+    get:
+      tags: [Forecasting]
+      summary: Get Cost Forecasts
+      description: Get cost forecasts for a tenant based on historical usage
+      operationId: getCostForecasts
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: forecast_days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+      responses:
+        "200":
+          description: Cost forecasts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CostForecast"
+              example:
+                - id: "forecast-001"
+                  tenant_id: "school-district-1"
+                  forecast_start: "2024-08-21T00:00:00Z"
+                  forecast_end: "2024-09-20T23:59:59Z"
+                  baseline_start: "2024-07-21T00:00:00Z"
+                  baseline_end: "2024-08-20T23:59:59Z"
+                  baseline_cost: "3825.40"
+                  predicted_cost: "4287.50"
+                  confidence_interval_low: "3950.00"
+                  confidence_interval_high: "4625.00"
+                  confidence_level: "0.95"
+                  growth_rate: "12.1"
+                  trend_direction: "increasing"
+                  forecast_model: "linear_regression"
+
+  # Cost Optimization
+  /optimizations:
+    get:
+      tags: [Optimization]
+      summary: Get Cost Optimizations
+      description: Get cost optimization recommendations
+      operationId: getCostOptimizations
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - name: service_name
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, implemented, rejected]
+      responses:
+        "200":
+          description: Cost optimization recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CostOptimization"
+              example:
+                - id: "opt-001"
+                  tenant_id: "school-district-1"
+                  recommendation_type: "model_substitution"
+                  title: "Switch from GPT-4 to GPT-3.5-turbo for simple tasks"
+                  description: "GPT-3.5-turbo provides good performance at 95% cost savings for basic Q&A"
+                  current_monthly_cost: "2400.00"
+                  projected_monthly_cost: "240.00"
+                  potential_savings: "2160.00"
+                  savings_percentage: "90.0"
+                  implementation_effort: "medium"
+                  implementation_time: "2 weeks"
+                  risk_level: "low"
+                  recommended_models: ["gpt-3.5-turbo"]
+                  status: "pending"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication service
+
+  schemas:
+    # Core Data Models
+    ProviderType:
+      type: string
+      enum: [openai, gemini, bedrock, azure_openai, anthropic, cohere, local]
+      example: "openai"
+
+    ModelType:
+      type: string
+      enum:
+        [
+          text_generation,
+          text_embedding,
+          image_generation,
+          image_analysis,
+          speech_to_text,
+          text_to_speech,
+          fine_tuning,
+        ]
+      example: "text_generation"
+
+    BudgetType:
+      type: string
+      enum: [global, tenant, learner, service, model]
+      example: "tenant"
+
+    BudgetPeriod:
+      type: string
+      enum: [daily, weekly, monthly, quarterly, yearly]
+      example: "monthly"
+
+    AlertSeverity:
+      type: string
+      enum: [low, medium, high, critical]
+      example: "high"
+
+    AlertChannel:
+      type: string
+      enum: [email, slack, webhook, sms]
+      example: "email"
+
+    # Usage Event Models
+    UsageEvent:
+      type: object
+      required:
+        [
+          tenant_id,
+          service_name,
+          provider,
+          model_name,
+          model_type,
+          request_count,
+        ]
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: "event-abc123"
+        tenant_id:
+          type: string
+          example: "school-district-1"
+        learner_id:
+          type: string
+          example: "learner-emma-123"
+        service_name:
+          type: string
+          example: "inference-gateway-svc"
+        session_id:
+          type: string
+          example: "session-xyz789"
+        provider:
+          $ref: "#/components/schemas/ProviderType"
+        model_name:
+          type: string
+          example: "gpt-4"
+        model_type:
+          $ref: "#/components/schemas/ModelType"
+        input_tokens:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 1500
+        output_tokens:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 750
+        total_tokens:
+          type: integer
+          minimum: 0
+          readOnly: true
+          example: 2250
+        request_count:
+          type: integer
+          minimum: 1
+          default: 1
+          example: 1
+        images_processed:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 0
+        audio_minutes:
+          type: string
+          format: decimal
+          default: "0"
+          example: "0"
+        storage_gb:
+          type: string
+          format: decimal
+          default: "0"
+          example: "0"
+        calculated_cost:
+          type: string
+          format: decimal
+          readOnly: true
+          example: "0.09"
+        cost_category:
+          type: string
+          enum: [inference, training, storage, compute, bandwidth, api_calls]
+          default: "inference"
+        currency:
+          type: string
+          default: "USD"
+          example: "USD"
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-20T10:30:15Z"
+        processing_duration_ms:
+          type: integer
+          minimum: 0
+          example: 1250
+        metadata:
+          type: object
+          additionalProperties: true
+          example:
+            subject: "mathematics"
+            grade: "5th"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-20T10:30:15Z"
+
+    # Budget Models
+    Budget:
+      type: object
+      required: [budget_type, name, amount, period]
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: "budget-learner-emma-123"
+        budget_type:
+          $ref: "#/components/schemas/BudgetType"
+        name:
+          type: string
+          example: "Emma's Monthly AI Budget"
+        description:
+          type: string
+          example: "Monthly budget for Emma's AI learning activities"
+        tenant_id:
+          type: string
+          example: "school-district-1"
+        learner_id:
+          type: string
+          example: "learner-emma-123"
+        service_name:
+          type: string
+          example: "tutoring-svc"
+        model_name:
+          type: string
+          example: "gpt-3.5-turbo"
+        amount:
+          type: string
+          format: decimal
+          example: "25.00"
+        period:
+          $ref: "#/components/schemas/BudgetPeriod"
+        currency:
+          type: string
+          default: "USD"
+          example: "USD"
+        start_date:
+          type: string
+          format: date-time
+          example: "2024-08-01T00:00:00Z"
+        end_date:
+          type: string
+          format: date-time
+          example: "2024-08-31T23:59:59Z"
+        is_recurring:
+          type: boolean
+          default: true
+          example: true
+        alert_thresholds:
+          type: array
+          items:
+            type: string
+            format: decimal
+          example: ["50.0", "75.0", "90.0", "100.0"]
+        alert_channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertChannel"
+          example: ["email"]
+        alert_recipients:
+          type: array
+          items:
+            type: string
+          example: ["teacher@school.edu", "parent@family.com"]
+        webhook_url:
+          type: string
+          format: uri
+          example: "https://school.edu/webhooks/budget-alerts"
+        current_spend:
+          type: string
+          format: decimal
+          readOnly: true
+          example: "18.75"
+        last_alert_sent:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-18T14:30:00Z"
+        last_alert_threshold:
+          type: string
+          format: decimal
+          readOnly: true
+          example: "75.0"
+        is_active:
+          type: boolean
+          default: true
+          example: true
+        is_exceeded:
+          type: boolean
+          readOnly: true
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-01T00:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-20T10:30:00Z"
+
+    CreateBudgetRequest:
+      type: object
+      required: [budget_type, name, amount, period]
+      properties:
+        budget_type:
+          $ref: "#/components/schemas/BudgetType"
+        name:
+          type: string
+          example: "Emma's Monthly AI Budget"
+        description:
+          type: string
+          example: "Monthly budget for Emma's AI learning activities"
+        amount:
+          type: string
+          format: decimal
+          example: "25.00"
+        period:
+          $ref: "#/components/schemas/BudgetPeriod"
+        tenant_id:
+          type: string
+          example: "school-district-1"
+        learner_id:
+          type: string
+          example: "learner-emma-123"
+        service_name:
+          type: string
+          example: "tutoring-svc"
+        model_name:
+          type: string
+          example: "gpt-3.5-turbo"
+        alert_thresholds:
+          type: array
+          items:
+            type: string
+            format: decimal
+          example: ["50.0", "75.0", "90.0"]
+        alert_channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertChannel"
+          example: ["email"]
+        alert_recipients:
+          type: array
+          items:
+            type: string
+          example: ["teacher@school.edu", "parent@family.com"]
+        webhook_url:
+          type: string
+          format: uri
+          example: "https://school.edu/webhooks/budget-alerts"
+        start_date:
+          type: string
+          format: date-time
+          example: "2024-08-01T00:00:00Z"
+        is_recurring:
+          type: boolean
+          default: true
+          example: true
+
+    UpdateBudgetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Updated Budget Name"
+        description:
+          type: string
+          example: "Updated budget description"
+        amount:
+          type: string
+          format: decimal
+          example: "30.00"
+        alert_thresholds:
+          type: array
+          items:
+            type: string
+            format: decimal
+          example: ["60.0", "80.0", "95.0"]
+        alert_channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertChannel"
+          example: ["email", "slack"]
+        alert_recipients:
+          type: array
+          items:
+            type: string
+          example: ["teacher@school.edu", "parent@family.com", "admin@aivo.com"]
+        webhook_url:
+          type: string
+          format: uri
+          example: "https://school.edu/webhooks/budget-alerts"
+        is_active:
+          type: boolean
+          example: true
+
+    # Alert Models
+    BudgetAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: "alert-critical-001"
+        budget_id:
+          type: string
+          example: "budget-learner-emma-123"
+        budget_name:
+          type: string
+          example: "Emma's Monthly AI Budget"
+        severity:
+          $ref: "#/components/schemas/AlertSeverity"
+        threshold_percentage:
+          type: string
+          format: decimal
+          example: "90.0"
+        current_spend:
+          type: string
+          format: decimal
+          example: "23.50"
+        budget_amount:
+          type: string
+          format: decimal
+          example: "25.00"
+        percentage_used:
+          type: string
+          format: decimal
+          example: "94.0"
+        tenant_id:
+          type: string
+          example: "school-district-1"
+        learner_id:
+          type: string
+          example: "learner-emma-123"
+        period_start:
+          type: string
+          format: date-time
+          example: "2024-08-01T00:00:00Z"
+        period_end:
+          type: string
+          format: date-time
+          example: "2024-08-31T23:59:59Z"
+        channels_sent:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertChannel"
+          readOnly: true
+          example: ["email"]
+        recipients_notified:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          example: ["teacher@school.edu", "parent@family.com"]
+        alert_title:
+          type: string
+          example: "Budget Alert: 94% of Emma's budget used"
+        alert_message:
+          type: string
+          example: "Emma's Monthly AI Budget has reached 94% usage ($23.50 of $25.00). Consider monitoring usage closely."
+        is_acknowledged:
+          type: boolean
+          default: false
+          example: false
+        acknowledged_by:
+          type: string
+          example: "teacher@school.edu"
+        acknowledged_at:
+          type: string
+          format: date-time
+          example: "2024-08-20T11:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-20T10:30:00Z"
+
+    # Cost Query Models
+    CostQueryRequest:
+      type: object
+      required: [start_date, end_date]
+      properties:
+        start_date:
+          type: string
+          format: date-time
+          example: "2024-08-01T00:00:00Z"
+        end_date:
+          type: string
+          format: date-time
+          example: "2024-08-20T23:59:59Z"
+        tenant_id:
+          type: string
+          example: "school-district-1"
+        learner_id:
+          type: string
+          example: "learner-emma-123"
+        service_name:
+          type: string
+          example: "inference-gateway-svc"
+        provider:
+          $ref: "#/components/schemas/ProviderType"
+        model_name:
+          type: string
+          example: "gpt-4"
+        group_by:
+          type: array
+          items:
+            type: string
+            enum: [provider, model, service, learner, day, hour, week, month]
+          example: ["provider", "model", "day"]
+        include_breakdown:
+          type: boolean
+          default: true
+          example: true
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+          example: 100
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 0
+
+    CostResponse:
+      type: object
+      properties:
+        total_cost:
+          type: string
+          format: decimal
+          example: "1247.85"
+        total_tokens:
+          type: integer
+          example: 2500000
+        total_requests:
+          type: integer
+          example: 15430
+        period_start:
+          type: string
+          format: date-time
+          example: "2024-08-01T00:00:00Z"
+        period_end:
+          type: string
+          format: date-time
+          example: "2024-08-20T23:59:59Z"
+        cost_by_provider:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+          example:
+            openai: "856.45"
+            gemini: "241.20"
+            bedrock: "150.20"
+        cost_by_model:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+          example:
+            "gpt-4": "456.30"
+            "gpt-3.5-turbo": "400.15"
+            "gemini-1.5-flash": "241.20"
+        cost_by_service:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+          example:
+            "inference-gateway-svc": "856.45"
+            "tutoring-svc": "391.40"
+        cost_by_day:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+          example:
+            "2024-08-19": "78.45"
+            "2024-08-20": "65.20"
+        summaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CostSummary"
+        has_more:
+          type: boolean
+          example: false
+        total_count:
+          type: integer
+          example: 85
+
+    CostSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: "summary-daily-001"
+        tenant_id:
+          type: string
+          example: "school-district-1"
+        learner_id:
+          type: string
+          example: "learner-emma-123"
+        service_name:
+          type: string
+          example: "inference-gateway-svc"
+        period_start:
+          type: string
+          format: date-time
+          example: "2024-08-20T00:00:00Z"
+        period_end:
+          type: string
+          format: date-time
+          example: "2024-08-20T23:59:59Z"
+        period_type:
+          type: string
+          enum: [hour, day, week, month]
+          example: "day"
+        total_cost:
+          type: string
+          format: decimal
+          example: "65.20"
+        cost_by_provider:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+          example:
+            openai: "45.30"
+            gemini: "19.90"
+        cost_by_model:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+          example:
+            "gpt-4": "25.40"
+            "gpt-3.5-turbo": "19.90"
+            "gemini-1.5-flash": "19.90"
+        cost_by_category:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+          example:
+            inference: "65.20"
+        total_tokens:
+          type: integer
+          example: 125000
+        total_requests:
+          type: integer
+          example: 750
+        unique_sessions:
+          type: integer
+          example: 180
+        avg_cost_per_token:
+          type: string
+          format: decimal
+          example: "0.0005216"
+        avg_cost_per_request:
+          type: string
+          format: decimal
+          example: "0.0869"
+        avg_cost_per_session:
+          type: string
+          format: decimal
+          example: "0.362"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-21T01:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-21T01:00:00Z"
+
+    UsageStatsResponse:
+      type: object
+      properties:
+        period_start:
+          type: string
+          format: date-time
+          example: "2024-08-01T00:00:00Z"
+        period_end:
+          type: string
+          format: date-time
+          example: "2024-08-20T23:59:59Z"
+        total_tokens:
+          type: integer
+          example: 2500000
+        input_tokens:
+          type: integer
+          example: 1600000
+        output_tokens:
+          type: integer
+          example: 900000
+        avg_tokens_per_request:
+          type: string
+          format: decimal
+          example: "162.1"
+        total_requests:
+          type: integer
+          example: 15430
+        unique_sessions:
+          type: integer
+          example: 3250
+        avg_requests_per_session:
+          type: string
+          format: decimal
+          example: "4.7"
+        cost_per_token:
+          type: string
+          format: decimal
+          example: "0.0004995"
+        cost_per_request:
+          type: string
+          format: decimal
+          example: "0.0809"
+        cost_per_session:
+          type: string
+          format: decimal
+          example: "0.384"
+        provider_stats:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+          example:
+            openai:
+              requests: 8500
+              tokens: 1400000
+            gemini:
+              requests: 4200
+              tokens: 650000
+            bedrock:
+              requests: 2730
+              tokens: 450000
+        model_stats:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+          example:
+            "gpt-4":
+              requests: 3200
+              tokens: 850000
+            "gpt-3.5-turbo":
+              requests: 5300
+              tokens: 550000
+            "gemini-1.5-flash":
+              requests: 4200
+              tokens: 650000
+
+    # Provider Pricing Models
+    ProviderPricing:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: "pricing-openai-gpt4"
+        provider:
+          $ref: "#/components/schemas/ProviderType"
+        model_name:
+          type: string
+          example: "gpt-4"
+        model_type:
+          $ref: "#/components/schemas/ModelType"
+        input_token_price:
+          type: string
+          format: decimal
+          example: "0.00003"
+        output_token_price:
+          type: string
+          format: decimal
+          example: "0.00006"
+        image_price:
+          type: string
+          format: decimal
+          example: "0.04"
+        audio_price:
+          type: string
+          format: decimal
+          example: "0.006"
+        request_price:
+          type: string
+          format: decimal
+          default: "0"
+          example: "0"
+        storage_price:
+          type: string
+          format: decimal
+          example: "0.023"
+        currency:
+          type: string
+          default: "USD"
+          example: "USD"
+        effective_date:
+          type: string
+          format: date-time
+          example: "2024-08-01T00:00:00Z"
+        expires_date:
+          type: string
+          format: date-time
+          example: "2024-12-31T23:59:59Z"
+        is_active:
+          type: boolean
+          default: true
+          example: true
+        rate_limit_rpm:
+          type: integer
+          example: 10000
+        rate_limit_tpm:
+          type: integer
+          example: 1000000
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-01T00:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-01T00:00:00Z"
+
+    # Forecasting Models
+    CostForecast:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: "forecast-001"
+        tenant_id:
+          type: string
+          example: "school-district-1"
+        learner_id:
+          type: string
+          example: "learner-emma-123"
+        service_name:
+          type: string
+          example: "inference-gateway-svc"
+        forecast_start:
+          type: string
+          format: date-time
+          example: "2024-08-21T00:00:00Z"
+        forecast_end:
+          type: string
+          format: date-time
+          example: "2024-09-20T23:59:59Z"
+        baseline_start:
+          type: string
+          format: date-time
+          example: "2024-07-21T00:00:00Z"
+        baseline_end:
+          type: string
+          format: date-time
+          example: "2024-08-20T23:59:59Z"
+        baseline_cost:
+          type: string
+          format: decimal
+          example: "3825.40"
+        predicted_cost:
+          type: string
+          format: decimal
+          example: "4287.50"
+        confidence_interval_low:
+          type: string
+          format: decimal
+          example: "3950.00"
+        confidence_interval_high:
+          type: string
+          format: decimal
+          example: "4625.00"
+        confidence_level:
+          type: string
+          format: decimal
+          default: "0.95"
+          example: "0.95"
+        growth_rate:
+          type: string
+          format: decimal
+          example: "12.1"
+        trend_direction:
+          type: string
+          enum: [increasing, decreasing, stable]
+          example: "increasing"
+        seasonality_factor:
+          type: string
+          format: decimal
+          example: "1.05"
+        forecast_model:
+          type: string
+          example: "linear_regression"
+        model_accuracy:
+          type: string
+          format: decimal
+          example: "0.87"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-20T10:30:00Z"
+
+    # Optimization Models
+    CostOptimization:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: "opt-001"
+        tenant_id:
+          type: string
+          example: "school-district-1"
+        service_name:
+          type: string
+          example: "inference-gateway-svc"
+        recommendation_type:
+          type: string
+          enum:
+            [
+              model_substitution,
+              rate_limiting,
+              caching,
+              batching,
+              regional_optimization,
+              provisioned_throughput,
+            ]
+          example: "model_substitution"
+        title:
+          type: string
+          example: "Switch from GPT-4 to GPT-3.5-turbo for simple tasks"
+        description:
+          type: string
+          example: "GPT-3.5-turbo provides good performance at 95% cost savings for basic Q&A and content generation tasks."
+        current_monthly_cost:
+          type: string
+          format: decimal
+          example: "2400.00"
+        projected_monthly_cost:
+          type: string
+          format: decimal
+          example: "240.00"
+        potential_savings:
+          type: string
+          format: decimal
+          example: "2160.00"
+        savings_percentage:
+          type: string
+          format: decimal
+          example: "90.0"
+        implementation_effort:
+          type: string
+          enum: [low, medium, high]
+          example: "medium"
+        implementation_time:
+          type: string
+          example: "2 weeks"
+        risk_level:
+          type: string
+          enum: [low, medium, high]
+          example: "low"
+        recommended_models:
+          type: array
+          items:
+            type: string
+          example: ["gpt-3.5-turbo"]
+        recommended_settings:
+          type: object
+          additionalProperties: true
+          example:
+            max_tokens: 1000
+            temperature: 0.7
+        status:
+          type: string
+          enum: [pending, approved, implemented, rejected]
+          default: "pending"
+          example: "pending"
+        approved_by:
+          type: string
+          example: "finops-manager@aivo.com"
+        implemented_at:
+          type: string
+          format: date-time
+          example: "2024-09-01T00:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-20T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-08-20T10:30:00Z"
+
+    # Health Models
+    FinOpsHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-08-20T10:30:00Z"
+        database_connected:
+          type: boolean
+          example: true
+        pricing_data_current:
+          type: boolean
+          example: true
+        last_usage_sync:
+          type: string
+          format: date-time
+          example: "2024-08-20T10:29:45Z"
+        latest_usage_event:
+          type: string
+          format: date-time
+          example: "2024-08-20T10:29:50Z"
+        budgets_monitored:
+          type: integer
+          example: 157
+        alerts_pending:
+          type: integer
+          example: 3
+        avg_cost_calculation_time_ms:
+          type: number
+          format: float
+          example: 12.5
+        daily_events_processed:
+          type: integer
+          example: 45230
+        version:
+          type: string
+          example: "1.0.0"
+        uptime_seconds:
+          type: integer
+          example: 86400
+
+    # Error Models
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Budget not found"
+        trace_id:
+          type: string
+          example: "trace-abc123"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-08-20T10:30:00Z"
+        details:
+          type: object
+          additionalProperties: true
+          example:
+            budget_id: "invalid-budget-id"
+            tenant_id: "school-district-1"
+
+tags:
+  - name: Health
+    description: Service health and status endpoints
+  - name: Metrics
+    description: Prometheus metrics for monitoring
+  - name: Usage Events
+    description: Record and track AI inference usage events
+  - name: Costs
+    description: Cost querying, reporting, and analytics
+  - name: Budgets
+    description: Budget creation, management, and monitoring
+  - name: Alerts
+    description: Budget alert management and acknowledgment
+  - name: Pricing
+    description: Provider pricing management and updates
+  - name: Forecasting
+    description: Cost forecasting and trend analysis
+  - name: Optimization
+    description: Cost optimization recommendations
