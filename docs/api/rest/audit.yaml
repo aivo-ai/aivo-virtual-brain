@@ -1,0 +1,1438 @@
+openapi: 3.0.3
+info:
+  title: AIVO Audit Service API
+  description: |
+    Comprehensive audit logging and compliance management service for AIVO platform.
+
+    ## Overview
+
+    The Audit Service provides enterprise-grade audit logging, access reviews, and 
+    Just-In-Time (JIT) support session management with guardian consent workflows.
+
+    ## Key Features
+
+    ### 📋 Audit Logging
+    - **Complete Activity Tracking**: Who/what/when/why logging for all sensitive operations
+    - **Data Access Monitoring**: Specialized logging for protected data reads/writes
+    - **Security Event Detection**: Failed authentication, permission violations, policy breaches
+    - **Compliance Reporting**: Automated audit reports and dashboards
+
+    ### 🔍 Access Reviews
+    - **Quarterly Certification**: Systematic review of user access rights and permissions
+    - **Risk-Based Prioritization**: Focus reviews on high-risk users and roles
+    - **Automated Workflows**: Streamlined approval/revocation processes
+    - **Compliance Documentation**: Audit trail for all access decisions
+
+    ### 🛠️ Just-In-Time Support
+    - **Guardian Consent**: Support sessions require explicit guardian approval
+    - **Time-Boxed Access**: Sessions automatically expire after configured duration
+    - **Read-Only Enforcement**: Configurable data access restrictions
+    - **Session Recording**: Complete audit trail of all support activities
+
+    ## Security & Compliance
+
+    - **SOC 2 Type II**: Comprehensive security controls and monitoring
+    - **GDPR Article 30**: Records of processing activities maintained
+    - **FERPA Compliance**: Educational records access properly logged and controlled
+    - **Zero Trust**: All actions verified and audited regardless of user privileges
+
+    ## Integration
+
+    The Audit Service integrates with all AIVO platform components to provide
+    centralized logging and compliance management. Events are captured automatically
+    via middleware and SDK integrations.
+
+  version: 1.0.0
+  contact:
+    name: AIVO Security Team
+    email: security@aivo.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.aivo.com/audit/v1
+    description: Production
+  - url: https://staging-api.aivo.com/audit/v1
+    description: Staging
+  - url: http://localhost:8080/api/v1
+    description: Development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /audit/events:
+    post:
+      summary: Create Audit Event
+      description: |
+        Log a new audit event for compliance tracking. All sensitive operations
+        should generate audit events with complete who/what/when/why information.
+
+        ## Event Types
+
+        - **Data Operations**: `data_read`, `data_write`, `data_delete`, `data_export`
+        - **Authentication**: `login_success`, `login_failure`, `logout`, `password_change`
+        - **Authorization**: `permission_granted`, `permission_denied`, `role_assigned`
+        - **Support**: `support_session_*` events for JIT access
+        - **Administrative**: `user_created`, `system_config_changed`
+
+        ## Severity Levels
+
+        - **Critical**: Security breaches, unauthorized access attempts
+        - **High**: Administrative changes, role modifications, data deletions
+        - **Medium**: Data access, login events, permission grants
+        - **Low**: System operations, routine activities
+      operationId: createAuditEvent
+      tags:
+        - Audit Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuditEventRequest"
+            examples:
+              data_access:
+                summary: Data Access Event
+                value:
+                  event_type: "data_read"
+                  severity: "medium"
+                  action: "view_student_profile"
+                  resource: "student_data"
+                  outcome: "success"
+                  target_id: "123e4567-e89b-12d3-a456-426614174000"
+                  target_type: "student_profile"
+                  target_classification: "confidential"
+                  metadata:
+                    endpoint: "/api/students/123"
+                    records_count: 1
+              permission_denied:
+                summary: Permission Denied
+                value:
+                  event_type: "permission_denied"
+                  severity: "high"
+                  action: "access_admin_panel"
+                  resource: "admin_interface"
+                  outcome: "failure"
+                  reason: "Insufficient privileges for admin access"
+      responses:
+        "200":
+          description: Audit event created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEvent"
+        "400":
+          description: Invalid request data
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+    get:
+      summary: Query Audit Events
+      description: |
+        Search and filter audit events with comprehensive query capabilities.
+        Supports time range filtering, event type filtering, and full-text search.
+
+        ## Access Control
+
+        - **Administrators**: Can query all events within their tenant
+        - **Security Officers**: Full access to audit logs and reports
+        - **Regular Users**: Limited to their own audit events
+
+        ## Performance
+
+        - Results are paginated for performance
+        - Complex queries may take longer to execute
+        - Consider using specific filters to reduce query time
+      operationId: queryAuditEvents
+      tags:
+        - Audit Events
+      parameters:
+        - name: start_date
+          in: query
+          description: Start date for audit event query (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+          example: "2024-01-01T00:00:00Z"
+        - name: end_date
+          in: query
+          description: End date for audit event query (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+          example: "2024-12-31T23:59:59Z"
+        - name: event_types
+          in: query
+          description: Filter by specific event types
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/AuditEventType"
+        - name: severities
+          in: query
+          description: Filter by severity levels
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/AuditSeverity"
+        - name: actor_id
+          in: query
+          description: Filter by actor (user) ID
+          schema:
+            type: string
+            format: uuid
+        - name: target_id
+          in: query
+          description: Filter by target resource ID
+          schema:
+            type: string
+            format: uuid
+        - name: search
+          in: query
+          description: Full-text search across action, resource, and reason fields
+          schema:
+            type: string
+          example: "login failure"
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          description: Number of events per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        "200":
+          description: Audit events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEvent"
+        "400":
+          description: Invalid query parameters
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /audit/events/{event_id}:
+    get:
+      summary: Get Audit Event Details
+      description: |
+        Retrieve detailed information about a specific audit event.
+        Includes all metadata and context information.
+      operationId: getAuditEvent
+      tags:
+        - Audit Events
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          description: Unique identifier for the audit event
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Audit event details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEvent"
+        "404":
+          description: Audit event not found
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /audit/reports/summary:
+    get:
+      summary: Generate Audit Summary Report
+      description: |
+        Generate comprehensive audit summary report for specified time period.
+        Includes statistics, trends, risk events, and compliance metrics.
+
+        ## Report Contents
+
+        - **Event Statistics**: Total events, events by type/severity
+        - **User Activity**: Top actors, unique users, failed events
+        - **Resource Access**: Most accessed resources, access patterns
+        - **Risk Events**: High/critical severity events requiring attention
+        - **Compliance Metrics**: Access reviews completed, policy violations
+      operationId: getAuditSummary
+      tags:
+        - Reports
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          description: Report start date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          required: true
+          description: Report end date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Audit summary report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditReport"
+        "400":
+          description: Invalid date range
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /access-reviews:
+    post:
+      summary: Start Access Review
+      description: |
+        Initiate a new access review process for user access certification.
+        Creates review items for all users matching the specified criteria.
+
+        ## Review Types
+
+        - **Quarterly**: Standard 90-day review cycle
+        - **Annual**: Comprehensive yearly review
+        - **Ad Hoc**: On-demand review for specific situations
+
+        ## Scope Configuration
+
+        Reviews can be scoped by user roles, departments, and risk levels
+        to focus on specific populations or high-risk users.
+      operationId: startAccessReview
+      tags:
+        - Access Reviews
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartAccessReviewRequest"
+            examples:
+              quarterly_review:
+                summary: Quarterly Teacher Review
+                value:
+                  review_type: "quarterly"
+                  roles_to_review: ["teacher", "admin"]
+                  departments: ["Mathematics", "Science"]
+                  due_date: "2024-04-30T23:59:59Z"
+      responses:
+        "200":
+          description: Access review started successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessReview"
+        "400":
+          description: Invalid request data
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions to start access reviews
+        "500":
+          description: Internal server error
+
+    get:
+      summary: List Access Reviews
+      description: |
+        Retrieve list of access reviews with optional filtering.
+        Shows review status, progress, and key metrics.
+      operationId: listAccessReviews
+      tags:
+        - Access Reviews
+      parameters:
+        - name: status
+          in: query
+          description: Filter by review status
+          schema:
+            $ref: "#/components/schemas/AccessReviewStatus"
+        - name: reviewer_id
+          in: query
+          description: Filter by reviewer ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of access reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccessReview"
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /access-reviews/{review_id}:
+    get:
+      summary: Get Access Review Details
+      description: |
+        Retrieve detailed information about a specific access review
+        including progress metrics and review scope.
+      operationId: getAccessReview
+      tags:
+        - Access Reviews
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          description: Unique identifier for the access review
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Access review details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessReview"
+        "404":
+          description: Access review not found
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /access-reviews/{review_id}/items:
+    get:
+      summary: Get Access Review Items
+      description: |
+        Retrieve individual user access items within a review.
+        Items are sorted by risk score to prioritize high-risk users.
+      operationId: getAccessReviewItems
+      tags:
+        - Access Reviews
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          description: Unique identifier for the access review
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of access review items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccessReviewItem"
+        "404":
+          description: Access review not found
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /access-reviews/{review_id}/items/{item_id}:
+    put:
+      summary: Review Access Item
+      description: |
+        Make a decision on an individual access review item.
+        Can certify, revoke, or modify user access based on review findings.
+
+        ## Review Decisions
+
+        - **Certified**: Access is appropriate and should continue
+        - **Revoked**: Access should be removed immediately
+        - **Modified**: Access needs changes (specify in changes_to_make)
+
+        ## Access Changes
+
+        When modifying access, specify the exact changes to apply:
+        - Remove specific permissions
+        - Revoke roles
+        - Disable account
+        - Change department assignment
+      operationId: reviewAccessItem
+      tags:
+        - Access Reviews
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          description: Unique identifier for the access review
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          description: Unique identifier for the access review item
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewAccessItemRequest"
+            examples:
+              certify_access:
+                summary: Certify User Access
+                value:
+                  status: "certified"
+                  reviewer_notes: "Access appropriate for current teaching role"
+                  changes_to_make: []
+              revoke_access:
+                summary: Revoke Excessive Permissions
+                value:
+                  status: "revoked"
+                  reviewer_notes: "User has excessive administrative permissions"
+                  changes_to_make:
+                    - action: "revoke_permission"
+                      target: "admin_access"
+                      value: null
+                    - action: "remove_role"
+                      target: "system_admin"
+                      value: null
+      responses:
+        "200":
+          description: Access item reviewed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Access item reviewed successfully"
+        "400":
+          description: Invalid request data
+        "404":
+          description: Access review item not found
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /support-sessions:
+    post:
+      summary: Request Support Session
+      description: |
+        Create a new Just-In-Time support session request.
+        Requires guardian approval before support agent can access learner data.
+
+        ## Workflow
+
+        1. **Request**: Guardian submits support request with justification
+        2. **Approval**: Guardian explicitly approves or denies the request
+        3. **Access**: Support agent starts time-limited session with read-only access
+        4. **Monitoring**: All actions during session are logged and audited
+        5. **Termination**: Session automatically expires or is manually ended
+
+        ## Data Access Controls
+
+        - Sessions are read-only by default
+        - Specific data types can be allowed/restricted
+        - Maximum session duration enforced
+        - All actions logged with audit trail
+      operationId: requestSupportSession
+      tags:
+        - Support Sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSupportSessionRequest"
+            examples:
+              login_issue:
+                summary: Student Login Issue
+                value:
+                  learner_id: "123e4567-e89b-12d3-a456-426614174000"
+                  reason: "Student unable to access learning platform"
+                  description: "Login credentials not working, needs password reset assistance"
+                  urgency: "high"
+                  max_duration_minutes: 30
+                  allowed_data_types: ["account_info", "login_history"]
+      responses:
+        "200":
+          description: Support session request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportSession"
+        "400":
+          description: Invalid request data
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions (must be guardian)
+        "500":
+          description: Internal server error
+
+    get:
+      summary: List Support Sessions
+      description: |
+        Retrieve list of support sessions with role-based filtering.
+
+        ## Access Control
+
+        - **Guardians**: See sessions for their learners only
+        - **Support Agents**: See sessions assigned to them
+        - **Administrators**: See all sessions within tenant
+      operationId: listSupportSessions
+      tags:
+        - Support Sessions
+      parameters:
+        - name: status
+          in: query
+          description: Filter by session status
+          schema:
+            $ref: "#/components/schemas/SupportSessionStatus"
+        - name: learner_id
+          in: query
+          description: Filter by learner ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of support sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportSession"
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /support-sessions/{session_id}:
+    get:
+      summary: Get Support Session Details
+      description: |
+        Retrieve detailed information about a specific support session
+        including approval status, timing, and action log.
+      operationId: getSupportSession
+      tags:
+        - Support Sessions
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Unique identifier for the support session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Support session details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportSession"
+        "404":
+          description: Support session not found
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+  /support-sessions/{session_id}/approve:
+    put:
+      summary: Approve Support Session
+      description: |
+        Guardian approval/denial of support session request.
+        Only the learner's guardian can approve or deny sessions.
+
+        ## Approval Process
+
+        - Guardian receives notification of support request
+        - Guardian reviews request details and justification
+        - Guardian explicitly approves or denies with reason
+        - Approved sessions can be started by support agents
+        - Denied sessions cannot be activated
+      operationId: approveSupportSession
+      tags:
+        - Support Sessions
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Unique identifier for the support session
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveSupportSessionRequest"
+            examples:
+              approve_session:
+                summary: Approve Support Request
+                value:
+                  approved: true
+                  reason: "Approved for login assistance"
+                  max_duration_minutes: 20
+                  allowed_data_types: ["account_info"]
+              deny_session:
+                summary: Deny Support Request
+                value:
+                  approved: false
+                  reason: "Issue can be resolved through self-service portal"
+      responses:
+        "200":
+          description: Support session approval processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportSession"
+        "400":
+          description: Invalid request data
+        "404":
+          description: Support session not found
+        "401":
+          description: Authentication required
+        "403":
+          description: Only guardian can approve sessions
+        "500":
+          description: Internal server error
+
+  /support-sessions/{session_id}/start:
+    post:
+      summary: Start Support Session
+      description: |
+        Begin approved support session and issue time-limited access token.
+        Only support agents can start sessions, and only after guardian approval.
+
+        ## Session Controls
+
+        - Generates secure access token with expiration
+        - Enforces maximum duration limits
+        - Restricts access to approved data types only
+        - Logs session start event for audit trail
+      operationId: startSupportSession
+      tags:
+        - Support Sessions
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Unique identifier for the support session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Support session started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/SupportSession"
+                  access_token:
+                    type: string
+                    description: Time-limited access token for support session
+                    example: "support_a1b2c3d4e5f6..."
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: Token expiration timestamp
+        "400":
+          description: Session not in approved state
+        "404":
+          description: Support session not found
+        "401":
+          description: Authentication required
+        "403":
+          description: Only support agents can start sessions
+        "500":
+          description: Internal server error
+
+  /support-sessions/{session_id}/end:
+    post:
+      summary: End Support Session
+      description: |
+        Terminate active support session and invalidate access token.
+        Can be called by support agent, guardian, or administrator.
+
+        ## Session Termination
+
+        - Immediately invalidates access token
+        - Records session end time and duration
+        - Logs termination event with reason
+        - Prevents further data access
+      operationId: endSupportSession
+      tags:
+        - Support Sessions
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Unique identifier for the support session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Support session ended successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportSession"
+        "404":
+          description: Support session not found
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from AIVO authentication service.
+        Include in Authorization header as: `Bearer <token>`
+
+  schemas:
+    AuditEventType:
+      type: string
+      enum:
+        - data_read
+        - data_write
+        - data_delete
+        - data_export
+        - data_anonymize
+        - login_success
+        - login_failure
+        - logout
+        - password_change
+        - mfa_enabled
+        - mfa_disabled
+        - permission_granted
+        - permission_denied
+        - role_assigned
+        - role_removed
+        - support_session_request
+        - support_session_approved
+        - support_session_denied
+        - support_session_start
+        - support_session_end
+        - support_token_issued
+        - support_token_expired
+        - user_created
+        - user_updated
+        - user_disabled
+        - system_config_changed
+        - access_review_started
+        - access_review_completed
+        - access_certified
+        - access_revoked
+
+    AuditSeverity:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+        - critical
+
+    DataClassification:
+      type: string
+      enum:
+        - public
+        - internal
+        - confidential
+        - restricted
+
+    UserRole:
+      type: string
+      enum:
+        - student
+        - teacher
+        - guardian
+        - admin
+        - support
+        - system
+
+    AccessReviewStatus:
+      type: string
+      enum:
+        - pending
+        - in_progress
+        - completed
+        - overdue
+
+    SupportSessionStatus:
+      type: string
+      enum:
+        - requested
+        - pending_approval
+        - approved
+        - denied
+        - active
+        - completed
+        - expired
+
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the audit event
+        timestamp:
+          type: string
+          format: date-time
+          description: When the event occurred (ISO 8601)
+        event_type:
+          $ref: "#/components/schemas/AuditEventType"
+        severity:
+          $ref: "#/components/schemas/AuditSeverity"
+        actor_id:
+          type: string
+          format: uuid
+          description: ID of the user who performed the action
+          nullable: true
+        actor_type:
+          $ref: "#/components/schemas/UserRole"
+        actor_email:
+          type: string
+          format: email
+          description: Email of the user who performed the action
+          nullable: true
+        actor_ip:
+          type: string
+          format: ipv4
+          description: IP address of the actor
+          nullable: true
+        actor_user_agent:
+          type: string
+          description: User agent string of the actor
+          nullable: true
+        target_id:
+          type: string
+          format: uuid
+          description: ID of the resource that was acted upon
+          nullable: true
+        target_type:
+          type: string
+          description: Type of the target resource
+          nullable: true
+        target_classification:
+          $ref: "#/components/schemas/DataClassification"
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant (organization) ID
+        session_id:
+          type: string
+          description: Session identifier
+          nullable: true
+        request_id:
+          type: string
+          description: Request identifier for correlation
+          nullable: true
+        action:
+          type: string
+          description: Specific action that was performed
+        resource:
+          type: string
+          description: Resource or system component involved
+        outcome:
+          type: string
+          enum: [success, failure, error]
+          description: Result of the action
+        reason:
+          type: string
+          description: Reason or justification for the action
+          nullable: true
+        metadata:
+          type: object
+          description: Additional contextual information
+          additionalProperties: true
+        retention_days:
+          type: integer
+          description: Number of days to retain this audit event
+          default: 2555
+
+    CreateAuditEventRequest:
+      type: object
+      required:
+        - event_type
+        - action
+        - resource
+      properties:
+        event_type:
+          $ref: "#/components/schemas/AuditEventType"
+        severity:
+          $ref: "#/components/schemas/AuditSeverity"
+          default: medium
+        action:
+          type: string
+          description: Specific action being audited
+          example: "view_student_profile"
+        resource:
+          type: string
+          description: Resource or system being accessed
+          example: "student_data"
+        outcome:
+          type: string
+          enum: [success, failure, error]
+          default: success
+        reason:
+          type: string
+          description: Reason or justification for the action
+          example: "Quarterly grade review"
+        actor_id:
+          type: string
+          format: uuid
+          description: Override actor ID (defaults to authenticated user)
+        actor_type:
+          $ref: "#/components/schemas/UserRole"
+        target_id:
+          type: string
+          format: uuid
+          description: ID of the resource being acted upon
+        target_type:
+          type: string
+          description: Type of the target resource
+          example: "student_profile"
+        target_classification:
+          $ref: "#/components/schemas/DataClassification"
+        metadata:
+          type: object
+          description: Additional contextual information
+          additionalProperties: true
+
+    AccessReview:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+          format: uuid
+        review_type:
+          type: string
+          enum: [quarterly, annual, ad_hoc]
+        review_period_start:
+          type: string
+          format: date-time
+        review_period_end:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/AccessReviewStatus"
+        due_date:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        reviewer_id:
+          type: string
+          format: uuid
+        reviewer_email:
+          type: string
+          format: email
+        roles_to_review:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
+        departments:
+          type: array
+          items:
+            type: string
+        total_users_reviewed:
+          type: integer
+          default: 0
+        access_certified:
+          type: integer
+          default: 0
+        access_revoked:
+          type: integer
+          default: 0
+        access_modified:
+          type: integer
+          default: 0
+        notes:
+          type: string
+          nullable: true
+
+    AccessReviewItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        review_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        user_email:
+          type: string
+          format: email
+        user_role:
+          $ref: "#/components/schemas/UserRole"
+        department:
+          type: string
+          nullable: true
+        permissions:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            type: string
+        last_login:
+          type: string
+          format: date-time
+          nullable: true
+        last_activity:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [pending, certified, revoked, modified]
+          default: pending
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        reviewer_notes:
+          type: string
+          nullable: true
+        risk_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+        risk_factors:
+          type: array
+          items:
+            type: string
+
+    SupportSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        learner_id:
+          type: string
+          format: uuid
+        guardian_id:
+          type: string
+          format: uuid
+        support_agent_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: "#/components/schemas/SupportSessionStatus"
+        reason:
+          type: string
+        description:
+          type: string
+          nullable: true
+        urgency:
+          type: string
+          enum: [low, normal, high, emergency]
+          default: normal
+        requested_at:
+          type: string
+          format: date-time
+        approval_requested_at:
+          type: string
+          format: date-time
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+        denied_at:
+          type: string
+          format: date-time
+          nullable: true
+        approval_reason:
+          type: string
+          nullable: true
+        session_start:
+          type: string
+          format: date-time
+          nullable: true
+        session_end:
+          type: string
+          format: date-time
+          nullable: true
+        max_duration_minutes:
+          type: integer
+          default: 60
+        read_only:
+          type: boolean
+          default: true
+        allowed_data_types:
+          type: array
+          items:
+            type: string
+        restricted_data_types:
+          type: array
+          items:
+            type: string
+        access_token:
+          type: string
+          nullable: true
+        token_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        actions_performed:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        tenant_id:
+          type: string
+          format: uuid
+
+    AuditReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        generated_at:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+          format: uuid
+        report_type:
+          type: string
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        total_events:
+          type: integer
+        events_by_type:
+          type: object
+          additionalProperties:
+            type: integer
+        events_by_severity:
+          type: object
+          additionalProperties:
+            type: integer
+        unique_actors:
+          type: integer
+        failed_events:
+          type: integer
+        top_actors:
+          type: array
+          items:
+            type: object
+            properties:
+              actor_id:
+                type: string
+              actor_email:
+                type: string
+              event_count:
+                type: integer
+        top_resources:
+          type: array
+          items:
+            type: object
+            properties:
+              resource:
+                type: string
+              access_count:
+                type: integer
+        risk_events:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        access_reviews_completed:
+          type: integer
+        support_sessions_approved:
+          type: integer
+        policy_violations:
+          type: integer
+
+    StartAccessReviewRequest:
+      type: object
+      properties:
+        review_type:
+          type: string
+          enum: [quarterly, annual, ad_hoc]
+          default: quarterly
+        roles_to_review:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
+        departments:
+          type: array
+          items:
+            type: string
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+
+    ReviewAccessItemRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [certified, revoked, modified]
+        reviewer_notes:
+          type: string
+          nullable: true
+        changes_to_make:
+          type: array
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+                enum:
+                  [
+                    revoke_permission,
+                    remove_role,
+                    disable_user,
+                    change_department,
+                  ]
+              target:
+                type: string
+              value:
+                oneOf:
+                  - type: string
+                  - type: "null"
+
+    CreateSupportSessionRequest:
+      type: object
+      required:
+        - learner_id
+        - reason
+      properties:
+        learner_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        description:
+          type: string
+          nullable: true
+        urgency:
+          type: string
+          enum: [low, normal, high, emergency]
+          default: normal
+        max_duration_minutes:
+          type: integer
+          minimum: 5
+          maximum: 240
+          default: 60
+        allowed_data_types:
+          type: array
+          items:
+            type: string
+
+    ApproveSupportSessionRequest:
+      type: object
+      required:
+        - approved
+      properties:
+        approved:
+          type: boolean
+        reason:
+          type: string
+          nullable: true
+        max_duration_minutes:
+          type: integer
+          minimum: 5
+          maximum: 240
+          nullable: true
+        allowed_data_types:
+          type: array
+          items:
+            type: string
+          nullable: true
