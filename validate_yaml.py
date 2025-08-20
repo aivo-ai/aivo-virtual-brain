@@ -13,7 +13,11 @@ def validate_yaml_file(filepath):
     """Validate a single YAML file"""
     try:
         with open(filepath, 'r', encoding='utf-8') as file:
-            yaml.safe_load(file)
+            content = file.read()
+            # Handle multi-document YAML files
+            documents = yaml.safe_load_all(content)
+            # Force evaluation of all documents
+            list(documents)
         return True, None
     except yaml.YAMLError as e:
         return False, str(e)
@@ -33,6 +37,9 @@ def find_yaml_files(directory):
         # Skip Helm template files
         if '/templates/' in file_str or '\\templates\\' in file_str:
             if '/charts/' in file_str or '\\charts\\' in file_str:
+                continue
+            # Also skip infra/helm templates
+            if '/helm/' in file_str or '\\helm\\' in file_str:
                 continue
         filtered_files.append(yaml_file)
     
