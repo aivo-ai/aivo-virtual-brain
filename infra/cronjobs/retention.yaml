@@ -1,0 +1,256 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: data-retention-cleanup
+  namespace: aivo-platform
+  labels:
+    app: data-retention
+    component: privacy-compliance
+    tier: automation
+spec:
+  # Run daily at 3 AM UTC for retention cleanup
+  schedule: "0 3 * * *"
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200 # 2 hours max
+      template:
+        metadata:
+          labels:
+            app: data-retention
+            job-type: cleanup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: privacy-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            fsGroup: 1001
+          containers:
+            - name: retention-cleanup
+              image: aivo/privacy-svc:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -m
+                - retention_cleanup
+              env:
+                - name: POSTGRES_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: host
+                - name: POSTGRES_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: port
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: database
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: username
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: password
+                - name: REDIS_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-redis-secrets
+                      key: url
+                - name: RETENTION_POLICY_DAYS
+                  value: "2555" # 7 years default retention
+                - name: CHECKPOINT_KEEP_COUNT
+                  value: "3" # Keep 3 personalized checkpoints
+                - name: LOG_LEVEL
+                  value: "INFO"
+                - name: DRY_RUN
+                  value: "false"
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "1Gi"
+                  cpu: "500m"
+              volumeMounts:
+                - name: retention-config
+                  mountPath: /app/config
+                  readOnly: true
+                - name: temp-storage
+                  mountPath: /tmp
+          volumes:
+            - name: retention-config
+              configMap:
+                name: retention-policies
+            - name: temp-storage
+              emptyDir:
+                sizeLimit: 1Gi
+
+---
+# Personalized Data Cleanup Job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: personalized-checkpoint-cleanup
+  namespace: aivo-platform
+  labels:
+    app: checkpoint-retention
+    component: privacy-compliance
+    tier: automation
+spec:
+  # Run weekly on Sundays at 4 AM UTC
+  schedule: "0 4 * * 0"
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600 # 1 hour max
+      template:
+        metadata:
+          labels:
+            app: checkpoint-retention
+            job-type: cleanup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: privacy-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            fsGroup: 1001
+          containers:
+            - name: checkpoint-cleanup
+              image: aivo/privacy-svc:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -m
+                - checkpoint_cleanup
+              env:
+                - name: POSTGRES_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: host
+                - name: POSTGRES_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: port
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: database
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: username
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: privacy-db-secrets
+                      key: password
+                - name: CHECKPOINT_KEEP_COUNT
+                  value: "3" # Keep latest 3 personalized checkpoints per learner
+                - name: CHECKPOINT_MIN_AGE_DAYS
+                  value: "30" # Only delete checkpoints older than 30 days
+                - name: LOG_LEVEL
+                  value: "INFO"
+                - name: DRY_RUN
+                  value: "false"
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "50m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "200m"
+              volumeMounts:
+                - name: temp-storage
+                  mountPath: /tmp
+          volumes:
+            - name: temp-storage
+              emptyDir:
+                sizeLimit: 500Mi
+
+---
+# Export Archive Cleanup Job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: export-archive-cleanup
+  namespace: aivo-platform
+  labels:
+    app: export-cleanup
+    component: privacy-compliance
+    tier: automation
+spec:
+  # Run daily at 5 AM UTC to clean up old export files
+  schedule: "0 5 * * *"
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1800 # 30 minutes max
+      template:
+        metadata:
+          labels:
+            app: export-cleanup
+            job-type: file-cleanup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: privacy-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            fsGroup: 1001
+          containers:
+            - name: export-cleanup
+              image: aivo/privacy-svc:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -m
+                - export_cleanup
+              env:
+                - name: EXPORT_RETENTION_DAYS
+                  value: "7" # Keep export files for 7 days
+                - name: EXPORT_STORAGE_PATH
+                  value: "/exports"
+                - name: LOG_LEVEL
+                  value: "INFO"
+              resources:
+                requests:
+                  memory: "64Mi"
+                  cpu: "25m"
+                limits:
+                  memory: "256Mi"
+                  cpu: "100m"
+              volumeMounts:
+                - name: export-storage
+                  mountPath: /exports
+          volumes:
+            - name: export-storage
+              persistentVolumeClaim:
+                claimName: privacy-export-storage

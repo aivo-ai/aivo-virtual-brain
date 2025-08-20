@@ -1,0 +1,700 @@
+openapi: 3.0.3
+info:
+  title: Privacy Service API
+  description: |
+    GDPR-compliant data export, erasure, and retention management service.
+
+    This service provides endpoints for:
+    - **Data Export**: Generate comprehensive data bundles for learners
+    - **Data Erasure**: Irreversible deletion with audit trails
+    - **Retention Management**: Automated cleanup and retention policies
+
+    ## Guardian Data Portal Backend
+
+    These endpoints power the guardian data portal, allowing parents/guardians
+    to request export or deletion of their child's learning data.
+
+    ## Key Features
+
+    - **PII Redaction**: Automatic redaction of sensitive data in exports
+    - **Adapter One-Way Rule**: Deletion of adapters never merges upwards
+    - **Audit Trail**: Complete logging of all privacy operations
+    - **Idempotent Operations**: Safe retry of export/erase requests
+
+  version: 1.0.0
+  contact:
+    name: AIVO Privacy Team
+    email: privacy@aivo.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.aivo.com/privacy/v1
+    description: Production
+  - url: https://staging-api.aivo.com/privacy/v1
+    description: Staging
+  - url: http://localhost:8080/api/v1
+    description: Development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /export:
+    post:
+      summary: Request Data Export
+      description: |
+        Creates a data export request for a learner. The export bundle includes:
+        - Learning progress and achievements  
+        - Assessment results and analytics
+        - Interaction logs (anonymized)
+        - Personalized learning paths
+        - Generated content and artifacts
+
+        **PII Redaction**: Sensitive fields are automatically redacted based on
+        data classification policies.
+
+        **Processing**: Export generation runs asynchronously. Use the returned
+        request ID to check status and download the bundle.
+      operationId: requestDataExport
+      tags:
+        - Data Export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportRequest"
+            examples:
+              basic_export:
+                summary: Basic learner export
+                value:
+                  learner_id: "550e8400-e29b-41d4-a716-446655440000"
+                  data_categories:
+                    ["learning_progress", "assessments", "interactions"]
+                  export_format: "json"
+                  include_metadata: true
+                  redact_pii: true
+              full_export:
+                summary: Complete data export
+                value:
+                  learner_id: "550e8400-e29b-41d4-a716-446655440000"
+                  data_categories: ["all"]
+                  export_format: "json"
+                  include_metadata: true
+                  redact_pii: false
+                  guardian_consent: true
+      responses:
+        "202":
+          description: Export request accepted and queued for processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyRequestResponse"
+              example:
+                request_id: "123e4567-e89b-12d3-a456-426614174000"
+                status: "pending"
+                created_at: "2025-08-20T10:30:00Z"
+                estimated_completion: "2025-08-20T11:00:00Z"
+                message: "Export request submitted successfully"
+        "400":
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Export request already in progress for this learner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many export requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /export/{request_id}/status:
+    get:
+      summary: Get Export Status
+      description: |
+        Check the status of an export request. Returns current processing
+        status and download URL when ready.
+      operationId: getExportStatus
+      tags:
+        - Data Export
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Export request ID
+      responses:
+        "200":
+          description: Export status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportStatusResponse"
+              examples:
+                processing:
+                  summary: Export in progress
+                  value:
+                    request_id: "123e4567-e89b-12d3-a456-426614174000"
+                    status: "processing"
+                    progress: 45
+                    created_at: "2025-08-20T10:30:00Z"
+                    estimated_completion: "2025-08-20T11:00:00Z"
+                completed:
+                  summary: Export completed
+                  value:
+                    request_id: "123e4567-e89b-12d3-a456-426614174000"
+                    status: "completed"
+                    progress: 100
+                    created_at: "2025-08-20T10:30:00Z"
+                    completed_at: "2025-08-20T10:55:00Z"
+                    download_url: "https://api.aivo.com/privacy/v1/export/123e4567-e89b-12d3-a456-426614174000/download"
+                    file_size: 2048576
+                    expires_at: "2025-08-27T10:55:00Z"
+        "404":
+          description: Export request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /export/{request_id}/download:
+    get:
+      summary: Download Export Bundle
+      description: |
+        Download the completed export bundle as a ZIP file.
+
+        **Security**: Download URLs are temporary and expire after 7 days.
+        Access requires proper authentication and authorization.
+      operationId: downloadExport
+      tags:
+        - Data Export
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Export request ID
+      responses:
+        "200":
+          description: Export bundle file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: Attachment filename
+            Content-Length:
+              schema:
+                type: integer
+              description: File size in bytes
+        "404":
+          description: Export not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "410":
+          description: Export bundle has expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /erase:
+    post:
+      summary: Request Data Erasure
+      description: |
+        Initiates irreversible erasure of learner data in compliance with
+        GDPR "Right to be Forgotten" requirements.
+
+        **Adapter One-Way Rule**: When deleting personalized adapters, the
+        deletion is final and never merges upwards to affect other learners
+        or the base models.
+
+        **Audit Trail**: All erasure operations are logged with immutable
+        audit records for compliance verification.
+
+        **Idempotency**: Multiple erasure requests for the same learner are
+        safely handled without data corruption.
+      operationId: requestDataErasure
+      tags:
+        - Data Erasure
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErasureRequest"
+            examples:
+              complete_erasure:
+                summary: Complete data erasure
+                value:
+                  learner_id: "550e8400-e29b-41d4-a716-446655440000"
+                  data_categories: ["all"]
+                  reason: "guardian_request"
+                  confirmation_token: "confirm_erasure_550e8400"
+                  guardian_verified: true
+              partial_erasure:
+                summary: Selective data erasure
+                value:
+                  learner_id: "550e8400-e29b-41d4-a716-446655440000"
+                  data_categories: ["interactions", "analytics"]
+                  reason: "privacy_concern"
+                  retain_achievements: true
+                  confirmation_token: "confirm_erasure_550e8400"
+      responses:
+        "202":
+          description: Erasure request accepted and queued for processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyRequestResponse"
+              example:
+                request_id: "789e0123-e89b-12d3-a456-426614174000"
+                status: "pending"
+                created_at: "2025-08-20T10:30:00Z"
+                estimated_completion: "2025-08-20T10:45:00Z"
+                message: "Erasure request submitted and logged"
+        "400":
+          description: Invalid request or missing confirmation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Erasure request already in progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /erase/{request_id}/status:
+    get:
+      summary: Get Erasure Status
+      description: |
+        Check the status of an erasure request. Provides progress updates
+        and completion confirmation.
+      operationId: getErasureStatus
+      tags:
+        - Data Erasure
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Erasure request ID
+      responses:
+        "200":
+          description: Erasure status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErasureStatusResponse"
+              examples:
+                processing:
+                  summary: Erasure in progress
+                  value:
+                    request_id: "789e0123-e89b-12d3-a456-426614174000"
+                    status: "processing"
+                    progress: 75
+                    created_at: "2025-08-20T10:30:00Z"
+                    data_categories_processed: ["interactions", "analytics"]
+                    estimated_completion: "2025-08-20T10:45:00Z"
+                completed:
+                  summary: Erasure completed
+                  value:
+                    request_id: "789e0123-e89b-12d3-a456-426614174000"
+                    status: "completed"
+                    progress: 100
+                    created_at: "2025-08-20T10:30:00Z"
+                    completed_at: "2025-08-20T10:42:00Z"
+                    data_categories_erased:
+                      ["interactions", "analytics", "learning_progress"]
+                    audit_log_id: "audit_789e0123"
+        "404":
+          description: Erasure request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /data-summary/{learner_id}:
+    get:
+      summary: Get Data Summary
+      description: |
+        Retrieve a summary of what data exists for a learner across
+        all categories. Useful for guardians to understand what data
+        can be exported or erased.
+      operationId: getDataSummary
+      tags:
+        - Data Discovery
+      parameters:
+        - name: learner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Learner ID
+      responses:
+        "200":
+          description: Data summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSummaryResponse"
+              example:
+                learner_id: "550e8400-e29b-41d4-a716-446655440000"
+                total_data_points: 15420
+                last_activity: "2025-08-19T16:45:00Z"
+                data_categories:
+                  learning_progress:
+                    record_count: 1250
+                    size_mb: 2.4
+                    oldest_record: "2024-09-01T08:00:00Z"
+                    newest_record: "2025-08-19T16:45:00Z"
+                  assessments:
+                    record_count: 89
+                    size_mb: 5.1
+                    oldest_record: "2024-09-15T10:30:00Z"
+                    newest_record: "2025-08-18T14:20:00Z"
+                  interactions:
+                    record_count: 12450
+                    size_mb: 45.8
+                    oldest_record: "2024-09-01T08:15:00Z"
+                    newest_record: "2025-08-19T16:44:00Z"
+                  personalized_adapters:
+                    record_count: 3
+                    size_mb: 125.7
+                    oldest_record: "2024-10-12T09:00:00Z"
+                    newest_record: "2025-07-30T11:15:00Z"
+        "404":
+          description: Learner not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /retention-policies:
+    get:
+      summary: Get Retention Policies
+      description: |
+        Retrieve current data retention policies and schedules.
+        Useful for transparency and compliance reporting.
+      operationId: getRetentionPolicies
+      tags:
+        - Retention
+      responses:
+        "200":
+          description: Retention policies retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetentionPolicyResponse"
+              example:
+                policies:
+                  learning_progress:
+                    retention_days: 2555 # 7 years
+                    auto_delete: true
+                    exceptions: ["academic_transcripts"]
+                  interactions:
+                    retention_days: 1095 # 3 years
+                    auto_delete: true
+                    anonymize_after_days: 365
+                  assessments:
+                    retention_days: 2555 # 7 years
+                    auto_delete: false # Manual review required
+                  personalized_adapters:
+                    retention_days: 1825 # 5 years
+                    keep_latest_count: 3
+                    auto_delete: true
+                next_cleanup: "2025-08-21T03:00:00Z"
+                last_cleanup: "2025-08-20T03:00:00Z"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for API authentication
+
+  schemas:
+    ExportRequest:
+      type: object
+      required:
+        - learner_id
+        - data_categories
+      properties:
+        learner_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the learner
+        data_categories:
+          type: array
+          items:
+            type: string
+            enum:
+              - learning_progress
+              - assessments
+              - interactions
+              - analytics
+              - personalized_adapters
+              - generated_content
+              - all
+          description: Categories of data to include in export
+        export_format:
+          type: string
+          enum: [json, csv, xml]
+          default: json
+          description: Export bundle format
+        include_metadata:
+          type: boolean
+          default: true
+          description: Include metadata and schema information
+        redact_pii:
+          type: boolean
+          default: true
+          description: Apply PII redaction to sensitive fields
+        guardian_consent:
+          type: boolean
+          default: false
+          description: Guardian consent for unrestricted export
+
+    ErasureRequest:
+      type: object
+      required:
+        - learner_id
+        - data_categories
+        - confirmation_token
+      properties:
+        learner_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the learner
+        data_categories:
+          type: array
+          items:
+            type: string
+            enum:
+              - learning_progress
+              - assessments
+              - interactions
+              - analytics
+              - personalized_adapters
+              - generated_content
+              - all
+          description: Categories of data to erase
+        reason:
+          type: string
+          enum:
+            - guardian_request
+            - privacy_concern
+            - account_deletion
+            - data_minimization
+            - other
+          description: Reason for erasure request
+        confirmation_token:
+          type: string
+          description: Required confirmation token to prevent accidental erasure
+        retain_achievements:
+          type: boolean
+          default: false
+          description: Retain anonymized achievement records
+        guardian_verified:
+          type: boolean
+          default: false
+          description: Guardian identity verification completed
+
+    PrivacyRequestResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the privacy request
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled]
+          description: Current request status
+        created_at:
+          type: string
+          format: date-time
+          description: Request creation timestamp
+        estimated_completion:
+          type: string
+          format: date-time
+          description: Estimated completion time
+        message:
+          type: string
+          description: Human-readable status message
+
+    ExportStatusResponse:
+      allOf:
+        - $ref: "#/components/schemas/PrivacyRequestResponse"
+        - type: object
+          properties:
+            progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Completion percentage
+            completed_at:
+              type: string
+              format: date-time
+              description: Completion timestamp (when status is completed)
+            download_url:
+              type: string
+              format: uri
+              description: Temporary download URL (when ready)
+            file_size:
+              type: integer
+              description: Export bundle size in bytes
+            expires_at:
+              type: string
+              format: date-time
+              description: Download URL expiration time
+
+    ErasureStatusResponse:
+      allOf:
+        - $ref: "#/components/schemas/PrivacyRequestResponse"
+        - type: object
+          properties:
+            progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Completion percentage
+            completed_at:
+              type: string
+              format: date-time
+              description: Completion timestamp (when status is completed)
+            data_categories_processed:
+              type: array
+              items:
+                type: string
+              description: Data categories currently being processed
+            data_categories_erased:
+              type: array
+              items:
+                type: string
+              description: Data categories successfully erased
+            audit_log_id:
+              type: string
+              description: Audit log reference for compliance
+
+    DataSummaryResponse:
+      type: object
+      properties:
+        learner_id:
+          type: string
+          format: uuid
+          description: Learner identifier
+        total_data_points:
+          type: integer
+          description: Total number of data records
+        last_activity:
+          type: string
+          format: date-time
+          description: Most recent data activity
+        data_categories:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              record_count:
+                type: integer
+                description: Number of records in this category
+              size_mb:
+                type: number
+                format: float
+                description: Approximate size in megabytes
+              oldest_record:
+                type: string
+                format: date-time
+                description: Oldest record timestamp
+              newest_record:
+                type: string
+                format: date-time
+                description: Newest record timestamp
+
+    RetentionPolicyResponse:
+      type: object
+      properties:
+        policies:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              retention_days:
+                type: integer
+                description: Data retention period in days
+              auto_delete:
+                type: boolean
+                description: Whether data is automatically deleted
+              keep_latest_count:
+                type: integer
+                description: Number of latest records to keep (for checkpoints)
+              anonymize_after_days:
+                type: integer
+                description: Days after which data is anonymized
+              exceptions:
+                type: array
+                items:
+                  type: string
+                description: Data types exempt from automatic deletion
+        next_cleanup:
+          type: string
+          format: date-time
+          description: Next scheduled cleanup job
+        last_cleanup:
+          type: string
+          format: date-time
+          description: Last completed cleanup job
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Additional error details
+        request_id:
+          type: string
+          description: Request identifier for debugging
+
+tags:
+  - name: Data Export
+    description: Generate and download comprehensive data exports
+  - name: Data Erasure
+    description: Irreversible deletion of personal data
+  - name: Data Discovery
+    description: Explore what data exists for a learner
+  - name: Retention
+    description: Data retention policies and automated cleanup
