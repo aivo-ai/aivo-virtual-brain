@@ -8,6 +8,9 @@ build/
 *.min.css
 
 # Helm templates (contain Go template syntax)
+infra/helm/**/*.yaml
+**/charts/**/templates/**/*.yaml
+services/**/charts/**/templates/**/*.yaml
 **/templates/*.yaml
 **/templates/*.yml
 

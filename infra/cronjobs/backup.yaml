@@ -1,0 +1,636 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgresql-backup
+  namespace: aivo-system
+  labels:
+    app: postgresql-backup
+    component: data-reliability
+spec:
+  schedule: "0 2 * * *" # Daily at 2 AM
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200 # 2 hours
+      template:
+        metadata:
+          labels:
+            app: postgresql-backup
+            component: data-reliability
+        spec:
+          restartPolicy: Never
+          serviceAccountName: backup-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: pgbackrest
+              image: pgbackrest/pgbackrest:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - /scripts/pgbackrest.sh
+              env:
+                - name: BACKUP_TYPE
+                  value: "incr"
+                - name: PGBACKREST_STANZA
+                  value: "aivo-postgres"
+                - name: KMS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: kms-key-id
+                - name: BACKUP_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: postgres-backup-bucket
+                - name: ENCRYPTION_KEY_CMD
+                  value: "aws kms decrypt --ciphertext-blob fileb:///etc/kms/key.enc --output text --query Plaintext | base64 -d"
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: aws-region
+                - name: ALERT_WEBHOOK
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: alert-webhook
+                      optional: true
+              volumeMounts:
+                - name: backup-scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: pgbackrest-config
+                  mountPath: /etc/pgbackrest
+                  readOnly: true
+                - name: kms-key
+                  mountPath: /etc/kms
+                  readOnly: true
+                - name: aws-credentials
+                  mountPath: /root/.aws
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: 2
+                  memory: 4Gi
+          volumes:
+            - name: backup-scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0755
+            - name: pgbackrest-config
+              configMap:
+                name: pgbackrest-config
+            - name: kms-key
+              secret:
+                secretName: backup-secrets
+                items:
+                  - key: kms-key-encrypted
+                    path: key.enc
+            - name: aws-credentials
+              secret:
+                secretName: aws-credentials
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: minio-backup
+  namespace: aivo-system
+  labels:
+    app: minio-backup
+    component: data-reliability
+spec:
+  schedule: "0 3 * * *" # Daily at 3 AM
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200 # 2 hours
+      template:
+        metadata:
+          labels:
+            app: minio-backup
+            component: data-reliability
+        spec:
+          restartPolicy: Never
+          serviceAccountName: backup-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: minio-sync
+              image: minio/mc:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - /scripts/minio-sync.sh
+              env:
+                - name: MINIO_SOURCE_ENDPOINT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: minio-endpoint
+                - name: MINIO_SOURCE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: minio-credentials
+                      key: access-key
+                - name: MINIO_SOURCE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: minio-credentials
+                      key: secret-key
+                - name: BACKUP_TARGET_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: minio-backup-bucket
+                - name: KMS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: kms-key-id
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: aws-region
+                - name: ALERT_WEBHOOK
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: alert-webhook
+                      optional: true
+              volumeMounts:
+                - name: backup-scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: aws-credentials
+                  mountPath: /root/.aws
+                  readOnly: true
+                - name: temp-storage
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 2Gi
+                  ephemeral-storage: 10Gi
+                limits:
+                  cpu: 2
+                  memory: 8Gi
+                  ephemeral-storage: 50Gi
+          volumes:
+            - name: backup-scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0755
+            - name: aws-credentials
+              secret:
+                secretName: aws-credentials
+            - name: temp-storage
+              emptyDir:
+                sizeLimit: 50Gi
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: opensearch-backup
+  namespace: aivo-system
+  labels:
+    app: opensearch-backup
+    component: data-reliability
+spec:
+  schedule: "0 4 * * *" # Daily at 4 AM
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200 # 2 hours
+      template:
+        metadata:
+          labels:
+            app: opensearch-backup
+            component: data-reliability
+        spec:
+          restartPolicy: Never
+          serviceAccountName: backup-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: opensearch-snapshots
+              image: curlimages/curl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - /scripts/os-snapshots.sh
+              env:
+                - name: OPENSEARCH_ENDPOINT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: opensearch-endpoint
+                - name: OPENSEARCH_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: opensearch-credentials
+                      key: username
+                - name: OPENSEARCH_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: opensearch-credentials
+                      key: password
+                - name: SNAPSHOT_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: opensearch-backup-bucket
+                - name: KMS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: kms-key-id
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: aws-region
+                - name: ALERT_WEBHOOK
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: alert-webhook
+                      optional: true
+              volumeMounts:
+                - name: backup-scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: aws-credentials
+                  mountPath: /root/.aws
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 512Mi
+                limits:
+                  cpu: 1
+                  memory: 2Gi
+          volumes:
+            - name: backup-scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0755
+            - name: aws-credentials
+              secret:
+                secretName: aws-credentials
+
+---
+# Weekly full backup for PostgreSQL
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgresql-full-backup
+  namespace: aivo-system
+  labels:
+    app: postgresql-backup
+    component: data-reliability
+    backup-type: full
+spec:
+  schedule: "0 1 * * 0" # Weekly on Sunday at 1 AM
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 14400 # 4 hours for full backup
+      template:
+        metadata:
+          labels:
+            app: postgresql-backup
+            component: data-reliability
+            backup-type: full
+        spec:
+          restartPolicy: Never
+          serviceAccountName: backup-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: pgbackrest-full
+              image: pgbackrest/pgbackrest:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - /scripts/pgbackrest.sh
+              env:
+                - name: BACKUP_TYPE
+                  value: "full"
+                - name: PGBACKREST_STANZA
+                  value: "aivo-postgres"
+                - name: KMS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: kms-key-id
+                - name: BACKUP_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: postgres-backup-bucket
+                - name: ENCRYPTION_KEY_CMD
+                  value: "aws kms decrypt --ciphertext-blob fileb:///etc/kms/key.enc --output text --query Plaintext | base64 -d"
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: aws-region
+                - name: ALERT_WEBHOOK
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: alert-webhook
+                      optional: true
+              volumeMounts:
+                - name: backup-scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: pgbackrest-config
+                  mountPath: /etc/pgbackrest
+                  readOnly: true
+                - name: kms-key
+                  mountPath: /etc/kms
+                  readOnly: true
+                - name: aws-credentials
+                  mountPath: /root/.aws
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 1
+                  memory: 2Gi
+                limits:
+                  cpu: 4
+                  memory: 8Gi
+          volumes:
+            - name: backup-scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0755
+            - name: pgbackrest-config
+              configMap:
+                name: pgbackrest-config
+            - name: kms-key
+              secret:
+                secretName: backup-secrets
+                items:
+                  - key: kms-key-encrypted
+                    path: key.enc
+            - name: aws-credentials
+              secret:
+                secretName: aws-credentials
+
+---
+# Daily restore verification job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-restore-verification
+  namespace: aivo-system
+  labels:
+    app: restore-verification
+    component: data-reliability
+spec:
+  schedule: "0 6 * * *" # Daily at 6 AM
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600 # 1 hour
+      template:
+        metadata:
+          labels:
+            app: restore-verification
+            component: data-reliability
+        spec:
+          restartPolicy: Never
+          serviceAccountName: backup-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: restore-verification
+              image: postgres:15-alpine
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - /scripts/verify-restore.sh
+              env:
+                - name: STAGING_DB_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: staging-postgres-host
+                - name: STAGING_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: staging-postgres-credentials
+                      key: username
+                - name: STAGING_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: staging-postgres-credentials
+                      key: password
+                - name: KMS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: kms-key-id
+                - name: BACKUP_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: postgres-backup-bucket
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: aws-region
+                - name: ALERT_WEBHOOK
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: alert-webhook
+                      optional: true
+              volumeMounts:
+                - name: backup-scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: aws-credentials
+                  mountPath: /root/.aws
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: 2
+                  memory: 4Gi
+          volumes:
+            - name: backup-scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0755
+            - name: aws-credentials
+              secret:
+                secretName: aws-credentials
+
+---
+# Backup Restore Verification Job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-verification
+  namespace: aivo-system
+  labels:
+    app: backup-verification
+    component: data-reliability
+    tier: verification
+spec:
+  # Run verification daily at 6:00 AM UTC
+  schedule: "0 6 * * *"
+  timeZone: "UTC"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200 # 2 hours max
+      template:
+        metadata:
+          labels:
+            app: backup-verification
+            job-type: verification
+        spec:
+          restartPolicy: Never
+          serviceAccountName: backup-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          initContainers:
+            - name: verify-staging-access
+              image: postgres:15-alpine
+              command:
+                - sh
+                - -c
+                - |
+                  echo "Verifying staging database access..."
+                  PGPASSWORD="$STAGING_DB_PASSWORD" psql -h "$STAGING_DB_HOST" -p "$STAGING_DB_PORT" \
+                    -U "$STAGING_DB_USER" -d postgres -c "SELECT version();"
+              env:
+                - name: STAGING_DB_HOST
+                  value: "staging-postgres.aivo-staging.svc.cluster.local"
+                - name: STAGING_DB_PORT
+                  value: "5432"
+                - name: STAGING_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: staging-db-username
+                - name: STAGING_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: staging-db-password
+          containers:
+            - name: verify-restore
+              image: pgbackrest/pgbackrest:latest
+              command:
+                - /bin/bash
+                - /scripts/verify-restore.sh
+              env:
+                - name: BACKUP_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: backup-config
+                      key: postgres-backup-bucket
+                - name: KMS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: kms-key-id
+                - name: STAGING_DB_HOST
+                  value: "staging-postgres.aivo-staging.svc.cluster.local"
+                - name: STAGING_DB_PORT
+                  value: "5432"
+                - name: STAGING_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: staging-db-username
+                - name: STAGING_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: staging-db-password
+                - name: AWS_DEFAULT_REGION
+                  value: "us-east-1"
+                - name: ALERT_WEBHOOK
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secrets
+                      key: alert-webhook
+                      optional: true
+                - name: KUBERNETES_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "2Gi"
+                  cpu: "1000m"
+              volumeMounts:
+                - name: backup-scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: aws-credentials
+                  mountPath: /root/.aws
+                  readOnly: true
+          volumes:
+            - name: backup-scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0755
+            - name: aws-credentials
+              secret:
+                secretName: aws-credentials
