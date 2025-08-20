@@ -136,8 +136,8 @@ jobs:
       - name: Run Gateway Load Test
         env:
           BASE_URL: ${{ needs.determine-test-scope.outputs.base-url }}
-          API_KEY: ${{ secrets.LOAD_TEST_API_KEY }}
-          TENANT_ID: ${{ secrets.LOAD_TEST_TENANT_ID }}
+          API_KEY: test-api-key
+          TENANT_ID: test-tenant
           TEST_TYPE: ${{ needs.determine-test-scope.outputs.test-type }}
         run: |
           cd tests/load/k6
@@ -216,9 +216,9 @@ jobs:
       - name: Run Assessment Load Test
         env:
           BASE_URL: ${{ needs.determine-test-scope.outputs.base-url }}
-          API_KEY: ${{ secrets.LOAD_TEST_API_KEY }}
-          TENANT_ID: ${{ secrets.LOAD_TEST_TENANT_ID }}
-          LEARNER_ID: ${{ secrets.LOAD_TEST_LEARNER_ID }}
+          API_KEY: test-api-key
+          TENANT_ID: test-tenant
+          LEARNER_ID: test-learner
           TEST_TYPE: ${{ needs.determine-test-scope.outputs.test-type }}
         run: |
           cd tests/load/k6
@@ -284,8 +284,8 @@ jobs:
       - name: Run Search Load Test
         env:
           BASE_URL: ${{ needs.determine-test-scope.outputs.base-url }}
-          API_KEY: ${{ secrets.LOAD_TEST_API_KEY }}
-          TENANT_ID: ${{ secrets.LOAD_TEST_TENANT_ID }}
+          API_KEY: test-api-key
+          TENANT_ID: test-tenant
           TEST_TYPE: ${{ needs.determine-test-scope.outputs.test-type }}
         run: |
           cd tests/load/k6
@@ -346,7 +346,13 @@ jobs:
 
   aggregate-results:
     runs-on: ubuntu-latest
-    needs: [k6-gateway-test, k6-assessment-test, k6-search-test]
+    needs:
+      [
+        determine-test-scope,
+        k6-gateway-test,
+        k6-assessment-test,
+        k6-search-test,
+      ]
     if: always()
     steps:
       - name: Download all test results
@@ -428,7 +434,7 @@ jobs:
 
   cleanup:
     runs-on: ubuntu-latest
-    needs: [aggregate-results]
+    needs: [determine-test-scope, aggregate-results]
     if: always()
     steps:
       - name: Stop test services
