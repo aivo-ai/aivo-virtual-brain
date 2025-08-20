@@ -20,15 +20,15 @@ spec:
     - name: success-rate
       interval: 60s
       count: 5
-      successCondition: result[0] >= {{args.success-threshold}}
+      successCondition: "result[0] >= {{.args.success-threshold}}"
       failureLimit: 2
       provider:
         prometheus:
           address: http://prometheus.monitoring.svc.cluster.local:9090
           query: |
             (
-              sum(rate(http_requests_total{job="{{args.service-name}}",namespace="{{args.namespace}}",code!~"5.."}[{{args.duration}}])) /
-              sum(rate(http_requests_total{job="{{args.service-name}}",namespace="{{args.namespace}}"}[{{args.duration}}]))
+              sum(rate(http_requests_total{job="{{.args.service-name}}",namespace="{{.args.namespace}}",code!~"5.."}[{{.args.duration}}])) /
+              sum(rate(http_requests_total{job="{{.args.service-name}}",namespace="{{.args.namespace}}"}[{{.args.duration}}]))
             ) * 100
 ---
 apiVersion: argoproj.io/v1alpha1
@@ -53,14 +53,14 @@ spec:
     - name: p95-latency
       interval: 60s
       count: 5
-      successCondition: result[0] <= {{args.latency-threshold}}
+      successCondition: "result[0] <= {{.args.latency-threshold}}"
       failureLimit: 2
       provider:
         prometheus:
           address: http://prometheus.monitoring.svc.cluster.local:9090
           query: |
             histogram_quantile(0.95,
-              sum(rate(http_request_duration_seconds_bucket{job="{{args.service-name}}",namespace="{{args.namespace}}"}[{{args.duration}}])) by (le)
+              sum(rate(http_request_duration_seconds_bucket{job="{{.args.service-name}}",namespace="{{.args.namespace}}"}[{{.args.duration}}])) by (le)
             ) * 1000
 ---
 apiVersion: argoproj.io/v1alpha1
@@ -83,9 +83,9 @@ spec:
       value: "1h"
   metrics:
     - name: error-budget-burn-rate
-      interval: 300s # 5 minutes
+      interval: 300s
       count: 3
-      successCondition: result[0] <= {{args.error-budget-threshold}}
+      successCondition: "result[0] <= {{.args.error-budget-threshold}}"
       failureLimit: 1
       provider:
         prometheus:
@@ -93,8 +93,8 @@ spec:
           query: |
             (
               1 - (
-                sum(rate(http_requests_total{job="{{args.service-name}}",namespace="{{args.namespace}}",code!~"5.."}[{{args.duration}}])) /
-                sum(rate(http_requests_total{job="{{args.service-name}}",namespace="{{args.namespace}}"}[{{args.duration}}]))
+                sum(rate(http_requests_total{job="{{.args.service-name}}",namespace="{{.args.namespace}}",code!~"5.."}[{{.args.duration}}])) /
+                sum(rate(http_requests_total{job="{{.args.service-name}}",namespace="{{.args.namespace}}"}[{{.args.duration}}]))
               )
             ) * 100 / 0.5
 ---
@@ -122,27 +122,27 @@ spec:
     - name: cpu-utilization
       interval: 60s
       count: 5
-      successCondition: result[0] <= {{args.cpu-threshold}}
+      successCondition: "result[0] <= {{.args.cpu-threshold}}"
       failureLimit: 3
       provider:
         prometheus:
           address: http://prometheus.monitoring.svc.cluster.local:9090
           query: |
             avg(
-              rate(container_cpu_usage_seconds_total{pod=~"{{args.service-name}}-.*",namespace="{{args.namespace}}"}[{{args.duration}}])
+              rate(container_cpu_usage_seconds_total{pod=~"{{.args.service-name}}-.*",namespace="{{.args.namespace}}"}[{{.args.duration}}])
             ) * 100
     - name: memory-utilization
       interval: 60s
       count: 5
-      successCondition: result[0] <= {{args.memory-threshold}}
+      successCondition: "result[0] <= {{.args.memory-threshold}}"
       failureLimit: 3
       provider:
         prometheus:
           address: http://prometheus.monitoring.svc.cluster.local:9090
           query: |
             avg(
-              container_memory_working_set_bytes{pod=~"{{args.service-name}}-.*",namespace="{{args.namespace}}"} /
-              container_spec_memory_limit_bytes{pod=~"{{args.service-name}}-.*",namespace="{{args.namespace}}"}
+              container_memory_working_set_bytes{pod=~"{{.args.service-name}}-.*",namespace="{{.args.namespace}}"} /
+              container_spec_memory_limit_bytes{pod=~"{{.args.service-name}}-.*",namespace="{{.args.namespace}}"}
             ) * 100
 ---
 apiVersion: argoproj.io/v1alpha1
@@ -163,32 +163,32 @@ spec:
     - name: success-rate
       interval: 60s
       count: 5
-      successCondition: result[0] >= 99.5
+      successCondition: "result[0] >= 99.5"
       failureLimit: 2
       provider:
         prometheus:
           address: http://prometheus.monitoring.svc.cluster.local:9090
           query: |
             (
-              sum(rate(http_requests_total{job="{{args.service-name}}",namespace="{{args.namespace}}",code!~"5.."}[5m])) /
-              sum(rate(http_requests_total{job="{{args.service-name}}",namespace="{{args.namespace}}"}[5m]))
+              sum(rate(http_requests_total{job="{{.args.service-name}}",namespace="{{.args.namespace}}",code!~"5.."}[5m])) /
+              sum(rate(http_requests_total{job="{{.args.service-name}}",namespace="{{.args.namespace}}"}[5m]))
             ) * 100
     - name: p95-latency
       interval: 60s
       count: 5
-      successCondition: result[0] <= 200
+      successCondition: "result[0] <= 200"
       failureLimit: 2
       provider:
         prometheus:
           address: http://prometheus.monitoring.svc.cluster.local:9090
           query: |
             histogram_quantile(0.95,
-              sum(rate(http_request_duration_seconds_bucket{job="{{args.service-name}}",namespace="{{args.namespace}}"}[5m])) by (le)
+              sum(rate(http_request_duration_seconds_bucket{job="{{.args.service-name}}",namespace="{{.args.namespace}}"}[5m])) by (le)
             ) * 1000
     - name: error-budget-burn
       interval: 300s
       count: 2
-      successCondition: result[0] <= 2.0
+      successCondition: "result[0] <= 2.0"
       failureLimit: 1
       provider:
         prometheus:
@@ -196,7 +196,7 @@ spec:
           query: |
             (
               1 - (
-                sum(rate(http_requests_total{job="{{args.service-name}}",namespace="{{args.namespace}}",code!~"5.."}[1h])) /
-                sum(rate(http_requests_total{job="{{args.service-name}}",namespace="{{args.namespace}}"}[1h]))
+                sum(rate(http_requests_total{job="{{.args.service-name}}",namespace="{{.args.namespace}}",code!~"5.."}[1h])) /
+                sum(rate(http_requests_total{job="{{.args.service-name}}",namespace="{{.args.namespace}}"}[1h]))
               )
             ) * 100 / 0.5

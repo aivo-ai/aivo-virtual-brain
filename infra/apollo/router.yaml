@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apollo-router-config
+  namespace: aivo-platform
+data:
+  router.yaml: |
+    # Apollo Router Configuration
+    listen: 0.0.0.0:4000
+
+    # Supergraph configuration
+    supergraph:
+      # Path to the supergraph schema
+      path: /etc/config/supergraph.graphql
+      
+    # CORS configuration
+    cors:
+      origins:
+        - https://app.aivo.dev
+        - https://admin.aivo.dev
+        - http://localhost:3000
+      credentials: true
+      
+    # Health check configuration
+    health_check:
+      listen: 0.0.0.0:8088
+      path: /health
+      
+    # Telemetry configuration
+    telemetry:
+      metrics:
+        prometheus:
+          enabled: true
+          listen: 0.0.0.0:9090
+          path: /metrics
+      
+      tracing:
+        propagation:
+          jaeger: true
+        
+    # Rate limiting
+    traffic_shaping:
+      router:
+        global_rate_limit:
+          capacity: 1000
+          interval: 60s
+          
+    # Plugin configuration
+    plugins:
+      "apollo.authentication":
+        jwt:
+          header_name: "Authorization"
+          header_value_prefix: "Bearer "
+          jwks_url: "https://auth.aivo.dev/.well-known/jwks.json"
+          
+      "apollo.authorization":
+        require_authentication: true
+        
+    # Caching configuration
+    apq:
+      router:
+        cache:
+          in_memory:
+            limit: 512
+            
+    # Query planning
+    query_planning:
+      cache:
+        in_memory:
+          limit: 256
+          
+    # Experimental features
+    experimental_chaos:
+      enabled: false

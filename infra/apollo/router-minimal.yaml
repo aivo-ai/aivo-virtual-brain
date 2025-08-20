@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apollo-router-minimal-config
+  namespace: aivo-platform
+data:
+  router.yaml: |
+    # Minimal Apollo Router Configuration
+    listen: 0.0.0.0:4000
+
+    # Supergraph configuration
+    supergraph:
+      path: /etc/config/supergraph.graphql
+      
+    # Health check
+    health_check:
+      listen: 0.0.0.0:8088
+      path: /health
+      
+    # Basic CORS
+    cors:
+      origins:
+        - "*"
+      credentials: false
+      
+    # Minimal telemetry
+    telemetry:
+      metrics:
+        prometheus:
+          enabled: true
+          listen: 0.0.0.0:9090
+          path: /metrics

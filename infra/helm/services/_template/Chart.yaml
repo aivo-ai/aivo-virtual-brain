@@ -1,0 +1,19 @@
+apiVersion: v2
+name: service-template
+description: AIVO Service Template Helm Chart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+keywords:
+  - template
+  - microservice
+  - aivo
+  - scaffold
+
+maintainers:
+  - name: AIVO Platform Team
+    email: platform@aivo.dev
+
+annotations:
+  category: Template

@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: Analytics Service API
+  description: REST API for AIVO analytics service
+  version: 1.0.0
+  contact:
+    name: AIVO Development Team
+    email: dev@aivo.com
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+  - url: https://api.aivo.com/analytics/v1
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /metrics:
+    get:
+      summary: Get analytics metrics
+      operationId: getMetrics
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Analytics metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_users:
+                    type: integer
+                  active_sessions:
+                    type: integer
+                  events_processed:
+                    type: integer

@@ -66,7 +66,8 @@ services:
 routes:
   # Authentication Routes
   - name: auth-login
-    service: auth-svc
+    service:
+      name: auth-svc
     paths:
       - /api/auth/login
     methods:
@@ -79,7 +80,8 @@ routes:
       - sensitive
 
   - name: auth-logout
-    service: auth-svc
+    service:
+      name: auth-svc
     paths:
       - /api/auth/logout
     methods:
@@ -91,7 +93,8 @@ routes:
       - logout
 
   - name: auth-refresh
-    service: auth-svc
+    service:
+      name: auth-svc
     paths:
       - /api/auth/refresh
     methods:
@@ -103,7 +106,8 @@ routes:
       - refresh
 
   - name: auth-reset-password
-    service: auth-svc
+    service:
+      name: auth-svc
     paths:
       - /api/auth/reset-password
     methods:
@@ -117,7 +121,8 @@ routes:
 
   # User Management Routes
   - name: user-profile
-    service: user-svc
+    service:
+      name: user-svc
     paths:
       - /api/users/profile
     methods:
@@ -130,7 +135,8 @@ routes:
       - profile
 
   - name: user-registration
-    service: user-svc
+    service:
+      name: user-svc
     paths:
       - /api/users/register
     methods:
@@ -143,7 +149,8 @@ routes:
 
   # Inference Routes
   - name: inference-generate
-    service: inference-gateway-svc
+    service:
+      name: inference-gateway-svc
     paths:
       - /api/inference/generate
     methods:
@@ -157,7 +164,8 @@ routes:
       - high-cost
 
   - name: inference-models
-    service: inference-gateway-svc
+    service:
+      name: inference-gateway-svc
     paths:
       - /api/inference/models
     methods:
@@ -170,7 +178,8 @@ routes:
 
   # Analytics Routes
   - name: analytics-events
-    service: analytics-svc
+    service:
+      name: analytics-svc
     paths:
       - /api/analytics/events
     methods:
@@ -183,7 +192,8 @@ routes:
 
   # Notification Routes
   - name: notifications
-    service: notification-svc
+    service:
+      name: notification-svc
     paths:
       - /api/notifications
     methods:
@@ -197,7 +207,7 @@ routes:
 # Plugins Configuration
 plugins:
   # Global Rate Limiting Plugin
-  - name: rate-limiting-advanced
+  - name: rate-limiting-global
     config:
       limit:
         - 1000 # 1000 requests
@@ -293,7 +303,7 @@ plugins:
   # Route-Specific Plugins
 
   # Login Route Rate Limiting (Strict)
-  - name: rate-limiting-advanced
+  - name: rate-limiting-login-ip
     route: auth-login
     config:
       limit:
@@ -317,7 +327,7 @@ plugins:
       - strict
 
   # Login Route Rate Limiting by Credential
-  - name: rate-limiting-advanced
+  - name: rate-limiting-login-credential
     route: auth-login
     config:
       limit:
@@ -338,7 +348,7 @@ plugins:
       - credential-limiting
 
   # Inference Generation Rate Limiting
-  - name: rate-limiting-advanced
+  - name: rate-limiting-inference-ip
     route: inference-generate
     config:
       limit:
@@ -362,7 +372,7 @@ plugins:
       - generation
 
   # Inference Generation Rate Limiting by User
-  - name: rate-limiting-advanced
+  - name: rate-limiting-inference-user
     route: inference-generate
     config:
       limit:

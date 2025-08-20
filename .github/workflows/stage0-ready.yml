@@ -1,0 +1,38 @@
+name: Stage 0 Ready Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  stage0-ready:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Stage 0 verification
+        run: pnpm run verify:stage0
+
+      - name: Check security policies
+        run: pnpm run test:security
+
+      - name: Lint configuration files
+        run: pnpm run lint:config

@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.min.js
+*.min.css
+
+# Helm templates (contain Go template syntax)
+**/templates/*.yaml
+**/templates/*.yml
+
+# Generated files
+coverage/
+*.log
+.DS_Store

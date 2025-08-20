@@ -1,0 +1,119 @@
+# Default values for aivo-platform
+# This is a YAML-formatted file.
+
+# Global platform configuration
+global:
+  imageRegistry: "registry.aivo.dev"
+  imagePullSecrets:
+    - name: registry-secret
+
+  # Platform-wide environment
+  environment: production
+
+  # Default resource quotas
+  defaultResourceQuota:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+# Namespace configuration
+namespaces:
+  - name: aivo-platform
+    labels:
+      environment: production
+      managed-by: helm
+  - name: aivo-auth
+    labels:
+      environment: production
+      component: authentication
+  - name: aivo-inference
+    labels:
+      environment: production
+      component: inference
+
+# Network policies
+networkPolicies:
+  enabled: true
+  defaultDeny: true
+  allowedIngress:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - namespaceSelector:
+        matchLabels:
+          name: istio-system
+
+# Priority classes
+priorityClasses:
+  - name: high-priority
+    value: 1000
+    description: "High priority for critical services"
+  - name: medium-priority
+    value: 500
+    description: "Medium priority for standard services"
+  - name: low-priority
+    value: 100
+    description: "Low priority for background tasks"
+
+# Security policies
+securityPolicies:
+  podSecurityStandards:
+    enforce: "restricted"
+    audit: "restricted"
+    warn: "restricted"
+
+  admission:
+    enabled: true
+    enforceNonRoot: true
+    requireReadOnlyRoot: true
+    dropAllCapabilities: true
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  namespace: monitoring
+
+  prometheus:
+    enabled: true
+    retention: "30d"
+    storageClass: "fast-ssd"
+    storageSize: "50Gi"
+
+  grafana:
+    enabled: true
+    adminUser: admin
+    persistence:
+      enabled: true
+      size: "10Gi"
+
+# Logging configuration
+logging:
+  enabled: true
+  namespace: logging
+
+  loki:
+    enabled: true
+    retention: "720h"
+    storageClass: "standard"
+    storageSize: "100Gi"
+
+# Service mesh configuration
+serviceMesh:
+  istio:
+    enabled: false
+    version: "1.18.0"
+
+# Database configuration
+databases:
+  postgresql:
+    enabled: true
+    storageClass: "fast-ssd"
+    storageSize: "20Gi"
+
+  redis:
+    enabled: true
+    storageClass: "fast-ssd"
+    storageSize: "5Gi"
