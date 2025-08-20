@@ -1,0 +1,271 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auth-svc-stable
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: auth-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: authentication
+    aivo.dev/traffic: stable
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "vault-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - auth.aivo.dev
+      secretName: auth-svc-tls
+  rules:
+    - host: auth.aivo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-svc
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auth-svc-canary
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: auth-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: authentication
+    aivo.dev/traffic: canary
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "0"
+    nginx.ingress.kubernetes.io/canary-by-header: "X-Canary"
+    nginx.ingress.kubernetes.io/canary-by-header-value: "true"
+    cert-manager.io/cluster-issuer: "vault-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - auth.aivo.dev
+      secretName: auth-svc-tls
+  rules:
+    - host: auth.aivo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-svc-canary
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: user-svc-stable
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: user-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: user-management
+    aivo.dev/traffic: stable
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "vault-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - users.aivo.dev
+      secretName: user-svc-tls
+  rules:
+    - host: users.aivo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: user-svc
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: user-svc-canary
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: user-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: user-management
+    aivo.dev/traffic: canary
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "0"
+    nginx.ingress.kubernetes.io/canary-by-header: "X-Canary"
+    nginx.ingress.kubernetes.io/canary-by-header-value: "true"
+    cert-manager.io/cluster-issuer: "vault-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - users.aivo.dev
+      secretName: user-svc-tls
+  rules:
+    - host: users.aivo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: user-svc-canary
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inference-gateway-svc-stable
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: inference-gateway-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: inference
+    aivo.dev/traffic: stable
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    cert-manager.io/cluster-issuer: "vault-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - inference.aivo.dev
+      secretName: inference-gateway-svc-tls
+  rules:
+    - host: inference.aivo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inference-gateway-svc
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inference-gateway-svc-canary
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: inference-gateway-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: inference
+    aivo.dev/traffic: canary
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "0"
+    nginx.ingress.kubernetes.io/canary-by-header: "X-Canary"
+    nginx.ingress.kubernetes.io/canary-by-header-value: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    cert-manager.io/cluster-issuer: "vault-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - inference.aivo.dev
+      secretName: inference-gateway-svc-tls
+  rules:
+    - host: inference.aivo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inference-gateway-svc-canary
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: analytics-svc-ingress
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: analytics-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: analytics
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "vault-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - analytics.aivo.dev
+      secretName: analytics-svc-tls
+  rules:
+    - host: analytics.aivo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-svc-active
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: notification-svc-ingress
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: notification-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: notifications
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "vault-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - notifications.aivo.dev
+      secretName: notification-svc-tls
+  rules:
+    - host: notifications.aivo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-svc-active
+                port:
+                  number: 80

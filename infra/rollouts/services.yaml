@@ -1,0 +1,240 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-svc
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: auth-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: authentication
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: auth-svc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-svc-canary
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: auth-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: authentication
+    aivo.dev/traffic: canary
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: auth-svc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-svc
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: user-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: user-management
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: user-svc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-svc-canary
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: user-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: user-management
+    aivo.dev/traffic: canary
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: user-svc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-gateway-svc
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: inference-gateway-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: inference
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: inference-gateway-svc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-gateway-svc-canary
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: inference-gateway-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: inference
+    aivo.dev/traffic: canary
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: inference-gateway-svc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-svc-active
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: analytics-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: analytics
+    aivo.dev/traffic: active
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: analytics-svc
+    role: active
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-svc-preview
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: analytics-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: analytics
+    aivo.dev/traffic: preview
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: analytics-svc
+    role: preview
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-svc-active
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: notification-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: notifications
+    aivo.dev/traffic: active
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: notification-svc
+    role: active
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-svc-preview
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: notification-svc
+    app.kubernetes.io/part-of: aivo-platform
+    aivo.dev/component: notifications
+    aivo.dev/traffic: preview
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: notification-svc
+    role: preview
