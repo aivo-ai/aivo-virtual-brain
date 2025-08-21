@@ -5,6 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import react from 'eslint-plugin-react'
 import tseslint from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
+import aivoPlugin from '../../libs/eslint-plugin-aivo/dist/index.js'
 
 export default [
   {
@@ -34,6 +35,7 @@ export default [
       react,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      '@aivo/aivo': aivoPlugin,
     },
     rules: {
       ...tseslint.configs.recommended.rules,
@@ -52,6 +54,7 @@ export default [
       ],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@aivo/aivo/no-live-class': 'error', // eslint-disable-line @aivo/aivo/no-live-class
     },
     settings: {
       react: {

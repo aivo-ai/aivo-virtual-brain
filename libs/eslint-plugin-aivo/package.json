@@ -1,0 +1,44 @@
+{
+  "name": "@aivo/eslint-plugin-aivo",
+  "version": "1.0.0",
+  "description": "ESLint plugin for AIVO Virtual Brain codebase standards",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src/ --ext .ts",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "eslint",
+    "plugin",
+    "aivo",
+    "education",
+    "code-quality"
+  ],
+  "author": "AIVO Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "devDependencies": {
+    "@types/eslint": "^8.56.10",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.9",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "typescript": "^5.5.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aivo-edu/virtual-brains.git",
+    "directory": "libs/eslint-plugin-aivo"
+  }
+}

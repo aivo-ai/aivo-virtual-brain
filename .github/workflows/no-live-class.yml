@@ -1,0 +1,270 @@
+name: No Live-Class Terminology Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  no-live-class-check:
+    name: Enforce Library Terminology
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build ESLint plugin
+        run: |
+          cd libs/eslint-plugin-aivo
+          pnpm run build
+
+      - name: Run ESLint no-live-class rule
+        run: |
+          # Install our custom ESLint plugin locally
+          pnpm add --save-dev file:./libs/eslint-plugin-aivo
+
+          # Create temporary ESLint config for this check
+          cat > .eslintrc.no-live-class.json << 'EOF'
+          {
+            "extends": [
+              "eslint:recommended"
+            ],
+            "plugins": ["@aivo/aivo"],
+            "rules": {
+              "@aivo/aivo/no-live-class": "error"
+            },
+            "parserOptions": {
+              "ecmaVersion": 2020,
+              "sourceType": "module",
+              "ecmaFeatures": {
+                "jsx": true
+              }
+            },
+            "env": {
+              "browser": true,
+              "node": true,
+              "es6": true
+            }
+          }
+          EOF
+
+          # Run ESLint with our custom rule on all relevant files
+          npx eslint \
+            --config .eslintrc.no-live-class.json \
+            --ext .js,.ts,.tsx,.jsx \
+            --ignore-pattern "node_modules/" \
+            --ignore-pattern "dist/" \
+            --ignore-pattern "coverage/" \
+            --ignore-pattern ".next/" \
+            --ignore-pattern "build/" \
+            . || {
+              echo "❌ Found live-class terminology in codebase!"
+              echo "Please replace all instances of 'live-class' with 'library'"
+              exit 1
+            }
+
+      - name: Check file and directory names
+        run: |
+          # Check for live-class in file names
+          LIVE_CLASS_FILES=$(find . -type f -name "*live-class*" -o -name "*liveclass*" -o -name "*live_class*" | grep -v node_modules | grep -v .git | head -10)
+
+          if [ -n "$LIVE_CLASS_FILES" ]; then
+            echo "❌ Found files with live-class in their names:"
+            echo "$LIVE_CLASS_FILES"
+            echo ""
+            echo "Please rename these files to use 'library' instead of 'live-class'"
+            exit 1
+          fi
+
+          # Check for live-class in directory names  
+          LIVE_CLASS_DIRS=$(find . -type d -name "*live-class*" -o -name "*liveclass*" -o -name "*live_class*" | grep -v node_modules | grep -v .git | head -10)
+
+          if [ -n "$LIVE_CLASS_DIRS" ]; then
+            echo "❌ Found directories with live-class in their names:"
+            echo "$LIVE_CLASS_DIRS"
+            echo ""
+            echo "Please rename these directories to use 'library' instead of 'live-class'"
+            exit 1
+          fi
+
+      - name: Check content for live-class references
+        run: |
+          # Search for live-class patterns in file content (excluding node_modules, .git, and binary files)
+          LIVE_CLASS_CONTENT=$(grep -r -i --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=coverage --exclude-dir=build --exclude="*.min.js" --exclude="*.map" --exclude="pnpm-lock.yaml" -E "(live[-_]?class|liveclass)" . | head -20)
+
+          if [ -n "$LIVE_CLASS_CONTENT" ]; then
+            echo "❌ Found live-class terminology in file content:"
+            echo "$LIVE_CLASS_CONTENT"
+            echo ""
+            echo "Please replace all instances of 'live-class' with 'library'"
+            exit 1
+          fi
+
+      - name: Test ESLint rule functionality
+        run: |
+          # Create a test file with live-class terminology to ensure our rule catches it
+          mkdir -p temp-test
+
+          cat > temp-test/live-class-test.js << 'EOF'
+          const liveClassComponent = "live-class-page";
+          function liveClassHandler() {
+            return "live-class-service";
+          }
+          EOF
+
+          # Run ESLint on the test file - this should fail
+          if npx eslint --config .eslintrc.no-live-class.json temp-test/live-class-test.js 2>/dev/null; then
+            echo "❌ ESLint rule failed to catch live-class terminology!"
+            echo "The no-live-class rule is not working properly"
+            exit 1
+          else
+            echo "✅ ESLint rule correctly detected live-class terminology"
+          fi
+
+          # Clean up test file
+          rm -rf temp-test
+
+      - name: Success message
+        run: |
+          echo "✅ No live-class terminology found!"
+          echo "✅ All references correctly use 'library' terminology"
+          echo "✅ ESLint rule is working correctly"
+
+  test-eslint-rule:
+    name: Test ESLint Rule
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint rule tests
+        run: |
+          cd libs/eslint-plugin-aivo
+          pnpm install
+          pnpm test
+
+      - name: Build ESLint plugin
+        run: |
+          cd libs/eslint-plugin-aivo
+          pnpm run build
+
+      - name: Validate plugin structure
+        run: |
+          cd libs/eslint-plugin-aivo
+
+          # Check that build output exists
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ ESLint plugin build failed - missing dist/index.js"
+            exit 1
+          fi
+
+          if [ ! -f "dist/no-live-class.js" ]; then
+            echo "❌ ESLint plugin build failed - missing dist/no-live-class.js"
+            exit 1
+          fi
+
+          echo "✅ ESLint plugin built successfully"
+
+  simulated-failure-test:
+    name: Test CI Catches Live-Class
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build ESLint plugin
+        run: |
+          cd libs/eslint-plugin-aivo
+          pnpm install
+          pnpm run build
+
+      - name: Test that CI catches live-class violations
+        run: |
+          # Install our ESLint plugin
+          pnpm add --save-dev file:./libs/eslint-plugin-aivo
+
+          # Create ESLint config
+          cat > .eslintrc.test.json << 'EOF'
+          {
+            "plugins": ["@aivo/aivo"],
+            "rules": {
+              "@aivo/aivo/no-live-class": "error"
+            },
+            "parserOptions": {
+              "ecmaVersion": 2020,
+              "sourceType": "module"
+            }
+          }
+          EOF
+
+          # Create a temporary file with live-class terminology
+          mkdir -p temp-violation-test
+          cat > temp-violation-test/live-class-violation.js << 'EOF'
+          // This file intentionally contains live-class terminology for testing
+          const liveClassService = {
+            endpoint: '/api/live-class',
+            getLiveClassData: () => {}
+          };
+          EOF
+
+          # Test that ESLint catches the violation
+          if npx eslint --config .eslintrc.test.json temp-violation-test/live-class-violation.js 2>/dev/null; then
+            echo "❌ CRITICAL: ESLint rule failed to catch live-class terminology!"
+            echo "The CI enforcement is not working properly"
+            rm -rf temp-violation-test
+            exit 1
+          else
+            echo "✅ SUCCESS: ESLint rule correctly caught live-class terminology"
+            echo "CI enforcement is working properly"
+          fi
+
+          # Clean up
+          rm -rf temp-violation-test
+          rm .eslintrc.test.json
