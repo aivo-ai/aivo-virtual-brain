@@ -1,17 +1,36 @@
 """
 AIVO Inference Gateway - Policy Engine
 S2-01 Implementation: Provider routing based on subject/locale/SLA with failover logic
+S4-12 Implementation: Content moderation & safety filters with subject-aware rules
 """
 
 import json
 import time
-from typing import Dict, List, Optional, Any, Tuple, Set
+import re
+from typing import Dict, List, Optional, Any, Tuple, Set, Union
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timedelta
 from opentelemetry import trace
 
-from .providers.base import ProviderType, SLATier
+# Import provider types - handle both absolute and relative imports
+try:
+    from .providers.base import ProviderType, SLATier
+except ImportError:
+    try:
+        from providers.base import ProviderType, SLATier
+    except ImportError:
+        # Define locally if imports fail
+        from enum import Enum
+        class ProviderType(str, Enum):
+            OPENAI = "openai"
+            VERTEX_GEMINI = "vertex"
+            BEDROCK_ANTHROPIC = "bedrock"
+        
+        class SLATier(str, Enum):
+            STANDARD = "standard"
+            PREMIUM = "premium"
+            ENTERPRISE = "enterprise"
 
 tracer = trace.get_tracer(__name__)
 
@@ -32,6 +51,63 @@ class FailoverMode(Enum):
     RETRY_BACKOFF = "retry_backoff"  # Exponential backoff before retries
 
 
+class GradeBand(Enum):
+    """K-12 grade band classifications"""
+    ELEMENTARY = "elementary"    # K-5
+    MIDDLE = "middle"           # 6-8
+    HIGH = "high"               # 9-12
+    ADULT = "adult"             # Adult education/post-secondary
+
+
+class ContentSeverity(Enum):
+    """Content severity levels for moderation"""
+    SAFE = "safe"                    # Appropriate for all ages
+    MINOR_CONCERN = "minor_concern"  # Mild concern, may need review
+    MODERATE = "moderate"            # Requires attention/filtering
+    SEVERE = "severe"               # Block immediately
+    CRITICAL = "critical"           # Block + escalate to guardian/teacher
+
+
+class ModerationAction(Enum):
+    """Actions to take based on moderation results"""
+    ALLOW = "allow"
+    WARN = "warn"                   # Show warning but allow
+    FILTER = "filter"               # Remove/replace content
+    BLOCK = "block"                 # Block request entirely
+    ESCALATE = "escalate"           # Block + notify guardian/teacher
+    AUDIT = "audit"                 # Allow but log for review
+
+
+class Subject(Enum):
+    """Academic subject classifications"""
+    MATH = "math"
+    SCIENCE = "science"
+    ENGLISH = "english"
+    HISTORY = "history"
+    ARTS = "arts"
+    MUSIC = "music"
+    PHYSICAL_EDUCATION = "physical_education"
+    FOREIGN_LANGUAGE = "foreign_language"
+    COMPUTER_SCIENCE = "computer_science"
+    SEL = "sel"                     # Social-Emotional Learning
+    GENERAL = "general"
+    ADMINISTRATIVE = "administrative"
+
+
+class SELCategory(Enum):
+    """Social-Emotional Learning sensitive categories"""
+    SELF_AWARENESS = "self_awareness"
+    SELF_MANAGEMENT = "self_management"
+    SOCIAL_AWARENESS = "social_awareness"
+    RELATIONSHIP_SKILLS = "relationship_skills"
+    RESPONSIBLE_DECISION_MAKING = "responsible_decision_making"
+    MENTAL_HEALTH = "mental_health"
+    FAMILY_DYNAMICS = "family_dynamics"
+    PEER_PRESSURE = "peer_pressure"
+    IDENTITY_ISSUES = "identity_issues"
+    TRAUMA = "trauma"
+
+
 @dataclass
 class ProviderHealth:
     """Provider health tracking"""
@@ -43,6 +119,58 @@ class ProviderHealth:
     avg_latency_ms: float = 0.0
     circuit_breaker_open: bool = False
     circuit_breaker_open_until: Optional[datetime] = None
+
+
+@dataclass
+class ModerationRule:
+    """Content moderation rule definition"""
+    name: str
+    description: str
+    grade_bands: List[GradeBand] = field(default_factory=list)
+    subjects: List[Subject] = field(default_factory=list)
+    blocked_keywords: List[str] = field(default_factory=list)
+    blocked_patterns: List[str] = field(default_factory=list)  # Regex patterns
+    severity_thresholds: Dict[str, float] = field(default_factory=dict)
+    action: ModerationAction = ModerationAction.WARN
+    requires_guardian_review: bool = False
+    sel_sensitive: bool = False
+    audit_log: bool = True
+    enabled: bool = True
+
+
+@dataclass
+class SafetyPolicy:
+    """Subject-aware safety policy configuration"""
+    subject: Subject
+    grade_band: GradeBand
+    base_rules: List[ModerationRule] = field(default_factory=list)
+    custom_thresholds: Dict[str, float] = field(default_factory=dict)
+    allowed_topics: List[str] = field(default_factory=list)
+    blocked_topics: List[str] = field(default_factory=list)
+    sel_escalation_enabled: bool = True
+    guardian_notification_webhook: Optional[str] = None
+    teacher_notification_webhook: Optional[str] = None
+    enabled: bool = True
+
+
+@dataclass
+class ModerationResult:
+    """Result of content moderation analysis"""
+    content: str
+    flagged: bool
+    severity: ContentSeverity
+    action: ModerationAction
+    triggered_rules: List[str] = field(default_factory=list)
+    category_scores: Dict[str, float] = field(default_factory=dict)
+    categories_flagged: Dict[str, bool] = field(default_factory=dict)
+    sel_categories: List[SELCategory] = field(default_factory=list)
+    requires_escalation: bool = False
+    guardian_notification: bool = False
+    teacher_notification: bool = False
+    audit_required: bool = False
+    confidence: float = 0.0
+    provider_used: Optional[str] = None
+    processing_time_ms: int = 0
 
 
 @dataclass
@@ -369,6 +497,448 @@ class PolicyEngine:
         """Reset health tracking for a provider"""
         if provider in self.provider_health:
             self.provider_health[provider] = ProviderHealth(provider=provider)
+
+
+class SafetyEngine:
+    """Subject-aware content moderation and safety filter engine"""
+    
+    def __init__(self, config: Dict[str, Any] = None):
+        self.config = config or {}
+        self.safety_policies: Dict[Tuple[Subject, GradeBand], SafetyPolicy] = {}
+        self.moderation_rules: Dict[str, ModerationRule] = {}
+        self.block_lists: Dict[str, Set[str]] = {}
+        self.audit_logger = None  # Will be set by dependency injection
+        
+        # Default grade-band thresholds
+        self.grade_band_thresholds = {
+            GradeBand.ELEMENTARY: {
+                "harassment": 0.3,
+                "hate": 0.2,
+                "self-harm": 0.1,
+                "sexual": 0.1,
+                "violence": 0.2,
+                "profanity": 0.2
+            },
+            GradeBand.MIDDLE: {
+                "harassment": 0.5,
+                "hate": 0.3,
+                "self-harm": 0.2,
+                "sexual": 0.2,
+                "violence": 0.3,
+                "profanity": 0.4
+            },
+            GradeBand.HIGH: {
+                "harassment": 0.7,
+                "hate": 0.5,
+                "self-harm": 0.3,
+                "sexual": 0.4,
+                "violence": 0.5,
+                "profanity": 0.6
+            },
+            GradeBand.ADULT: {
+                "harassment": 0.8,
+                "hate": 0.7,
+                "self-harm": 0.5,
+                "sexual": 0.7,
+                "violence": 0.7,
+                "profanity": 0.8
+            }
+        }
+        
+        # SEL-sensitive patterns and keywords
+        self.sel_patterns = {
+            SELCategory.MENTAL_HEALTH: [
+                r'\b(depressed?|depression|anxiety|panic|suicidal?)\b',
+                r'\b(self.?harm|cutting|suicide)\b',
+                r'\b(therapy|counselor|medication)\b'
+            ],
+            SELCategory.FAMILY_DYNAMICS: [
+                r'\b(divorce|abuse|neglect|domestic)\b',
+                r'\b(family.?problem|parent.?issue)\b',
+                r'\b(custody|separation)\b'
+            ],
+            SELCategory.PEER_PRESSURE: [
+                r'\b(bullying|bullied|bully)\b',
+                r'\b(peer.?pressure|social.?pressure)\b',
+                r'\b(excluded|isolation|lonely)\b'
+            ],
+            SELCategory.IDENTITY_ISSUES: [
+                r'\b(identity|belonging|self.?worth)\b',
+                r'\b(confidence|self.?esteem)\b',
+                r'\b(gender|sexuality|orientation)\b'
+            ],
+            SELCategory.TRAUMA: [
+                r'\b(trauma|ptsd|flashback)\b',
+                r'\b(abuse|assault|violence)\b',
+                r'\b(grief|loss|death)\b'
+            ]
+        }
+        
+        self._load_default_policies()
+        self._load_custom_policies()
+    
+    def _load_default_policies(self):
+        """Load default safety policies for all subject/grade combinations"""
+        
+        # Elementary school policies (K-5)
+        elementary_base_rules = [
+            ModerationRule(
+                name="elementary_safe_content",
+                description="Strict content filtering for K-5",
+                grade_bands=[GradeBand.ELEMENTARY],
+                subjects=[Subject.GENERAL],
+                blocked_keywords=[
+                    "violence", "weapon", "gun", "knife", "kill", "death", "die",
+                    "sex", "sexual", "rape", "abuse", "drugs", "alcohol", "smoking",
+                    "hate", "stupid", "dumb", "idiot", "loser", "shut up"
+                ],
+                blocked_patterns=[
+                    r'\b(damn|hell|crap|suck)\b',
+                    r'\b(kill|die|death|dead)\b',
+                    r'\b(sex|sexy|sexual)\b'
+                ],
+                severity_thresholds={
+                    "harassment": 0.3,
+                    "hate": 0.2,
+                    "sexual": 0.1,
+                    "violence": 0.2
+                },
+                action=ModerationAction.BLOCK,
+                audit_log=True
+            ),
+            ModerationRule(
+                name="elementary_sel_escalation",
+                description="SEL-sensitive content escalation for K-5",
+                grade_bands=[GradeBand.ELEMENTARY],
+                subjects=[Subject.SEL, Subject.GENERAL],
+                blocked_keywords=[
+                    "sad", "scared", "hurt", "angry", "family problems",
+                    "bullying", "mean kids", "don't like me"
+                ],
+                action=ModerationAction.ESCALATE,
+                sel_sensitive=True,
+                requires_guardian_review=True,
+                audit_log=True
+            )
+        ]
+        
+        # Middle school policies (6-8)
+        middle_base_rules = [
+            ModerationRule(
+                name="middle_content_filter",
+                description="Age-appropriate filtering for grades 6-8",
+                grade_bands=[GradeBand.MIDDLE],
+                subjects=[Subject.GENERAL],
+                blocked_keywords=[
+                    "explicit violence", "graphic content", "sexual content",
+                    "drug use", "substance abuse", "self-harm"
+                ],
+                severity_thresholds={
+                    "harassment": 0.5,
+                    "hate": 0.3,
+                    "sexual": 0.2,
+                    "violence": 0.3
+                },
+                action=ModerationAction.FILTER,
+                audit_log=True
+            ),
+            ModerationRule(
+                name="middle_sel_review",
+                description="SEL content requiring teacher review for grades 6-8",
+                grade_bands=[GradeBand.MIDDLE],
+                subjects=[Subject.SEL],
+                sel_sensitive=True,
+                action=ModerationAction.ESCALATE,
+                requires_guardian_review=False,  # Teacher review only
+                audit_log=True
+            )
+        ]
+        
+        # High school policies (9-12)
+        high_base_rules = [
+            ModerationRule(
+                name="high_mature_content",
+                description="Mature content guidelines for grades 9-12",
+                grade_bands=[GradeBand.HIGH],
+                subjects=[Subject.GENERAL],
+                severity_thresholds={
+                    "harassment": 0.7,
+                    "hate": 0.5,
+                    "sexual": 0.4,
+                    "violence": 0.5
+                },
+                action=ModerationAction.WARN,
+                audit_log=True
+            ),
+            ModerationRule(
+                name="high_sel_sensitive",
+                description="SEL-sensitive topics for high school",
+                grade_bands=[GradeBand.HIGH],
+                subjects=[Subject.SEL],
+                sel_sensitive=True,
+                action=ModerationAction.AUDIT,
+                audit_log=True
+            )
+        ]
+        
+        # Create safety policies for each subject/grade combination
+        for subject in Subject:
+            for grade_band in GradeBand:
+                if grade_band == GradeBand.ELEMENTARY:
+                    base_rules = elementary_base_rules
+                elif grade_band == GradeBand.MIDDLE:
+                    base_rules = middle_base_rules
+                elif grade_band == GradeBand.HIGH:
+                    base_rules = high_base_rules
+                else:  # ADULT
+                    base_rules = []  # Minimal restrictions for adult education
+                
+                policy = SafetyPolicy(
+                    subject=subject,
+                    grade_band=grade_band,
+                    base_rules=base_rules,
+                    custom_thresholds=self.grade_band_thresholds[grade_band],
+                    sel_escalation_enabled=(grade_band in [GradeBand.ELEMENTARY, GradeBand.MIDDLE])
+                )
+                
+                self.safety_policies[(subject, grade_band)] = policy
+    
+    def _load_custom_policies(self):
+        """Load custom safety policies from configuration"""
+        custom_policies = self.config.get("custom_safety_policies", [])
+        
+        for policy_config in custom_policies:
+            subject = Subject(policy_config.get("subject", "general"))
+            grade_band = GradeBand(policy_config.get("grade_band", "adult"))
+            
+            if (subject, grade_band) in self.safety_policies:
+                policy = self.safety_policies[(subject, grade_band)]
+                
+                # Override thresholds if provided
+                if "custom_thresholds" in policy_config:
+                    policy.custom_thresholds.update(policy_config["custom_thresholds"])
+                
+                # Add custom blocked topics
+                if "blocked_topics" in policy_config:
+                    policy.blocked_topics.extend(policy_config["blocked_topics"])
+                
+                # Add notification webhooks
+                policy.guardian_notification_webhook = policy_config.get("guardian_webhook")
+                policy.teacher_notification_webhook = policy_config.get("teacher_webhook")
+    
+    async def moderate_content(self, content: str, subject: Subject = Subject.GENERAL,
+                              grade_band: GradeBand = GradeBand.ADULT,
+                              user_id: Optional[str] = None,
+                              tenant_id: Optional[str] = None) -> ModerationResult:
+        """Perform subject-aware content moderation"""
+        start_time = time.time()
+        
+        with tracer.start_as_current_span("safety_moderate_content") as span:
+            span.set_attribute("subject", subject.value)
+            span.set_attribute("grade_band", grade_band.value)
+            span.set_attribute("content_length", len(content))
+            
+            # Get applicable safety policy
+            policy = self.safety_policies.get((subject, grade_band))
+            if not policy or not policy.enabled:
+                # Fallback to general adult policy
+                policy = self.safety_policies.get((Subject.GENERAL, GradeBand.ADULT))
+            
+            # Initialize result
+            result = ModerationResult(
+                content=content,
+                flagged=False,
+                severity=ContentSeverity.SAFE,
+                action=ModerationAction.ALLOW
+            )
+            
+            # Apply moderation rules
+            await self._apply_moderation_rules(content, policy, result)
+            
+            # Check SEL sensitivity
+            await self._check_sel_sensitivity(content, policy, result)
+            
+            # Determine final action
+            self._determine_final_action(policy, result)
+            
+            # Log audit if required
+            if result.audit_required:
+                await self._log_audit_event(result, subject, grade_band, user_id, tenant_id)
+            
+            result.processing_time_ms = int((time.time() - start_time) * 1000)
+            span.set_attribute("processing_time_ms", result.processing_time_ms)
+            span.set_attribute("final_action", result.action.value)
+            span.set_attribute("severity", result.severity.value)
+            
+            return result
+    
+    async def _apply_moderation_rules(self, content: str, policy: SafetyPolicy, 
+                                    result: ModerationResult):
+        """Apply moderation rules from the safety policy"""
+        content_lower = content.lower()
+        
+        for rule in policy.base_rules:
+            if not rule.enabled:
+                continue
+            
+            # Check blocked keywords
+            for keyword in rule.blocked_keywords:
+                if keyword.lower() in content_lower:
+                    result.flagged = True
+                    result.triggered_rules.append(f"{rule.name}:keyword:{keyword}")
+                    
+                    if rule.action.value in ["block", "escalate"]:
+                        result.severity = ContentSeverity.SEVERE
+                    elif rule.action.value == "filter":
+                        result.severity = ContentSeverity.MODERATE
+            
+            # Check blocked patterns (regex)
+            for pattern in rule.blocked_patterns:
+                if re.search(pattern, content, re.IGNORECASE):
+                    result.flagged = True
+                    result.triggered_rules.append(f"{rule.name}:pattern:{pattern}")
+                    
+                    if rule.action.value in ["block", "escalate"]:
+                        result.severity = ContentSeverity.SEVERE
+            
+            # Apply rule-specific action if triggered
+            if any(rule.name in triggered for triggered in result.triggered_rules):
+                if rule.action.value in ["escalate", "block"] and result.action.value == "allow":
+                    result.action = rule.action
+                elif rule.action.value == "filter" and result.action.value == "allow":
+                    result.action = rule.action
+                
+                if rule.requires_guardian_review:
+                    result.guardian_notification = True
+                
+                if rule.audit_log:
+                    result.audit_required = True
+    
+    async def _check_sel_sensitivity(self, content: str, policy: SafetyPolicy, 
+                                   result: ModerationResult):
+        """Check for SEL-sensitive content that requires special handling"""
+        if not policy.sel_escalation_enabled:
+            return
+        
+        for sel_category, patterns in self.sel_patterns.items():
+            for pattern in patterns:
+                if re.search(pattern, content, re.IGNORECASE):
+                    result.sel_categories.append(sel_category)
+                    result.flagged = True
+                    result.requires_escalation = True
+                    result.triggered_rules.append(f"sel:{sel_category.value}:{pattern}")
+                    
+                    # SEL content escalates to teacher/guardian review
+                    if sel_category in [SELCategory.MENTAL_HEALTH, SELCategory.TRAUMA]:
+                        result.guardian_notification = True
+                        result.teacher_notification = True
+                        result.action = ModerationAction.ESCALATE
+                        result.severity = ContentSeverity.CRITICAL
+                    else:
+                        result.teacher_notification = True
+                        if result.action.value == "allow":
+                            result.action = ModerationAction.AUDIT
+                        if result.severity.value == "safe":
+                            result.severity = ContentSeverity.MINOR_CONCERN
+    
+    def _determine_final_action(self, policy: SafetyPolicy, result: ModerationResult):
+        """Determine the final action based on all moderation checks"""
+        # If already escalating, keep that action
+        if result.action == ModerationAction.ESCALATE:
+            return
+        
+        # If SEL categories detected and escalation enabled
+        if result.sel_categories and policy.sel_escalation_enabled:
+            if any(cat in [SELCategory.MENTAL_HEALTH, SELCategory.TRAUMA] 
+                   for cat in result.sel_categories):
+                result.action = ModerationAction.ESCALATE
+                result.severity = ContentSeverity.CRITICAL
+                return
+        
+        # Based on severity level
+        if result.severity == ContentSeverity.CRITICAL:
+            result.action = ModerationAction.ESCALATE
+        elif result.severity == ContentSeverity.SEVERE:
+            result.action = ModerationAction.BLOCK
+        elif result.severity == ContentSeverity.MODERATE:
+            result.action = ModerationAction.FILTER
+        elif result.severity == ContentSeverity.MINOR_CONCERN:
+            result.action = ModerationAction.WARN
+        # else: ContentSeverity.SAFE -> ModerationAction.ALLOW (default)
+    
+    async def _log_audit_event(self, result: ModerationResult, subject: Subject,
+                             grade_band: GradeBand, user_id: Optional[str],
+                             tenant_id: Optional[str]):
+        """Log audit event for blocked/flagged content"""
+        audit_data = {
+            "timestamp": datetime.now().isoformat(),
+            "content_hash": hash(result.content) % (10**8),  # Anonymized content reference
+            "content_length": len(result.content),
+            "subject": subject.value,
+            "grade_band": grade_band.value,
+            "user_id": user_id,
+            "tenant_id": tenant_id,
+            "flagged": result.flagged,
+            "severity": result.severity.value,
+            "action": result.action.value,
+            "triggered_rules": result.triggered_rules,
+            "sel_categories": [cat.value for cat in result.sel_categories],
+            "requires_escalation": result.requires_escalation,
+            "guardian_notification": result.guardian_notification,
+            "teacher_notification": result.teacher_notification,
+            "processing_time_ms": result.processing_time_ms
+        }
+        
+        # Log audit event (implementation depends on audit system)
+        if self.audit_logger:
+            await self.audit_logger.log_moderation_event(audit_data)
+        else:
+            # Fallback: log to console/file
+            print(f"AUDIT LOG: {json.dumps(audit_data)}")
+    
+    def add_block_list(self, name: str, keywords: List[str]):
+        """Add a custom block list"""
+        self.block_lists[name] = set(keywords)
+    
+    def remove_block_list(self, name: str):
+        """Remove a block list"""
+        if name in self.block_lists:
+            del self.block_lists[name]
+    
+    def update_safety_policy(self, subject: Subject, grade_band: GradeBand,
+                           updates: Dict[str, Any]):
+        """Update an existing safety policy"""
+        key = (subject, grade_band)
+        if key in self.safety_policies:
+            policy = self.safety_policies[key]
+            
+            if "custom_thresholds" in updates:
+                policy.custom_thresholds.update(updates["custom_thresholds"])
+            
+            if "blocked_topics" in updates:
+                policy.blocked_topics.extend(updates["blocked_topics"])
+            
+            if "sel_escalation_enabled" in updates:
+                policy.sel_escalation_enabled = updates["sel_escalation_enabled"]
+    
+    def get_safety_policy(self, subject: Subject, grade_band: GradeBand) -> Optional[SafetyPolicy]:
+        """Get safety policy for subject/grade combination"""
+        return self.safety_policies.get((subject, grade_band))
+    
+    def get_moderation_stats(self) -> Dict[str, Any]:
+        """Get moderation statistics and health metrics"""
+        total_policies = len(self.safety_policies)
+        enabled_policies = sum(1 for p in self.safety_policies.values() if p.enabled)
+        
+        return {
+            "total_policies": total_policies,
+            "enabled_policies": enabled_policies,
+            "grade_bands": [gb.value for gb in GradeBand],
+            "subjects": [s.value for s in Subject],
+            "sel_categories": [cat.value for cat in SELCategory],
+            "block_lists_count": len(self.block_lists),
+            "default_thresholds": self.grade_band_thresholds
+        }
 
 
 # Predefined policy configurations
