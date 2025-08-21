@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "aivo-chat-svc"
+version = "1.0.0"
+description = "AIVO Chat Service - Threaded Message History per Learner with Privacy Compliance"
+authors = ["AIVO Team <tech@aivo.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "*"
+uvicorn = "*"
+sqlalchemy = "*"
+asyncpg = "*"
+alembic = "*"
+pydantic = "*"
+pydantic-settings = "*"
+pyjwt = "*"
+cryptography = "*"
+kafka-python = "*"
+redis = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-asyncio = "*"
+httpx = "*"
+ruff = "*"
+mypy = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
