@@ -1,0 +1,112 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: inference-provider-outage
+  namespace: chaos-testing
+spec:
+  action: pod-kill
+  mode: fixed-percent
+  value: "50"
+  selector:
+    namespaces:
+      - inference-gateway
+    labelSelectors:
+      app: openai-provider
+  duration: "10m"
+  scheduler:
+    cron: "0 */4 * * *" # Every 4 hours
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: provider-network-partition
+  namespace: chaos-testing
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - inference-gateway
+    labelSelectors:
+      app: anthropic-provider
+  duration: "15m"
+  direction: both
+  target:
+    mode: all
+    selector:
+      namespaces:
+        - inference-gateway
+      labelSelectors:
+        app: gateway-service
+  scheduler:
+    cron: "0 */6 * * *" # Every 6 hours
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: provider-api-errors
+  namespace: chaos-testing
+spec:
+  mode: fixed-percent
+  value: "30"
+  selector:
+    namespaces:
+      - inference-gateway
+    labelSelectors:
+      app: azure-openai-provider
+  target: Request
+  port: 8080
+  path: "/v1/chat/completions"
+  method: POST
+  duration: "20m"
+  abort: false
+  delay: "10s"
+  replace:
+    code: 503
+    body: '{"error": {"message": "Service temporarily unavailable", "type": "service_unavailable", "code": "rate_limit_exceeded"}}'
+  scheduler:
+    cron: "0 */3 * * *" # Every 3 hours
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: IOChaos
+metadata:
+  name: provider-storage-latency
+  namespace: chaos-testing
+spec:
+  action: latency
+  mode: all
+  selector:
+    namespaces:
+      - inference-gateway
+    labelSelectors:
+      app: local-llama-provider
+  volumePath: "/data"
+  path: "/data/models/**"
+  delay: "5s"
+  duration: "30m"
+  percent: 50
+  scheduler:
+    cron: "0 */8 * * *" # Every 8 hours
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: gateway-resource-pressure
+  namespace: chaos-testing
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - inference-gateway
+    labelSelectors:
+      app: gateway-service
+  duration: "25m"
+  stressors:
+    cpu:
+      workers: 2
+      load: 75
+    memory:
+      workers: 1
+      size: "512MB"
+  scheduler:
+    cron: "0 */5 * * *" # Every 5 hours

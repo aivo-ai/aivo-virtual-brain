@@ -1,0 +1,225 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Schedule
+metadata:
+  name: continuous-chaos-schedule
+  namespace: chaos-testing
+spec:
+  schedule: "*/30 * * * *" # Every 30 minutes
+  type: "PodChaos"
+  podChaos:
+    action: pod-failure
+    mode: fixed
+    value: "1"
+    selector:
+      namespaces:
+        - tenant-alice
+        - tenant-bob
+      labelSelectors:
+        app: synthetic-test-pod
+    duration: "5m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Workflow
+metadata:
+  name: tenant-isolation-validation-workflow
+  namespace: chaos-testing
+spec:
+  entry: "isolation-test-sequence"
+  templates:
+    - name: "isolation-test-sequence"
+      steps:
+        - - name: "network-partition"
+            template: "network-chaos"
+        - - name: "cross-tenant-access-test"
+            template: "synthetic-pod-test"
+        - - name: "verify-isolation"
+            template: "verification-test"
+        - - name: "alert-if-failure"
+            template: "sre-alert"
+            when: "{{steps.verify-isolation.outputs.result}} == 'FAILED'"
+
+    - name: "network-chaos"
+      chaos:
+        networkChaos:
+          action: partition
+          mode: all
+          selector:
+            namespaces:
+              - tenant-alice
+          duration: "10m"
+          direction: both
+          target:
+            mode: all
+            selector:
+              namespaces:
+                - tenant-bob
+
+    - name: "synthetic-pod-test"
+      chaos:
+        podChaos:
+          action: pod-failure
+          mode: fixed
+          value: "1"
+          selector:
+            namespaces:
+              - tenant-alice
+            labelSelectors:
+              app: synthetic-test-pod
+          duration: "2m"
+
+    - name: "verification-test"
+      container:
+        image: curlimages/curl:latest
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            # Test cross-tenant access (should fail)
+            RESULT=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: Bearer tenant-alice-token" \
+              http://gateway.tenant-bob.svc.cluster.local:8080/api/data)
+
+            if [ "$RESULT" = "403" ] || [ "$RESULT" = "401" ]; then
+              echo "PASSED: Cross-tenant access properly denied ($RESULT)"
+              echo "PASSED" > /tmp/result
+            else
+              echo "FAILED: Cross-tenant access allowed ($RESULT)"
+              echo "FAILED" > /tmp/result
+            fi
+        outputs:
+          parameters:
+            - name: "result"
+              valueFrom:
+                path: "/tmp/result"
+
+    - name: "sre-alert"
+      container:
+        image: curlimages/curl:latest
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            # Send alert to SRE (PagerDuty, Slack, etc.)
+            curl -X POST \
+              -H "Content-Type: application/json" \
+              -d '{
+                "severity": "critical",
+                "summary": "Tenant Isolation FAILURE Detected",
+                "component": "chaos-engineering",
+                "details": {
+                  "test": "cross-tenant-access-denial",
+                  "status": "FAILED",
+                  "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+                  "escalation": "immediate"
+                }
+              }' \
+              "${SRE_WEBHOOK_URL}"
+
+            echo "SRE alert sent for tenant isolation failure"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Schedule
+metadata:
+  name: provider-failover-schedule
+  namespace: chaos-testing
+spec:
+  schedule: "0 */4 * * *" # Every 4 hours
+  type: "Workflow"
+  workflowSpec:
+    entry: "provider-failover-sequence"
+    templates:
+      - name: "provider-failover-sequence"
+        steps:
+          - - name: "kill-primary-provider"
+              template: "primary-provider-chaos"
+          - - name: "test-failover"
+              template: "failover-test"
+          - - name: "verify-graceful-message"
+              template: "graceful-message-check"
+          - - name: "alert-if-no-failover"
+              template: "failover-alert"
+              when: "{{steps.verify-graceful-message.outputs.result}} == 'NO_FAILOVER'"
+
+      - name: "primary-provider-chaos"
+        chaos:
+          podChaos:
+            action: pod-kill
+            mode: all
+            selector:
+              namespaces:
+                - inference-gateway
+              labelSelectors:
+                app: openai-provider
+                priority: "1"
+            duration: "15m"
+
+      - name: "failover-test"
+        container:
+          image: curlimages/curl:latest
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              # Test inference request during outage
+              RESPONSE=$(curl -s -w "\n%{http_code}" \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer ${TEST_API_TOKEN}" \
+                -d '{"messages":[{"role":"user","content":"Test failover"}],"max_tokens":50}' \
+                http://gateway.inference-gateway.svc.cluster.local:8080/api/inference/chat)
+
+              HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+              BODY=$(echo "$RESPONSE" | head -n -1)
+
+              echo "HTTP Code: $HTTP_CODE"
+              echo "Response: $BODY"
+              echo "$BODY" > /tmp/response
+        outputs:
+          parameters:
+            - name: "response"
+              valueFrom:
+                path: "/tmp/response"
+
+      - name: "graceful-message-check"
+        container:
+          image: alpine:latest
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              RESPONSE="{{steps.failover-test.outputs.parameters.response}}"
+
+              # Check for graceful degradation indicators
+              if echo "$RESPONSE" | grep -i -E "(temporarily|unavailable|maintenance|try again|failover|backup)" > /dev/null; then
+                echo "GRACEFUL_FAILOVER"
+                echo "GRACEFUL_FAILOVER" > /tmp/result
+              else
+                echo "NO_FAILOVER"
+                echo "NO_FAILOVER" > /tmp/result
+              fi
+        outputs:
+          parameters:
+            - name: "result"
+              valueFrom:
+                path: "/tmp/result"
+
+      - name: "failover-alert"
+        container:
+          image: curlimages/curl:latest
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              curl -X POST \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "severity": "high",
+                  "summary": "Provider Failover NOT Working",
+                  "component": "inference-gateway",
+                  "details": {
+                    "test": "provider-failover",
+                    "status": "NO_GRACEFUL_FAILOVER",
+                    "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+                    "response": "{{steps.failover-test.outputs.parameters.response}}"
+                  }
+                }' \
+                "${SRE_WEBHOOK_URL}"

@@ -1,0 +1,80 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: tenant-isolation-network-chaos
+  namespace: chaos-testing
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - tenant-alice
+      - tenant-bob
+  duration: "30m"
+  direction: both
+  target:
+    mode: all
+    selector:
+      namespaces:
+        - tenant-charlie
+        - tenant-dave
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: synthetic-pod-cross-namespace-test
+  namespace: chaos-testing
+spec:
+  action: pod-failure
+  mode: fixed
+  value: "1"
+  selector:
+    namespaces:
+      - tenant-alice
+    labelSelectors:
+      app: synthetic-test-pod
+  duration: "5m"
+  scheduler:
+    cron: "*/30 * * * *" # Every 30 minutes
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: cross-tenant-api-denial
+  namespace: chaos-testing
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - tenant-alice
+      - tenant-bob
+  target: Request
+  port: 8080
+  path: "/api/tenant/*"
+  method: GET
+  duration: "30m"
+  abort: true
+  scheduler:
+    cron: "*/30 * * * *" # Every 30 minutes
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: resource-isolation-stress
+  namespace: chaos-testing
+spec:
+  mode: fixed
+  value: "2"
+  selector:
+    namespaces:
+      - tenant-alice
+  duration: "15m"
+  stressors:
+    cpu:
+      workers: 4
+      load: 80
+    memory:
+      workers: 2
+      size: "1GB"
+  scheduler:
+    cron: "0 */2 * * *" # Every 2 hours

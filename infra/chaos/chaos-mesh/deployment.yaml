@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chaos-testing
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaos-controller-manager
+  namespace: chaos-testing
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chaos-controller-manager
+rules:
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["chaos-mesh.org"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chaos-controller-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chaos-controller-manager
+subjects:
+  - kind: ServiceAccount
+    name: chaos-controller-manager
+    namespace: chaos-testing
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sre-webhook-config
+  namespace: chaos-testing
+data:
+  webhook-url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+  pagerduty-key: "YOUR_PAGERDUTY_INTEGRATION_KEY"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tenant-isolation-monitor
+  namespace: chaos-testing
+spec:
+  schedule: "*/30 * * * *" # Every 30 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: chaos-controller-manager
+          containers:
+            - name: isolation-test
+              image: curlimages/curl:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "🔍 Testing tenant isolation at $(date)"
+
+                  # Test cross-tenant access (should fail)
+                  RESULT=$(curl -s -o /dev/null -w "%{http_code}" \
+                    -H "Authorization: Bearer tenant-alice-token" \
+                    --max-time 10 \
+                    http://gateway.tenant-bob.svc.cluster.local:8080/api/data || echo "000")
+
+                  echo "Cross-tenant access result: $RESULT"
+
+                  if [ "$RESULT" = "403" ] || [ "$RESULT" = "401" ] || [ "$RESULT" = "000" ]; then
+                    echo "✅ PASS: Cross-tenant access properly denied"
+                  else
+                    echo "❌ FAIL: Cross-tenant access allowed - SECURITY BREACH!"
+                    
+                    # Send SRE alert
+                    curl -X POST \
+                      -H "Content-Type: application/json" \
+                      -d '{
+                        "text": "🚨 CRITICAL: Tenant isolation BREACH detected!\nCross-tenant access returned: '"$RESULT"'\nTime: '"$(date)"'",
+                        "channel": "#sre-alerts"
+                      }' \
+                      "$(cat /config/webhook-url)" || echo "Failed to send alert"
+                  fi
+              volumeMounts:
+                - name: webhook-config
+                  mountPath: /config
+          volumes:
+            - name: webhook-config
+              configMap:
+                name: sre-webhook-config
+          restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: provider-failover-monitor
+  namespace: chaos-testing
+spec:
+  schedule: "0 */4 * * *" # Every 4 hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: chaos-controller-manager
+          containers:
+            - name: failover-test
+              image: curlimages/curl:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "🔄 Testing provider failover at $(date)"
+
+                  # Test inference endpoint
+                  RESPONSE=$(curl -s -w "\n%{http_code}" \
+                    -H "Content-Type: application/json" \
+                    -H "Authorization: Bearer test-token" \
+                    --max-time 30 \
+                    -d '{"messages":[{"role":"user","content":"Test"}],"max_tokens":10}' \
+                    http://gateway.inference-gateway.svc.cluster.local:8080/api/inference/chat || echo -e "\n000")
+
+                  HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+                  BODY=$(echo "$RESPONSE" | head -n -1)
+
+                  echo "HTTP Code: $HTTP_CODE"
+                  echo "Response: $BODY"
+
+                  # Check for graceful degradation
+                  if [ "$HTTP_CODE" = "200" ]; then
+                    echo "✅ PASS: Inference working normally"
+                  elif echo "$BODY" | grep -i -E "(temporarily|unavailable|maintenance|try again)" > /dev/null; then
+                    echo "⚠️  GRACEFUL: Provider down but graceful message shown"
+                  else
+                    echo "❌ FAIL: No graceful degradation detected!"
+                    
+                    # Send SRE alert  
+                    curl -X POST \
+                      -H "Content-Type: application/json" \
+                      -d '{
+                        "text": "🚨 HIGH: Provider failover NOT graceful!\nHTTP: '"$HTTP_CODE"'\nBody: '"$(echo "$BODY" | head -c 200)"'\nTime: '"$(date)"'",
+                        "channel": "#sre-alerts"
+                      }' \
+                      "$(cat /config/webhook-url)" || echo "Failed to send alert"
+                  fi
+              volumeMounts:
+                - name: webhook-config
+                  mountPath: /config
+          volumes:
+            - name: webhook-config
+              configMap:
+                name: sre-webhook-config
+          restartPolicy: Never
