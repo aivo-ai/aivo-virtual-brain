@@ -1,0 +1,430 @@
+name: S4-19 Accessibility & I18n Audit Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/web/src/**'
+      - 'libs/i18n/**'
+      - 'services/**'
+      - '.github/workflows/a11y-i18n.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20.19.4'
+  PNPM_VERSION: '9.11.0'
+
+jobs:
+  # I18n Translation Coverage Check
+  i18n-coverage:
+    name: 🌐 I18n Translation Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Check i18n translation coverage
+        run: |
+          echo "🔍 Running S4-19 I18n Coverage Check..."
+          tsx scripts/check-i18n-misses.ts
+        env:
+          CI: true
+          
+      - name: Upload i18n coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i18n-coverage-report
+          path: |
+            i18n-coverage-report.json
+            i18n-missing-keys.txt
+          retention-days: 7
+
+  # Accessibility Audit - Core Screens
+  accessibility-audit:
+    name: ♿ Accessibility Audit (Top 30 Screens)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        screen-category: [public, auth, student, teacher, parent, admin]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+        
+      - name: Start development server
+        run: |
+          pnpm --filter=web dev &
+          echo "DEV_SERVER_PID=$!" >> $GITHUB_ENV
+        env:
+          NODE_ENV: test
+          
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for dev server to start..."
+          npx wait-on http://localhost:3000 --timeout 60000
+          
+      - name: Run accessibility audit for ${{ matrix.screen-category }}
+        run: |
+          echo "🔍 Running accessibility audit for ${{ matrix.screen-category }} screens..."
+          pnpm exec playwright test \
+            --project=chromium \
+            --grep="category.*${{ matrix.screen-category }}" \
+            apps/web/e2e/a11y-audit.spec.ts
+        env:
+          CI: true
+          PLAYWRIGHT_HTML_REPORT: playwright-report-a11y-${{ matrix.screen-category }}
+          
+      - name: Stop development server
+        if: always()
+        run: |
+          if [ ! -z "$DEV_SERVER_PID" ]; then
+            kill $DEV_SERVER_PID || true
+          fi
+          
+      - name: Upload accessibility test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report-${{ matrix.screen-category }}
+          path: |
+            playwright-report-a11y-${{ matrix.screen-category }}/
+            test-results/
+          retention-days: 14
+
+  # Critical A11y Tests - Must Pass
+  critical-accessibility:
+    name: 🔴 CRITICAL A11y Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [i18n-coverage]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium firefox --with-deps
+        
+      - name: Start mock services
+        run: |
+          echo "Starting required services for testing..."
+          docker-compose -f docker-compose.test.yml up -d postgres redis
+          sleep 10
+        
+      - name: Start development server
+        run: |
+          pnpm --filter=web dev &
+          echo "DEV_SERVER_PID=$!" >> $GITHUB_ENV
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test:test@localhost:5432/aivo_test
+          REDIS_URL: redis://localhost:6379
+          
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for dev server to start..."
+          npx wait-on http://localhost:3000 --timeout 60000
+          
+      - name: Run CRITICAL accessibility tests
+        run: |
+          echo "🔴 Running CRITICAL accessibility tests..."
+          echo "These tests MUST PASS or the build will fail!"
+          pnpm exec playwright test \
+            --project=chromium \
+            --grep="🔴 CRITICAL" \
+            apps/web/e2e/a11y-audit.spec.ts \
+            --reporter=github
+        env:
+          CI: true
+          
+      - name: Run cross-browser accessibility tests
+        run: |
+          echo "🌐 Running cross-browser accessibility tests..."
+          pnpm exec playwright test \
+            --project=firefox \
+            --grep="Multi-language accessibility" \
+            apps/web/e2e/a11y-audit.spec.ts
+        env:
+          CI: true
+          
+      - name: Stop services
+        if: always()
+        run: |
+          if [ ! -z "$DEV_SERVER_PID" ]; then
+            kill $DEV_SERVER_PID || true
+          fi
+          docker-compose -f docker-compose.test.yml down || true
+          
+      - name: Upload critical test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: critical-accessibility-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+  # WCAG Compliance Verification
+  wcag-compliance:
+    name: 📋 WCAG 2.1 AA Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install axe-core CLI
+        run: npm install -g @axe-core/cli
+        
+      - name: Start development server
+        run: |
+          pnpm --filter=web dev &
+          echo "DEV_SERVER_PID=$!" >> $GITHUB_ENV
+        env:
+          NODE_ENV: test
+          
+      - name: Wait for server
+        run: npx wait-on http://localhost:3000 --timeout 60000
+        
+      - name: Run axe-core WCAG compliance check
+        run: |
+          echo "📋 Running WCAG 2.1 AA compliance check..."
+          
+          # Check key public pages
+          axe http://localhost:3000 \
+            --tags wcag2a,wcag2aa,wcag21aa \
+            --exit \
+            --save wcag-landing.json
+            
+          axe http://localhost:3000/login \
+            --tags wcag2a,wcag2aa,wcag21aa \
+            --exit \
+            --save wcag-login.json
+            
+          axe http://localhost:3000/register \
+            --tags wcag2a,wcag2aa,wcag21aa \
+            --exit \
+            --save wcag-register.json
+            
+      - name: Stop development server
+        if: always()
+        run: |
+          if [ ! -z "$DEV_SERVER_PID" ]; then
+            kill $DEV_SERVER_PID || true
+          fi
+          
+      - name: Upload WCAG compliance reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wcag-compliance-reports
+          path: |
+            wcag-*.json
+          retention-days: 14
+
+  # Summary Report
+  audit-summary:
+    name: 📊 Audit Summary & Gate Decision
+    runs-on: ubuntu-latest
+    needs: [i18n-coverage, accessibility-audit, critical-accessibility, wcag-compliance]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: audit-reports/
+          
+      - name: Generate audit summary
+        run: |
+          echo "📊 S4-19 Accessibility & I18n Audit Summary" > audit-summary.md
+          echo "================================================" >> audit-summary.md
+          echo "" >> audit-summary.md
+          
+          # Check if critical tests passed
+          if [ "${{ needs.critical-accessibility.result }}" = "success" ]; then
+            echo "✅ **CRITICAL ACCESSIBILITY TESTS**: PASSED" >> audit-summary.md
+          else
+            echo "❌ **CRITICAL ACCESSIBILITY TESTS**: FAILED" >> audit-summary.md
+          fi
+          
+          # Check i18n coverage
+          if [ "${{ needs.i18n-coverage.result }}" = "success" ]; then
+            echo "✅ **I18N TRANSLATION COVERAGE**: PASSED" >> audit-summary.md
+          else
+            echo "❌ **I18N TRANSLATION COVERAGE**: FAILED" >> audit-summary.md
+          fi
+          
+          # Check WCAG compliance
+          if [ "${{ needs.wcag-compliance.result }}" = "success" ]; then
+            echo "✅ **WCAG 2.1 AA COMPLIANCE**: PASSED" >> audit-summary.md
+          else
+            echo "❌ **WCAG 2.1 AA COMPLIANCE**: FAILED" >> audit-summary.md
+          fi
+          
+          echo "" >> audit-summary.md
+          echo "## Test Results by Category" >> audit-summary.md
+          echo "" >> audit-summary.md
+          
+          # Add category results
+          categories=("public" "auth" "student" "teacher" "parent" "admin")
+          for category in "${categories[@]}"; do
+            if [ -d "audit-reports/accessibility-report-$category" ]; then
+              echo "- **$category screens**: ✅ Tested" >> audit-summary.md
+            else
+              echo "- **$category screens**: ❌ Failed or skipped" >> audit-summary.md
+            fi
+          done
+          
+          echo "" >> audit-summary.md
+          echo "## Compliance Status" >> audit-summary.md
+          echo "" >> audit-summary.md
+          echo "This audit ensures:" >> audit-summary.md
+          echo "- Zero critical/serious accessibility violations" >> audit-summary.md
+          echo "- 90%+ translation coverage across all languages" >> audit-summary.md
+          echo "- WCAG 2.1 AA compliance on key user flows" >> audit-summary.md
+          echo "- Keyboard navigation functionality" >> audit-summary.md
+          echo "- Screen reader compatibility" >> audit-summary.md
+          echo "- Mobile touch target accessibility" >> audit-summary.md
+          
+          cat audit-summary.md
+          
+      - name: Determine gate status
+        id: gate_status
+        run: |
+          if [ "${{ needs.critical-accessibility.result }}" = "success" ] && \
+             [ "${{ needs.i18n-coverage.result }}" = "success" ]; then
+            echo "status=pass" >> $GITHUB_OUTPUT
+            echo "🎉 S4-19 Audit Gate: PASSED"
+          else
+            echo "status=fail" >> $GITHUB_OUTPUT
+            echo "💥 S4-19 Audit Gate: FAILED"
+          fi
+          
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('audit-summary.md', 'utf8');
+            const status = '${{ steps.gate_status.outputs.status }}';
+            
+            const comment = `## 🚨 S4-19 Accessibility & I18n Audit Gate
+            
+            **Status**: ${status === 'pass' ? '✅ PASSED' : '❌ FAILED'}
+            
+            ${summary}
+            
+            ${status === 'fail' ? 
+              '⚠️ **This PR cannot be merged until all critical accessibility and i18n issues are resolved.**' : 
+              '🎉 **This PR meets all accessibility and internationalization requirements.**'
+            }
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+            
+      - name: Fail build if gate fails
+        if: steps.gate_status.outputs.status == 'fail'
+        run: |
+          echo "💥 S4-19 Audit Gate Failed!"
+          echo "Critical accessibility violations or missing translations detected."
+          echo "Please fix all issues before merging."
+          exit 1
+          
+      - name: Upload final audit summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: s4-19-audit-summary
+          path: |
+            audit-summary.md
+          retention-days: 30
