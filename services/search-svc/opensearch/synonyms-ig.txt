@@ -1,0 +1,171 @@
+# Igbo Educational Content Synonyms for OpenSearch
+# Mathematics and Numbers (Mgbako na Onụọgụgụ)
+mgbako,mathematics,math,ọnụọgụgụ
+ịgbakọ,addition,ntinye,plus
+mwepu,subtraction,iwepụ,minus
+ịba uba,multiplication,ịmụba,times
+nkewa,division,ikewa,sharing
+ọnụọgụgụ,number,nọmba,digit
+efu,zero,ihe efu,nothing
+otu,one,mbụ,first
+abụọ,two,nke abụọ,second
+atọ,three,nke atọ,third
+anọ,four,nke anọ,fourth
+ise,five,nke ise,fifth
+isii,six,nke isii,sixth
+asaa,seven,nke asaa,seventh
+asatọ,eight,nke asatọ,eighth
+itoolu,nine,nke itoolu,ninth
+iri,ten,nke iri,tenth
+narị,hundred,ọtụtụ,many
+puku,thousand,ọtụtụ,numerous
+
+# Language Arts (Asụsụ na Agụmagụ)
+asụsụ,language,okwu,speech
+ụtọ asụsụ,grammar,iwu asụsụ,language rules
+ịgụ akwụkwọ,reading,study,ọmụmụ
+ide,writing,composition,ede
+akụkọ,story,akụkọ ifo,tale
+abụ,poem,poetry,uri
+mkpụrụ okwu,alphabet,akwụkwọ ozi,letters
+okwu,word,aha,name
+ahịrịokwu,sentence,phrase,statement
+akwụkwọ ozi,letter,ozi,message
+edemede,essay,article,ọdịde
+agụmagụ,literature,akwụkwọ,books
+okwu ọnụ,speech,nkwuwa okwu,lecture
+mkparịta ụka,conversation,discussion,nkwurịta okwu
+
+# Science (Sayensị)
+sayensị,science,ọmụmụ ihe,knowledge
+okike,nature,natural,eke
+sayensị ndụ,biology,ihe ndụ,living things
+sayensị ihe,chemistry,chemical,kemịkal
+sayensị okike,physics,physical,anụ ahụ
+ụwa,earth,ala,ground
+mbara igwe,sky,space,ohere
+anyanwụ,sun,kpakpando,star
+ọnwa,moon,ọnwa,lunar
+kpakpando,stars,constellation,ụkpụrụ kpakpando
+mmiri,water,H2O,liquid
+ikuku,air,wind,ifufe
+ọkụ,fire,flame,ọgbụgba
+ìhè,light,illumination,ọkụ
+ụda,sound,noise,mkpọtụ
+ọsọ,motion,movement,ngagharị
+ike,force,power,ume
+ike,energy,power,ume
+
+# Social Studies (Ọmụmụ Mmadụ na Ọha)
+akụkọ ihe mere eme,history,historical,akụkọ
+ọdịdị ala,geography,geographical,ala
+ọmenala,culture,cultural,ọdịnala
+mmekọrịta mmadụ,society,social,ọha
+ndọrọ ndọrọ ọchịchị,politics,political,ọchịchị
+akụ na ụba,economics,economic,ego
+obodo,country,nation,mba
+steeti,state,province,mpaghara
+obodo ukwu,city,town,nnukwu obodo
+obodo nta,village,rural,ime obodo
+ọdịnala,tradition,custom,omenala
+emume,festival,celebration,ọṅụ
+okpukpe,religion,faith,nkwenye
+iwu,law,legal,iwu kwụ ọtọ
+ọchịchị,government,administration,njikwa
+
+# School Terms (Okwu Ụlọ Akwụkwọ)
+ụlọ akwụkwọ,school,ebe mmụta,education place
+onye nkụzi,teacher,instructor,nna ukwu
+nwa akwụkwọ,student,learner,onye mmụta
+klaasị,class,classroom,ọnọdụ
+ule,exam,test,assessment
+ọrụ ụlọ,homework,assignment,ọrụ
+akwụkwọ,book,text,ọgụgụ
+akwụkwọ mpempe,notebook,copy,akwụkwọ ọdịde
+mkpịsị akwụkwọ,pen,pencil,ngwa ede
+bọọdụ,board,blackboard,ebe ederede
+nzu,chalk,white chalk,ọcha
+okpokoro,desk,table,ebe ọdịnọdụ
+oche,chair,seat,ebe ịnọdụ ala
+akpa akwụkwọ,bag,backpack,akpa
+
+# Time and Calendar (Oge na Kalenda)
+oge,time,period,awa
+ụbọchị,day,daylight,ehihie
+abalị,night,darkness,ọchịchịrị
+ụtụtụ,morning,dawn,isi ụtụtụ
+ehihie,afternoon,noon,etiti ụbọchị
+anyasị,evening,dusk,mgbede
+izu,week,seven days,izu ụka
+ọnwa,month,thirty days,iri ụbọchị atọ
+afọ,year,annual,otu afọ
+Mọnde,monday,first day,ụbọchị mbụ
+Tuuzde,tuesday,second day,ụbọchị nke abụọ
+Wenezde,wednesday,third day,ụbọchị nke atọ
+Tọọzde,thursday,fourth day,ụbọchị nke anọ
+Fraịde,friday,fifth day,ụbọchị nke ise
+Satọde,saturday,sixth day,ụbọchị nke isii
+Sọnde,sunday,seventh day,ụbọchị izu ike
+
+# Colors (Agba)
+agba,color,colour,shade
+uhie,red,crimson,ọbara ọbara
+acha anụnụ anụnụ,blue,navy,nke mbara igwe
+akwụkwọ ndụ,green,emerald,nke osisi
+edo edo,yellow,golden,nke ọla edo
+ojii,black,dark,ọchịchịrị
+ọcha,white,bright,ìhè
+pink,pink,rose,rosy
+odo odo,purple,violet,magenta
+aja aja,brown,tan,nke aja
+oroma,orange,saffron,nke oroma
+
+# Body Parts (Akụkụ Ahụ)
+ahụ,body,physique,anụ ahụ
+isi,head,skull,okpokoro isi
+anya,eye,eyes,anya abụọ
+ntị,ear,ears,ntị abụọ
+imi,nose,smell,imi isi
+ọnụ,mouth,oral,ọnụ okwu
+aka,hand,hands,aka abụọ
+ụkwụ,foot,feet,ụkwụ abụọ
+afọ,stomach,belly,eriri afọ
+obi,heart,cardiac,obi ọma
+
+# Family (Ezinụlọ)
+ezinụlọ,family,household,ụlọ
+nne,mother,mom,mama
+nna,father,dad,papa
+nwanne nwoke,brother,male sibling,nwanne
+nwanne nwaanyị,sister,female sibling,nwanne
+nna ochie,grandfather,grandpa,nna nna
+nne ochie,grandmother,grandma,nne nne
+nwanne nna,uncle,father's brother,deede
+nwanne nne,aunt,mother's sister,daa
+
+# Education Levels
+ntọala,primary,elementary,basic
+ime,secondary,middle,intermediate
+elu,high,advanced,superior
+mahadum,university,college,ụlọ akwụkwọ ukwu
+gụsịrị akwụkwọ,graduate,bachelor,degree
+gụsịrị akwụkwọ elu,postgraduate,master,elu elu
+
+# Subjects
+ọmụmụ ihe,learning,study,mmụta
+nkuzi,teaching,instruction,izi ihe
+nwale,test,examination,nnwale
+amamihe,wisdom,knowledge,ọgụgụ isi
+nghọta,understanding,comprehension,ịghọta
+
+# Common Educational Terms
+ihe ọmụmụ,lesson,topic,isiokwu
+nrụnyere aka,practical,hands-on,ọrụ aka
+nlegharị anya,review,revision,nlele
+nchikota,summary,conclusion,mkpokọta
+nsogbu,problem,challenge,ihe isi ike
+azịza,answer,solution,ngwọta
+ajụjụ,question,inquiry,ase
+nchọpụta,discovery,finding,ịchọta
+nyocha,research,investigation,nnyocha
+ọmụmụ,study,learning,ịmụta

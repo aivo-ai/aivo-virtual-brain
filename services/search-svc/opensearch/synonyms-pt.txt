@@ -1,0 +1,170 @@
+# Portuguese Educational Content Synonyms for OpenSearch
+# Mathematics and Numbers (Matemática e Números)
+matemática,matemáticas,math,maths,números
+soma,adição,adicionar,mais,plus
+subtração,subtrair,menos,diminuir,minus
+multiplicação,multiplicar,vezes,times
+divisão,dividir,repartir,sharing
+número,numeral,dígito,algarismo
+zero,nada,vazio,nothing
+um,uma,primeiro,first
+dois,duas,segundo,second
+três,terceiro,third
+quatro,quarto,fourth
+cinco,quinto,fifth
+seis,sexto,sixth
+sete,sétimo,seventh
+oito,oitavo,eighth
+nove,nono,ninth
+dez,décimo,tenth
+cem,centena,hundred
+mil,milhar,thousand
+
+# Language Arts (Língua Portuguesa)
+língua,idioma,linguagem,language
+gramática,regras linguísticas,grammar
+leitura,ler,reading
+escrita,escrever,writing
+história,conto,narrativa,story
+poema,poesia,versos,poem
+alfabeto,abecedário,letters
+palavra,vocábulo,termo,word
+frase,oração,sentence
+carta,correspondência,letter
+ensaio,redação,composition
+literatura,letras,books
+discurso,palestra,speech
+conversa,diálogo,conversation
+
+# Science (Ciências)
+ciência,ciências,science
+natureza,meio ambiente,nature
+biologia,ciências da vida,biology
+química,ciências químicas,chemistry
+física,ciências físicas,physics
+terra,planeta,mundo,earth
+céu,atmosfera,sky
+sol,astro-rei,sun
+lua,satélite,moon
+estrelas,astros,stars
+água,líquido,water
+ar,atmosfera,vento,air
+fogo,chama,fire
+luz,claridade,light
+som,ruído,barulho,sound
+movimento,deslocamento,motion
+força,energia,power
+
+# Social Studies (Estudos Sociais)
+história,passado,events
+geografia,território,lugares,geography
+cultura,tradição,costumes,culture
+sociedade,comunidade,povo,society
+política,governo,politics
+economia,dinheiro,economics
+país,nação,pátria,country
+estado,região,province
+cidade,município,town
+aldeia,vila,povoado,village
+tradição,costume,hábito,tradition
+festa,celebração,festival
+religião,fé,crença,religion
+lei,norma,regra,law
+governo,administração,government
+
+# School Terms (Termos Escolares)
+escola,colégio,estabelecimento de ensino,school
+professor,educador,mestre,teacher
+aluno,estudante,discípulo,student
+aula,classe,lesson
+exame,prova,teste,exam
+tarefa,dever de casa,homework
+livro,manual,texto,book
+caderno,bloco,notebook
+caneta,esferográfica,pen
+quadro,lousa,board
+giz,chalk
+mesa,carteira,desk
+cadeira,assento,chair
+mochila,pasta,bag
+
+# Time and Calendar (Tempo e Calendário)
+tempo,duração,período,time
+dia,jornada,day
+noite,período noturno,night
+manhã,aurora,morning
+tarde,período vespertino,afternoon
+noite,anoitecer,evening
+semana,período de sete dias,week
+mês,período mensal,month
+ano,período anual,year
+segunda-feira,monday
+terça-feira,tuesday
+quarta-feira,wednesday
+quinta-feira,thursday
+sexta-feira,friday
+sábado,saturday
+domingo,sunday
+
+# Colors (Cores)
+cor,coloração,tonalidade,color
+vermelho,encarnado,red
+azul,anil,blue
+verde,esmeralda,green
+amarelo,dourado,yellow
+preto,negro,black
+branco,alvo,white
+rosa,cor-de-rosa,pink
+roxo,violeta,purple
+castanho,marrom,brown
+laranja,cor de laranja,orange
+
+# Body Parts (Partes do Corpo)
+corpo,organismo,físico,body
+cabeça,crânio,head
+olho,órgão da visão,eye
+ouvido,orelha,ear
+nariz,órgão do olfato,nose
+boca,cavidade oral,mouth
+mão,extremidade,hand
+pé,extremidade inferior,foot
+barriga,abdómen,stomach
+coração,órgão cardíaco,heart
+
+# Family (Família)
+família,parentela,parentes,family
+mãe,progenitora,mother
+pai,progenitor,father
+irmão,fraterno,brother
+irmã,fraternal,sister
+avô,ancestral masculino,grandfather
+avó,ancestral feminino,grandmother
+tio,parente masculino,uncle
+tia,parente feminina,aunt
+
+# Education Levels (Níveis de Educação)
+primário,básico,elementar,primary
+secundário,médio,intermediate,secondary
+superior,universitário,advanced,high
+universidade,faculdade,university
+graduação,licenciatura,graduate
+pós-graduação,mestrado,postgraduate
+
+# Subjects (Disciplinas)
+aprendizagem,ensino,estudo,learning
+ensinar,educar,instruir,teaching
+teste,avaliação,prova,test
+sabedoria,conhecimento,saber,wisdom
+compreensão,entendimento,understanding
+
+# Common Educational Terms (Termos Educacionais Comuns)
+lição,aula,tópico,lesson
+prático,aplicado,hands-on,practical
+revisão,repassar,review
+resumo,síntese,summary
+problema,dificuldade,desafio,problem
+resposta,solução,answer
+pergunta,questão,question
+descoberta,achado,discovery
+pesquisa,investigação,research
+estudo,aprendizado,study

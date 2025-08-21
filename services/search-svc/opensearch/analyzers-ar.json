@@ -1,0 +1,133 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_arabic": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "arabic_stop",
+            "arabic_stemmer",
+            "arabic_synonyms",
+            "arabic_normalization",
+            "edge_ngrams"
+          ]
+        },
+        "aivo_arabic_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "arabic_stop",
+            "arabic_stemmer",
+            "arabic_synonyms",
+            "arabic_normalization"
+          ]
+        },
+        "aivo_arabic_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "arabic_stop": {
+          "type": "stop",
+          "stopwords": "_arabic_"
+        },
+        "arabic_stemmer": {
+          "type": "stemmer",
+          "language": "arabic"
+        },
+        "arabic_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-ar.txt",
+          "updateable": true
+        },
+        "arabic_normalization": {
+          "type": "arabic_normalization"
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_arabic",
+        "search_analyzer": "aivo_arabic_search",
+        "fields": {
+          "suggest": {
+            "type": "text",
+            "analyzer": "aivo_arabic_suggest"
+          },
+          "exact": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_arabic",
+        "search_analyzer": "aivo_arabic_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_arabic",
+        "search_analyzer": "aivo_arabic_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_arabic"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_arabic"
+          }
+        }
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      }
+    }
+  }
+}

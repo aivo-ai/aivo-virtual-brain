@@ -1,0 +1,143 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_hausa": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "hausa_stopwords",
+            "hausa_synonyms",
+            "edge_ngrams"
+          ]
+        },
+        "aivo_hausa_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "hausa_stopwords", "hausa_synonyms"]
+        },
+        "aivo_hausa_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "hausa_stopwords": {
+          "type": "stop",
+          "stopwords": [
+            "da",
+            "ta",
+            "na",
+            "ya",
+            "za",
+            "ba",
+            "ma",
+            "ko",
+            "sai",
+            "don",
+            "ga",
+            "kan",
+            "cikin",
+            "akan",
+            "daga",
+            "zuwa",
+            "har",
+            "kuma",
+            "amma",
+            "ne",
+            "ce",
+            "shi",
+            "ita",
+            "su",
+            "mu",
+            "ku",
+            "ni",
+            "ka",
+            "ki"
+          ]
+        },
+        "hausa_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-ha.txt"
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_hausa",
+        "search_analyzer": "aivo_hausa_search",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "aivo_hausa_suggest"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_hausa",
+        "search_analyzer": "aivo_hausa_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_hausa",
+        "search_analyzer": "aivo_hausa_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_hausa"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+}

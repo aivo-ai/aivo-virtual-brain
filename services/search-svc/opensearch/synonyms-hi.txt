@@ -1,0 +1,171 @@
+# Hindi Educational Content Synonyms for OpenSearch
+# Mathematics and Arithmetic
+गणित,गणित शास्त्र,अंकगणित,संख्या,हिसाब,मैथ्स
+जोड़,योग,संकलन,प्लस,addition
+घटाना,बाकी,minus,subtraction
+गुणा,multiply,गुणन फल,multiplication
+भाग,विभाजन,division,बांटना
+संख्या,अंक,number,digit,नंबर
+शून्य,zero,sifar,०
+एक,one,इकाई,१
+दो,two,द्वि,२
+तीन,three,त्रि,३
+चार,four,चतुर,४
+पांच,five,पंच,५
+छह,six,षट्,६
+सात,seven,सप्त,७
+आठ,eight,अष्ट,८
+नौ,nine,नव,९
+दस,ten,दश,१०
+सौ,hundred,शत,१००
+हजार,thousand,सहस्र,१०००
+
+# Language Arts (Hindi)
+भाषा,language,hindi,हिंदी
+व्याकरण,grammar,नियम,rules
+पढ़ना,reading,अध्ययन,study
+लिखना,writing,लेखन,composition
+कहानी,story,कथा,tale
+कविता,poem,poetry,छंद
+वर्णमाला,alphabet,अक्षर,letters
+शब्द,word,पद,term
+वाक्य,sentence,phrase,उक्ति
+पत्र,letter,चिट्ठी,mail
+निबंध,essay,लेख,article
+साहित्य,literature,काव्य,poetry
+भाषण,speech,व्याख्यान,lecture
+वार्तालाप,conversation,बातचीत,dialogue
+
+# Science (विज्ञान)
+विज्ञान,science,साइंस,knowledge
+प्रकृति,nature,natural,स्वाभाविक
+जीव विज्ञान,biology,जैविक,living
+रसायन विज्ञान,chemistry,chemical,रासायनिक
+भौतिक विज्ञान,physics,physical,भौतिक
+पृथ्वी,earth,धरती,भूमि
+आकाश,sky,space,अंतरिक्ष
+सूर्य,sun,सूरज,star
+चांद,moon,चंद्रमा,lunar
+तारे,stars,नक्षत्र,constellation
+जल,water,पानी,H2O
+हवा,air,वायु,wind
+अग्नि,fire,आग,flame
+प्रकाश,light,रोशनी,illumination
+ध्वनि,sound,आवाज,noise
+गति,motion,movement,चाल
+बल,force,शक्ति,power
+ऊर्जा,energy,power,शक्ति
+
+# Social Studies (सामाजिक अध्ययन)
+इतिहास,history,historical,ऐतिहासिक
+भूगोल,geography,भौगोलिक,geographical
+संस्कृति,culture,cultural,सांस्कृतिक
+समाज,society,social,सामाजिक
+राजनीति,politics,political,राजनीतिक
+अर्थशास्त्र,economics,economic,आर्थिक
+देश,country,nation,राष्ट्र
+राज्य,state,province,प्रांत
+शहर,city,नगर,town
+गांव,village,ग्राम,rural
+परंपरा,tradition,प्रथा,custom
+त्योहार,festival,celebration,उत्सव
+धर्म,religion,faith,विश्वास
+कानून,law,legal,न्यायिक
+सरकार,government,शासन,administration
+
+# School Terms (स्कूली शब्द)
+विद्यालय,school,स्कूल,शिक्षा स्थान
+शिक्षक,teacher,अध्यापक,गुरु
+छात्र,student,विद्यार्थी,शिष्य
+कक्षा,class,classroom,श्रेणी
+परीक्षा,exam,test,assessment
+गृहकार्य,homework,assignment,कार्य
+किताब,book,पुस्तक,ग्रंथ
+कॉपी,notebook,copy,खाता
+पेन,pen,कलम,pencil
+बोर्ड,board,blackboard,श्यामपट्ट
+चॉक,chalk,खड़िया,white
+मेज,desk,table,डेस्क
+कुर्सी,chair,seat,आसन
+बस्ता,bag,backpack,थैला
+
+# Time and Calendar (समय और कैलेंडर)
+समय,time,वक्त,काल
+दिन,day,दिवस,din
+रात,night,रात्रि,राका
+सुबह,morning,प्रातः,dawn
+दोपहर,afternoon,मध्याह्न,noon
+शाम,evening,संध्या,dusk
+सप्ताह,week,हफ्ता,seven days
+महीना,month,मास,thirty days
+साल,year,वर्ष,annual
+सोमवार,monday,som,first day
+मंगलवार,tuesday,mangal,second day
+बुधवार,wednesday,budh,third day
+गुरुवार,thursday,guru,fourth day
+शुक्रवार,friday,shukra,fifth day
+शनिवार,saturday,shani,sixth day
+रविवार,sunday,ravi,seventh day
+
+# Colors (रंग)
+रंग,color,colour,shade
+लाल,red,crimson,scarlet
+नीला,blue,navy,azure
+हरा,green,emerald,jade
+पीला,yellow,golden,amber
+काला,black,dark,ebony
+सफेद,white,bright,ivory
+गुलाबी,pink,rose,rosy
+बैंगनी,purple,violet,magenta
+भूरा,brown,tan,chocolate
+नारंगी,orange,saffron,amber
+
+# Body Parts (शरीर के अंग)
+शरीर,body,physique,काया
+सिर,head,मस्तक,skull
+आंख,eye,eyes,नेत्र
+कान,ear,ears,श्रवण
+नाक,nose,नासिका,smell
+मुंह,mouth,मुख,oral
+हाथ,hand,hands,भुजा
+पैर,foot,feet,पाद
+पेट,stomach,belly,उदर
+दिल,heart,हृदय,cardiac
+
+# Numbers Beyond 10 (दस से अधिक संख्याएं)
+ग्यारह,eleven,एकादश,११
+बारह,twelve,द्वादश,१२
+तेरह,thirteen,त्रयोदश,१३
+चौदह,fourteen,चतुर्दश,१४
+पंद्रह,fifteen,पंचदश,१५
+सोलह,sixteen,षोडश,१६
+सत्रह,seventeen,सप्तदश,१७
+अठारह,eighteen,अष्टादश,१८
+उन्नीस,nineteen,एकोनविंश,१९
+बीस,twenty,विंशति,२०
+तीस,thirty,त्रिंशत्,३०
+चालीस,forty,चत्वारिंशत्,४०
+पचास,fifty,पंचाशत्,५०
+साठ,sixty,षष्टि,६०
+सत्तर,seventy,सप्तति,७०
+अस्सी,eighty,अशीति,८०
+नब्बे,ninety,नवति,९०
+
+# Family (परिवार)
+परिवार,family,household,कुटुंब
+माता,mother,mom,मां
+पिता,father,dad,पापा
+भाई,brother,bhai,sibling
+बहन,sister,behan,sibling
+दादा,grandfather,grandpa,नाना
+दादी,grandmother,grandma,नानी
+चाचा,uncle,mama,काका
+चाची,aunt,mami,काकी
+
+# Education Levels
+प्राथमिक,primary,elementary,basic
+माध्यमिक,secondary,middle,intermediate
+उच्च,high,advanced,superior
+विश्वविद्यालय,university,college,महाविद्यालय
+स्नातक,graduate,bachelor,degree
+स्नातकोत्तर,postgraduate,master,उन्नत

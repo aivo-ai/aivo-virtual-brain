@@ -1,0 +1,119 @@
+# French Synonyms for Educational Content / Synonymes Français pour Contenu Éducatif
+# Mathématiques
+mathématiques,maths,arithmétique,calcul,nombres
+additionner,addition,plus,somme,total,ajouter
+soustraire,soustraction,moins,différence,enlever
+multiplier,multiplication,fois,produit
+diviser,division,partager,quotient
+fraction,partie,portion,morceau
+décimal,virgule,point décimal
+pourcentage,pour cent,pourcent
+géométrie,formes,figures
+algèbre,équations,variables,inconnues
+nombre,numéral,chiffre,digit
+compter,énumérer,calculer
+résoudre,solution,réponse,résultat
+problème,exercice,question,tâche
+graphique,diagramme,schéma
+mesurer,mesure,longueur,largeur,hauteur
+aire,surface,espace
+volume,capacité,taille
+angle,coin,sommet
+cercle,rond,circonférence
+carré,rectangle,triangle,polygone
+ligne,droite,bord
+courbe,arc,courbure
+
+# Arts du Langage / Français
+langue,français,lecture,écriture
+lire,lecture,compréhension,comprendre
+écrire,écriture,rédaction,composition
+histoire,conte,récit,narration
+livre,texte,littérature,roman
+personnage,protagoniste,figure,caractère
+intrigue,trame,développement,événements
+cadre,lieu,décor,environnement
+thème,message,idée principale,sujet
+vocabulaire,mots,termes,lexique
+grammaire,règles,structure,syntaxe
+phrase,proposition,énoncé
+paragraphe,section,passage
+ponctuation,signes,point,virgule
+orthographe,épellation
+phonétique,sons,prononciation
+fluidité,vitesse,rythme
+poésie,poème,vers,rime
+fiction,imaginaire,inventé,fantaisie
+réalité,faits,vérité,information
+biographie,vie,autobiographie
+rechercher,étudier,explorer,chercher
+citer,référence,source
+corriger,réviser,améliorer,éditer
+
+# Sciences
+science,scientifique,expérience,investigation
+biologie,êtres vivants,vie,organismes
+chimie,éléments,composés,substances
+physique,mouvement,énergie,force
+sciences naturelles,géologie,climat,temps
+astronomie,espace,planètes,étoiles
+hypothèse,prédiction,théorie,supposition
+expérience,test,essai,épreuve
+observer,regarder,examiner,étudier
+données,informations,résultats,faits
+conclusion,résultat,découverte
+mesurer,mesure,unités,mètres
+force,poussée,pression,poids
+énergie,puissance,électricité,combustible
+matière,matériau,substance,chose
+atome,molécule,particule,élément
+cellule,organisme,être vivant,créature
+écosystème,environnement,habitat,nature
+gravité,poids,attraction
+lumière,vision,vue,éclat
+son,bruit,audio,vibration
+chaleur,température,tiède,chaud
+
+# Sciences Sociales
+histoire,passé,historique,ancien
+géographie,cartes,localisation,lieux
+gouvernement,politique,lois,règles
+démocratie,votes,élections,citoyens
+culture,traditions,coutumes,croyances
+communauté,société,gens,groupe
+pays,nation,état,territoire
+ville,village,commune,agglomération
+habitants,résidents,population,gens
+économie,argent,commerce,affaires
+transport,voyage,mouvement,véhicules
+communication,parler,messages,langue
+chronologie,séquence,ordre,temps
+artefact,objet,chose,relique
+source primaire,original,direct
+source secondaire,interprétation,analyse
+civilisation,société,culture,peuple
+
+# Niveaux Éducatifs
+maternelle,préscolaire,petite enfance
+primaire,élémentaire,fondamental,de base
+secondaire,collège,lycée,supérieur
+étudiant,élève,apprenant,enfant
+professeur,enseignant,éducateur,instructeur
+leçon,cours,enseignement,apprentissage
+devoir,travail,exercice,tâche
+examen,test,évaluation,contrôle
+étudier,apprendre,pratiquer,réviser
+
+# Termes Académiques Généraux
+éducation,enseignement,école,académique
+curriculum,programme,cours,plan
+objectif,but,objectif,fin
+standard,exigence,attente,norme
+compétence,habileté,capacité,aptitude
+connaissance,savoir,information,compréhension
+pratique,exercice,entraînement,répétition
+révision,étude,relecture
+évaluation,notation,appréciation
+retour,commentaire,réponse,conseil
+progrès,avancement,amélioration,développement
+réussite,succès,résultat,accomplissement

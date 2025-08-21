@@ -1,0 +1,138 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_efik": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "efik_stopwords",
+            "efik_synonyms",
+            "edge_ngrams"
+          ]
+        },
+        "aivo_efik_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "efik_stopwords", "efik_synonyms"]
+        },
+        "aivo_efik_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "efik_stopwords": {
+          "type": "stop",
+          "stopwords": [
+            "ke",
+            "nte",
+            "ye",
+            "se",
+            "afo",
+            "emi",
+            "eyen",
+            "ndien",
+            "oro",
+            "ikot",
+            "ubok",
+            "etie",
+            "esit",
+            "akwa",
+            "mme",
+            "ntre",
+            "eko",
+            "ami",
+            "adiaha",
+            "ekpenyong",
+            "iniobong",
+            "ubong",
+            "ima",
+            "eti"
+          ]
+        },
+        "efik_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-efi.txt"
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_efik",
+        "search_analyzer": "aivo_efik_search",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "aivo_efik_suggest"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_efik",
+        "search_analyzer": "aivo_efik_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_efik",
+        "search_analyzer": "aivo_efik_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_efik"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+}

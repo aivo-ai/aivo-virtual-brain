@@ -1,0 +1,122 @@
+# English Synonyms for Educational Content
+# Mathematics Synonyms
+math,mathematics,arithmetic,calculation,computation
+add,addition,plus,sum,total,combine
+subtract,subtraction,minus,difference,take away
+multiply,multiplication,times,product
+divide,division,split,quotient,share
+fraction,part,portion,piece,segment
+decimal,decimal point,point
+percent,percentage,per cent
+geometry,shapes,figures
+algebra,equations,variables
+number,numeral,digit,figure
+count,counting,enumerate
+calculate,compute,figure out,work out
+solve,solution,answer,result
+problem,question,exercise,task
+graph,chart,diagram,plot
+measure,measurement,length,width,height
+area,space,surface
+volume,capacity,size
+angle,corner,turn
+circle,round,ring
+square,rectangle,triangle,polygon
+line,straight,edge
+curve,arc,bend
+
+# Language Arts/ELA Synonyms
+language,language arts,ELA,english,reading,writing
+read,reading,comprehension,understand
+write,writing,composition,essay
+story,tale,narrative,account
+book,text,literature,novel
+character,person,figure,protagonist
+plot,story line,sequence,events
+setting,place,location,scene
+theme,message,main idea,topic
+vocabulary,words,terms,language
+grammar,rules,structure,syntax
+sentence,phrase,clause
+paragraph,section,passage
+punctuation,marks,period,comma
+spelling,letters,orthography
+phonics,sounds,pronunciation
+fluency,flow,smooth reading
+poetry,poem,verse,rhyme
+fiction,made up,imaginary,story
+nonfiction,facts,real,true,informational
+biography,life story,autobiography
+research,investigate,study,explore
+cite,reference,source,quote
+edit,revise,improve,correct
+
+# Science Synonyms
+science,scientific,experiment,investigation
+biology,life science,living things
+chemistry,chemical,elements,compounds
+physics,physical science,motion,energy
+earth science,geology,weather,climate
+astronomy,space,planets,stars
+hypothesis,prediction,guess,theory
+experiment,test,investigation,trial
+observe,watch,notice,examine
+data,information,facts,results
+conclusion,result,finding,outcome
+measure,measurement,metric,units
+force,push,pull,pressure
+energy,power,fuel,electricity
+matter,material,substance,stuff
+atom,molecule,particle,element
+cell,organism,living thing,creature
+ecosystem,environment,habitat,nature
+gravity,weight,attraction,pull
+light,vision,sight,brightness
+sound,noise,hearing,vibration
+heat,temperature,warm,hot,thermal
+
+# Social Studies Synonyms
+history,past,historical,ancient,old
+geography,maps,location,places
+government,politics,laws,rules
+democracy,voting,elections,citizens
+culture,traditions,customs,beliefs
+community,society,people,group
+country,nation,state,territory
+city,town,village,settlement
+population,people,inhabitants,residents
+economy,money,trade,business
+transportation,travel,movement,vehicles
+communication,talking,messages,language
+timeline,chronology,sequence,order
+artifact,object,item,thing,relic
+primary source,original,firsthand,direct
+secondary source,interpretation,analysis
+civilization,society,culture,people
+
+# Grade Band Specific Terms
+kindergarten,K,preschool,early childhood
+elementary,primary,basic,foundation
+middle school,junior high,intermediate
+high school,secondary,senior,advanced
+grade,level,year,class
+student,pupil,learner,child
+teacher,instructor,educator,guide
+lesson,class,instruction,learning
+homework,assignment,task,work
+test,quiz,exam,assessment
+study,learn,practice,review
+
+# General Academic Terms
+education,learning,school,academic
+curriculum,program,course,syllabus
+objective,goal,aim,target
+standard,requirement,expectation,benchmark
+skill,ability,competency,capability
+knowledge,information,facts,understanding
+practice,exercise,drill,rehearse
+review,revisit,go over,study again
+assessment,evaluation,test,check
+feedback,response,comment,advice
+progress,improvement,advancement,growth
+achievement,success,accomplishment,attainment

@@ -1,0 +1,172 @@
+# Efik Educational Content Synonyms for OpenSearch
+# Mathematics and Numbers (Nkpo Ukara)
+nkpo,mathematics,math,ukara
+tua,addition,kiet,plus
+sue,subtraction,tono,minus
+doba,multiplication,tua emi,times
+kiet,division,sua,sharing
+namba,number,digit,ukara
+ntak,zero,mkpo,nothing
+kiet,one,iban,first
+iba,two,ubok iba,second
+ita,three,ubok ita,third
+inan,four,ubok inan,fourth
+ition,five,ubok ition,fifth
+itiat,six,ubok itiat,sixth
+idiok,seven,ubok idiok,seventh
+uket,eight,ubok uket,eighth
+uso,nine,ubok uso,ninth
+duop,ten,ubok duop,tenth
+ntak duop,hundred,ukara kiet,many
+kiet ukot,thousand,ukara kiet kiet,numerous
+
+# Language Arts (Usem Efik)
+usem,language,oro,speech
+usem efik,efik language,oro efik,efik speech
+wet,grammar,ikot usem,language rules
+kere,reading,wet ikwo,study
+wet,writing,composition,wet ikwo
+usem ito,story,ifiok,tale
+isong,poem,poetry,ekemini
+nkpo usem,alphabet,mikwot,letters
+oro,word,nkpo,name
+asua oro,sentence,ikot oro,statement
+ikwo eto,letter,nwed,message
+wet ikwo,essay,article,wet eto
+usem ikwo,literature,minkwo,books
+oro ison,speech,wet oro,lecture
+mkparawa oro,conversation,discussion,oro mme
+
+# Science (Usen Nte)
+usen,science,amana,knowledge
+nte,nature,edisana,creation
+usen eyen,biology,mme eyen ndu,living things
+usen nkpo,chemistry,chemical,nkpo
+usen ukot,physics,physical,ukot
+isong,earth,ndem,ground
+itie,sky,space,mkpa itie
+itiat,sun,star,itiat ifiok
+uko,moon,lunar,uko
+itiat mme,stars,constellation,mme itiat
+mmong,water,H2O,mmong
+ikot,air,wind,ikot afaha
+idem,fire,flame,idem
+ifiok,light,illumination,ifiok
+uyo,sound,noise,ito uyo
+ndito,motion,movement,tono
+ukut,force,power,iko
+ukut,energy,power,ukut iko
+
+# Social Studies (Usen Ikot)
+ukut emi,history,historical,mme ukut
+ndem emi,geography,geographical,ikot ndem
+usem ikot,culture,cultural,usem emi
+ikot,society,social,mme nnyin
+ubok,politics,political,ikot ubok
+ukara eto,economics,economic,ukara
+ndem,country,nation,ikot
+esit,state,province,ndito esit
+ikot ukwu,city,town,ikot ukwu
+ikot ukim,village,rural,ikot ukim
+usem emi,tradition,custom,mme usem
+emem,festival,celebration,emem owo
+nsinsi,religion,faith,nsinsi
+iwuo,law,legal,iwuo ikot
+ubok,government,administration,ikot ubok
+
+# School Terms (Mme Oro Esuk)
+esuk,school,emi esuk,education place
+ete esuk,teacher,instructor,onye nkuzi
+eyen esuk,student,learner,onye mmuta
+klas,class,classroom,ime esuk
+nnono,exam,test,assessment
+ukara uso,homework,assignment,ukara
+ikwo,book,text,ikwo amana
+ikwo wet,notebook,copy,ikwo emi wet
+nkpo wet,pen,pencil,nkpo emi wet
+mbot wet,board,blackboard,emi wet
+nso,chalk,white chalk,nso mfon
+ukpong,desk,table,emi edino
+ukpong,chair,seat,emi edino
+nkpo esuk,bag,backpack,usung nkpo
+
+# Time and Calendar (Ini Nte Ukara)
+ini,time,period,oro ini
+usuk,day,daylight,ifiok usuk
+edak,night,darkness,idem edak
+itie,morning,dawn,iban usuk
+ubiak,afternoon,noon,etok usuk
+nsiak,evening,dusk,nsup usuk
+usen,week,seven days,usuk idiok
+uko,month,thirty days,usuk itiat duop
+afiak,year,annual,afiak kiet
+Mande,monday,first day,usuk iban
+Tuzde,tuesday,second day,usuk iba
+Wenzde,wednesday,third day,usuk ita
+Tozde,thursday,fourth day,usuk inan
+Frayde,friday,fifth day,usuk ition
+Saturde,saturday,sixth day,usuk itiat
+Sande,sunday,seventh day,usuk emem
+
+# Colors (Mme Nkpo Ifiok)
+ifiok,color,colour,shade
+mbamba,red,crimson,mbamba iko
+blue,blue,navy,blue iko
+uwem,green,emerald,uwem iko
+nfuho,yellow,golden,nfuho iko
+idem,black,dark,idem iko
+mfon,white,bright,mfon iko
+pink,pink,rose,rosy
+purple,purple,violet,magenta
+brown,brown,tan,brown iko
+orange,orange,saffron,orange iko
+
+# Body Parts (Nkpo Ukot)
+ukot,body,physique,ukot nnyin
+itie,head,skull,itie nnyin
+mbet,eye,eyes,mme mbet
+nti,ear,ears,mme nti
+isung,nose,smell,isung iko
+inua,mouth,oral,inua oro
+ubak,hand,hands,mme ubak
+ukot,foot,feet,mme ukot
+ikot,stomach,belly,ikot
+ema,heart,cardiac,ema nnyin
+
+# Family (Ufok)
+ufok,family,household,ime ufok
+eka,mother,mom,mama
+ete,father,dad,papa
+nna,brother,male sibling,nna inua
+mma,sister,female sibling,mma inua
+eka emi,grandfather,grandpa,eka ete
+ete emi,grandmother,grandma,ete eka
+nna ete,uncle,father's brother,nna ete
+mma eka,aunt,mother's sister,mma eka
+
+# Education Levels
+akamade,primary,elementary,iban
+sekondere,secondary,middle,etok
+ekondo,high,advanced,nsup
+yunivesiti,university,college,esuk ukwu
+graduat,graduate,bachelor,degree
+postgraduat,postgraduate,master,degree ekondo
+
+# Subjects
+amana,learning,study,wet amana
+nkuzi,teaching,instruction,kara amana
+nnono,test,examination,emen nnono
+ima,wisdom,knowledge,amana ima
+akanamde,understanding,comprehension,ima oro
+
+# Common Educational Terms
+lesun,lesson,topic,oro nkuzi
+ukara ubak,practical,hands-on,ukara ubak
+nnwana,review,revision,nnwana amana
+nkukure,summary,conclusion,nkukure oro
+nsongho,problem,challenge,oro nsongho
+ndukut,answer,solution,ndukut oro
+otoro,question,inquiry,mme otoro
+ndiana,discovery,finding,ndiana amana
+nnwono,research,investigation,nnwono amana
+wet amana,study,learning,wet emi amana

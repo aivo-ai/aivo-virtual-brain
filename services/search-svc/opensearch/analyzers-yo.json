@@ -1,0 +1,109 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_yoruba": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "yoruba_synonyms", "edge_ngrams"]
+        },
+        "aivo_yoruba_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "yoruba_synonyms"]
+        },
+        "aivo_yoruba_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "yoruba_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-yo.txt",
+          "updateable": true
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_yoruba",
+        "search_analyzer": "aivo_yoruba_search",
+        "fields": {
+          "suggest": {
+            "type": "text",
+            "analyzer": "aivo_yoruba_suggest"
+          },
+          "exact": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_yoruba",
+        "search_analyzer": "aivo_yoruba_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_yoruba",
+        "search_analyzer": "aivo_yoruba_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_yoruba"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_yoruba"
+          }
+        }
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      }
+    }
+  }
+}

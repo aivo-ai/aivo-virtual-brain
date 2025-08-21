@@ -19,6 +19,12 @@ passlib[bcrypt]>=1.7.4
 pydantic>=2.5.2
 pydantic-settings>=2.1.0
 
+# Additional dependencies for S4-16 implementation
+aiohttp>=3.9.1
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+httpx>=0.25.2
+
 # HTTP client for service communication
 httpx>=0.25.2
 aiohttp>=3.9.1

@@ -1,0 +1,119 @@
+# Spanish Synonyms for Educational Content / Sinónimos en Español para Contenido Educativo
+# Matemáticas
+matemáticas,mates,aritmética,cálculo,números
+sumar,suma,adición,más,total,agregar
+restar,resta,sustracción,menos,diferencia,quitar
+multiplicar,multiplicación,por,producto,veces
+dividir,división,entre,cociente,repartir,partir
+fracción,parte,porción,pedazo,trozo
+decimal,punto decimal,coma decimal
+porcentaje,por ciento,tanto por ciento
+geometría,formas,figuras,shapes
+álgebra,ecuaciones,variables,incógnitas
+número,numeral,cifra,dígito
+contar,enumerar,calcular
+resolver,solución,respuesta,resultado
+problema,ejercicio,tarea,cuestión
+gráfico,gráfica,diagrama,esquema
+medir,medida,longitud,ancho,alto
+área,superficie,espacio
+volumen,capacidad,tamaño
+ángulo,esquina,vértice
+círculo,redondo,circunferencia
+cuadrado,rectángulo,triángulo,polígono
+línea,recta,borde
+curva,arco,doblez
+
+# Lengua y Literatura
+lengua,idioma,español,lectura,escritura
+leer,lectura,comprensión,entender
+escribir,escritura,redacción,composición
+historia,cuento,relato,narración
+libro,texto,literatura,novela
+personaje,protagonista,figura,carácter
+argumento,trama,desarrollo,sucesos
+ambiente,lugar,escenario,entorno
+tema,mensaje,idea principal,asunto
+vocabulario,palabras,términos,léxico
+gramática,reglas,estructura,sintaxis
+oración,frase,enunciado
+párrafo,sección,pasaje
+puntuación,signos,punto,coma
+ortografía,escritura,deletreo
+fonética,sonidos,pronunciación
+fluidez,velocidad,ritmo
+poesía,poema,verso,rima
+ficción,imaginario,inventado,fantasía
+realidad,hechos,verdad,información
+biografía,vida,autobiografía
+investigar,estudiar,explorar,buscar
+citar,referencia,fuente
+corregir,revisar,mejorar,editar
+
+# Ciencias
+ciencia,científico,experimento,investigación
+biología,seres vivos,vida,organismos
+química,elementos,compuestos,sustancias
+física,movimiento,energía,fuerza
+ciencias naturales,geología,clima,tiempo
+astronomía,espacio,planetas,estrellas
+hipótesis,predicción,teoría,suposición
+experimento,prueba,ensayo,test
+observar,mirar,examinar,estudiar
+datos,información,resultados,hechos
+conclusión,resultado,hallazgo
+medir,medición,unidades,metros
+fuerza,empuje,presión,peso
+energía,poder,electricidad,combustible
+materia,material,sustancia,cosa
+átomo,molécula,partícula,elemento
+célula,organismo,ser vivo,criatura
+ecosistema,ambiente,hábitat,naturaleza
+gravedad,peso,atracción
+luz,visión,vista,brillo
+sonido,ruido,audio,vibración
+calor,temperatura,tibio,caliente
+
+# Ciencias Sociales
+historia,pasado,histórico,antiguo
+geografía,mapas,ubicación,lugares
+gobierno,política,leyes,reglas
+democracia,votos,elecciones,ciudadanos
+cultura,tradiciones,costumbres,creencias
+comunidad,sociedad,gente,grupo
+país,nación,estado,territorio
+ciudad,pueblo,aldea,población
+habitantes,residentes,pobladores,gente
+economía,dinero,comercio,negocios
+transporte,viaje,movimiento,vehículos
+comunicación,hablar,mensajes,idioma
+cronología,secuencia,orden,tiempo
+artefacto,objeto,cosa,reliquia
+fuente primaria,original,directo
+fuente secundaria,interpretación,análisis
+civilización,sociedad,cultura,pueblo
+
+# Niveles Educativos
+preescolar,jardín,inicial,temprano
+primaria,elemental,básico,fundamental
+secundaria,bachillerato,preparatoria,media
+estudiante,alumno,aprendiz,niño
+maestro,profesor,educador,instructor
+lección,clase,enseñanza,aprendizaje
+tarea,trabajo,ejercicio,deber
+examen,prueba,evaluación,test
+estudiar,aprender,practicar,repasar
+
+# Términos Académicos Generales
+educación,enseñanza,escuela,académico
+currículo,programa,curso,plan
+objetivo,meta,propósito,fin
+estándar,requisito,expectativa,norma
+habilidad,destreza,competencia,capacidad
+conocimiento,saber,información,entendimiento
+práctica,ejercicio,entrenamiento,repetición
+repaso,revisión,estudio,repasar
+evaluación,calificación,valoración
+retroalimentación,comentario,respuesta,consejo
+progreso,avance,mejora,desarrollo
+logro,éxito,resultado,meta alcanzada

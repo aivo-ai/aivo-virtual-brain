@@ -1,0 +1,121 @@
+# Yoruba Synonyms for Educational Content / Awọn Asopọ Ede Yoruba fun Awọn Akoonu Eto-ẹkọ
+# Iṣiro/Mathematics
+iṣiro,awọn nọmba,kirọ,ọ̀rọ̀ iṣiro
+afikun,fikun,ṣafikun,lapapọ,pọ
+yọkuro,yọ,odiyele,dinkù
+isodipupo,pọ,isodipupo,ọja
+pipin,pin,fun,ẹya
+iseda,idamẹwa,ege,apakan
+ọnka ibẹ̀rẹ̀,ami-ida,aami
+ogorun,idadogorun,ni ọgọrun
+ilana-ọna,awọn apẹrẹ,awọn eya
+aljebra,awọn idogba,awọn oniyipada
+nọmba,eka,nọmba,awọn ọrọ-òdù
+kiro,ṣiro,ka,wọn
+yanju,ojulowo,idahun,abajade
+iṣoro,adaṣe,ibeere,iṣẹ
+aworan,apẹẹrẹ,aworan,iyaworan
+wiwọn,gigun,ibugbe,giga
+agbegbe,aaye,oju-ọpọn
+iwọn,iwọn,titobi
+igun,igun,iyika
+rogodo,yika,iyika
+square,onigun-mẹrin,onigun-mẹta,onigun-pupọ
+ila,gẹẹrẹ,eti
+tẹtẹ,aperé,tẹ
+
+# Ede ati Iwe/Language Arts
+ede,yoruba,kika,kikọ
+ka,kika,oye,ye
+kọ,kikọ,itan-akọọlẹ,akọọlẹ
+itan,arokotan,itan-aye
+iwe,ọrọ,iwe-litireso,aramada
+ohun-kikọ,akorin,oniṣẹ-akọkọ,ẹni-akọkọ
+ipilẹ,ọrọ-itan,idagbasoke,awọn iṣẹlẹ
+ipilẹ,ibi,ibiti,ayika
+kokoro,ọrọ-pataki,ero-akọkọ,kókó
+awọn ọrọ,awọn eka-ọrọ,awọn ọrọ,iwe-ọrọ
+ilana-ede,awọn ofin,igbekalẹ,awọn àbùdá
+gbolohun,ọrọ,gbólóhùn
+paragira,abala,ipele
+awọn ami-ọrọ,ami,pẹriọdu,koma
+sipelì,kikọ,sìpèlì
+ohun,ipe,sọrọ
+ṣiṣan,iyara,ilana
+ewi,ewi,ila,irọ
+itan-iro,ọrọ arin,itan-iro,itan
+ọtitọ,oogun,gidi,alaye
+itan-aye,igbesi-aye,itan-ara-ẹni
+iwadii,ṣayẹwo,ṣawari,kiri
+tọka,itọka,ori,tọka
+ṣatunṣe,tuyè,dara-si,ṣatunṣe
+
+# Ẹkọ-ẹdá/Science
+ẹkọ-ẹda,eleto,ayẹwo,iwadii
+ẹkọ-iwọn,ẹkọ-igbesi-aye,ohun-alaaye
+kemistri,awọn eroja,awọn alapọpọ,awọn nkan
+fisiksi,irinrinkan,agbara,ipa
+ẹkọ-agbaaye,ẹkọ-ile,oju-ọjọ,afefe
+ẹkọ-aye,aaye,awọn planeti,awọn irawọ
+iferi,asọtẹlẹ,ero,ifura
+ayẹwo,idanwo,ayewo,idanwo
+ṣakiyesi,wo,ṣayewo,kẹkọọ
+data,alaye,awọn esi,awọn otitọ
+ipari,esi,wiwa,abajade
+wiwọn,wọn,awọn ẹya-wiwọn,mita
+ipa,titari,titẹ,iwuwo
+agbara,ipa,ina,idana
+ohun,ohun-elo,nkan,ohun
+atomu,moleku,paati,eroja
+sẹẹli,ohun-alaaye,ẹda-alaaye,ẹranko
+ẹkọ-ayika,ayika,ibugbe,eda
+ipaniimọ,iwuwo,ipa,afamọ
+ina,iran,wiwo,imọlẹ
+ariwo,iro,igbọ,titirikitiri
+ooru,iwọn-otutu,lọ́wọ́rọ́,gbona
+
+# Ẹkọ Awujọ/Social Studies
+itan,atijọ,itan,igba-atijọ
+isalẹ-aye,awọn maapu,ipo,awọn aaye
+ijọba,oṣelu,awọn ofin,awọn ilana
+ijọba-olominira,dibo,idibo,awọn ara-ilu
+aṣa,aṣa,iwa,igbagbọ
+agbegbe,awujọ,eniyan,ẹgbẹ
+orilẹ-ede,orilẹ-ede,ipinlẹ,agbegbe
+ilu,ilu,abule,ibusobọ
+olugbe,awọn olugbe,awọn arugbo,awọn eniyan
+ọrọ-aje,owo,iṣowo,iṣẹ
+irinna,irin-ajo,gbigbe,awọn ọkọ
+ibaraẹnisọrọ,sọrọ,awọn ifiranṣẹ,ede
+ila-akoko,lẹsẹsẹ,eto,akoko
+ohun-ibatan,ohun,ohun,atan
+orisun akọkọ,atilẹba,lọwọlọwọ,taara
+orisun keji,itumọ,iṣe-ayẹwo
+ọlaju,awujọ,aṣa,eniyan
+
+# Awọn Ipele Ẹkọ
+kindergarten,iṣaaju-ile-ẹkọ,ọmọde-kekere
+alakọbẹrẹ,akọkọ,ipilẹ,ipilẹ
+alakọ-aarin,ile-ẹkọ-aarin,agbedemeji
+giga-ile-ẹkọ,ile-ẹkọ-giga,agba,to-ga
+kilasi,ipele,ọdun,kilasi
+ọmọ-ile-ẹkọ,ọmọ-ẹkọ,olumọ,ọmọ
+olukọ,olukọni,olutọ,itọsọna
+ẹkọ,kilasi,ikọni,imọ
+iṣẹ-ile,iṣẹ-aṣẹ,iṣẹ,adaṣe
+idanwo,ayẹwo,idanwo,igbelewọn
+kẹkọọ,mọ,adaṣe,aṣabẹwo
+
+# Awọn Ọrọ Ti O Gun Nipa Ẹkọ
+ẹkọ,ikẹkọ,ile-ẹkọ,ẹkọ
+eto-ẹkọ,eto,ikọ,ilana
+ibi-afẹde,idi,ifẹ,ipari
+ipilẹ,ibeere,ireti,ifọwọsi
+ọgbọn,iye-agbara,ipo,iye
+imọ,alaye,awọn otitọ,oye
+iṣe,adaṣe,ikẹkọ,iṣeṣe
+aṣabẹwo,ri-pada,lo-pada,kẹkọọ-lẹẹkansi
+igbelewọn,ifọwọsi,idanwo,ṣayẹwo
+ifi-ipadanu,idahun,ọrọ,imọran
+ilọsiwaju,ilọsiwaju,idagbasoke,idagba
+aṣeyọri,aṣeyọri,esi,ifẹ

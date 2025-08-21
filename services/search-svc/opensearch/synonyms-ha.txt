@@ -1,0 +1,171 @@
+# Hausa Educational Content Synonyms for OpenSearch
+# Mathematics and Numbers (Lissafi da Lambobi)
+lissafi,mathematics,math,kididdiga
+tara,addition,kari,plus
+rage,subtraction,cirewa,minus
+ninka,multiplication,yawan,times
+raba,division,rarraba,sharing
+lamba,number,kidida,digit
+sifiri,zero,babu komai,nothing
+daya,one,farko,first
+biyu,two,na biyu,second
+uku,three,na uku,third
+hudu,four,na hudu,fourth
+biyar,five,na biyar,fifth
+shida,six,na shida,sixth
+bakwai,seven,na bakwai,seventh
+takwas,eight,na takwas,eighth
+tara,nine,na tara,ninth
+goma,ten,na goma,tenth
+dari,hundred,yawa,many
+dubu,thousand,da yawa,numerous
+
+# Language Arts (Harshe da Adabi)
+harshe,language,yare,speech
+nahawu,grammar,dokokin harshe,language rules
+karatu,reading,nazari,study
+rubutu,writing,rubuce-rubuce,composition
+labari,story,tatsuniya,tale
+waka,poem,poetry,baka
+haruffa,alphabet,wasiƙu,letters
+kalma,word,suna,name
+jimla,sentence,magana,statement
+wasiƙa,letter,saƙo,message
+rubutu,essay,labarin,article
+adabi,literature,littattafai,books
+jawabi,speech,lacca,lecture
+tattaunawa,conversation,hira,discussion
+
+# Science (Kimiyya)
+kimiyya,science,ilimi,knowledge
+yanayi,nature,halitta,creation
+kimiyyar rayuwa,biology,abubuwan rayuwa,living things
+kimiyyar sinadarai,chemistry,chemical,sinadaran
+kimiyyar jiki,physics,physical,jikin mutum
+duniya,earth,kasa,ground
+sararin sama,sky,space,fili
+rana,sun,tauraro,star
+wata,moon,wata,lunar
+taurari,stars,constellation,gungun taurari
+ruwa,water,H2O,ruwa mai
+iska,air,wind,iska
+wuta,fire,flame,wuta
+haske,light,illumination,fitila
+sauti,sound,noise,amo
+motsi,motion,movement,tafiya
+karfi,force,power,iko
+makamashi,energy,power,karfi
+
+# Social Studies (Nazarin Al'umma)
+tarihi,history,historical,abubuwan da suka faru
+yanayin kasa,geography,geographical,wurare
+al'ada,culture,cultural,al'adun gargajiya
+al'umma,society,social,jama'a
+siyasa,politics,political,gwamnati
+tattalin arziki,economics,economic,kudi
+kasa,country,nation,al'umma
+jiha,state,province,yanki
+birni,city,town,babban gari
+kauyuka,village,rural,kananan garuruwa
+gargajiya,tradition,custom,al'ada
+buki,festival,celebration,farin ciki
+addini,religion,faith,imani
+doka,law,legal,shari'a
+gwamnati,government,administration,mulki
+
+# School Terms (Kalmomin Makaranta)
+makaranta,school,wurin koyo,education place
+malami,teacher,instructor,mai koyarwa
+dalibi,student,learner,mai koyo
+aji,class,classroom,dakin koyo
+jarrabawa,exam,test,gwaji
+aikin gida,homework,assignment,aiki
+littafi,book,text,karatu
+littafin rubutu,notebook,copy,littafin yin rubutu
+alkalami,pen,pencil,kayan rubutu
+allo,board,blackboard,wurin rubutu
+alli,chalk,white chalk,farin alli
+tebur,desk,table,wurin zama
+kujera,chair,seat,wurin zama
+jakar littattafai,bag,backpack,jaka
+
+# Time and Calendar (Lokaci da Kalanda)
+lokaci,time,period,sa'a
+rana,day,daylight,hasken rana
+dare,night,darkness,duhu
+safiya,morning,dawn,farkon rana
+rana,afternoon,noon,tsakar rana
+yamma,evening,dusk,karshen rana
+mako,week,seven days,kwanaki bakwai
+wata,month,thirty days,kwanaki talatin
+shekara,year,annual,shekara guda
+Litinin,monday,first day,ranar farko
+Talata,tuesday,second day,ranar biyu
+Laraba,wednesday,third day,ranar uku
+Alhamis,thursday,fourth day,ranar hudu
+Jumma'a,friday,fifth day,ranar biyar
+Asabar,saturday,sixth day,ranar shida
+Lahadi,sunday,seventh day,ranar hutawa
+
+# Colors (Launuka)
+launi,color,colour,shade
+ja,red,crimson,jajayen
+shudi,blue,navy,shudin
+kore,green,emerald,koren
+rawaya,yellow,golden,rawayan
+baki,black,dark,duhu
+fari,white,bright,haske
+ruwan hoda,pink,rose,rosy
+shudin purple,purple,violet,magenta
+launin yashi,brown,tan,yashi
+lemun tsami,orange,saffron,orange
+
+# Body Parts (Sassan Jiki)
+jiki,body,physique,jikin mutum
+kai,head,skull,kan
+ido,eye,eyes,idanuwa
+kunne,ear,ears,kunnuwa
+hanci,nose,smell,shakar hanci
+baki,mouth,oral,bakin
+hannu,hand,hands,hannuwa
+kafa,foot,feet,kafafu
+ciki,stomach,belly,cikin
+zuciya,heart,cardiac,zuciyar
+
+# Family (Iyali)
+iyali,family,household,gida
+uwa,mother,mom,mama
+uba,father,dad,baba
+dan'uwa,brother,male sibling,dan'uwa namiji
+'yar'uwa,sister,female sibling,'yar'uwa
+kaka,grandfather,grandpa,babban uba
+kaka,grandmother,grandma,babbar uwa
+kawu,uncle,father's brother,dan'uwan uba
+inna,aunt,mother's sister,'yar'uwar uwa
+
+# Education Levels
+firamare,primary,elementary,farko
+sakandare,secondary,middle,tsakiya
+babba,high,advanced,babba
+jami'a,university,college,babbar makaranta
+kamalewa,graduate,bachelor,digiri
+kamalewa na gaba,postgraduate,master,babban digiri
+
+# Subjects
+koyo,learning,study,karatu
+koyarwa,teaching,instruction,koyar da
+gwaji,test,examination,jarrabawa
+hikima,wisdom,knowledge,ilimi
+fahimta,understanding,comprehension,gane
+
+# Common Educational Terms
+darasi,lesson,topic,batun koyo
+aiki da hannu,practical,hands-on,aikin hannu
+sake duba,review,revision,nazari
+takaitawa,summary,conclusion,gajeriyar bayani
+matsala,problem,challenge,wahala
+amsa,answer,solution,magani
+tambaya,question,inquiry,tambayoyi
+gano,discovery,finding,ganowa
+bincike,research,investigation,nazari
+karatu,study,learning,koyo

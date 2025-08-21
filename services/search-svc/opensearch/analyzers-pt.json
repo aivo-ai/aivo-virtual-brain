@@ -1,0 +1,125 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_portuguese": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "portuguese_stop",
+            "portuguese_stemmer",
+            "portuguese_synonyms",
+            "edge_ngrams"
+          ]
+        },
+        "aivo_portuguese_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "portuguese_stop",
+            "portuguese_stemmer",
+            "portuguese_synonyms"
+          ]
+        },
+        "aivo_portuguese_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "portuguese_stop": {
+          "type": "stop",
+          "stopwords": "_portuguese_"
+        },
+        "portuguese_stemmer": {
+          "type": "stemmer",
+          "language": "portuguese"
+        },
+        "portuguese_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-pt.txt",
+          "updateable": true
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_portuguese",
+        "search_analyzer": "aivo_portuguese_search",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "aivo_portuguese_suggest"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_portuguese",
+        "search_analyzer": "aivo_portuguese_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_portuguese",
+        "search_analyzer": "aivo_portuguese_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_portuguese"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+}

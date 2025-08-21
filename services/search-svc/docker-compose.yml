@@ -1,0 +1,107 @@
+version: "3.8"
+
+services:
+  search-svc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8082
+      - OPENSEARCH_HOST=opensearch
+      - OPENSEARCH_PORT=9200
+      - OPENSEARCH_USER=admin
+      - OPENSEARCH_PASSWORD=admin
+      - DEBUG=false
+    depends_on:
+      - opensearch
+    volumes:
+      - ./opensearch:/app/opensearch:ro
+    networks:
+      - search-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: aivo-opensearch
+    environment:
+      - cluster.name=aivo-search
+      - node.name=aivo-search-node
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=false"
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=AivoSearch123!"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+      - ./opensearch/analyzers-en.json:/usr/share/opensearch/config/analyzers/analyzers-en.json:ro
+      - ./opensearch/analyzers-es.json:/usr/share/opensearch/config/analyzers/analyzers-es.json:ro
+      - ./opensearch/analyzers-fr.json:/usr/share/opensearch/config/analyzers/analyzers-fr.json:ro
+      - ./opensearch/analyzers-ar.json:/usr/share/opensearch/config/analyzers/analyzers-ar.json:ro
+      - ./opensearch/analyzers-zh-Hans.json:/usr/share/opensearch/config/analyzers/analyzers-zh-Hans.json:ro
+      - ./opensearch/analyzers-hi.json:/usr/share/opensearch/config/analyzers/analyzers-hi.json:ro
+      - ./opensearch/analyzers-pt.json:/usr/share/opensearch/config/analyzers/analyzers-pt.json:ro
+      - ./opensearch/analyzers-ig.json:/usr/share/opensearch/config/analyzers/analyzers-ig.json:ro
+      - ./opensearch/analyzers-yo.json:/usr/share/opensearch/config/analyzers/analyzers-yo.json:ro
+      - ./opensearch/analyzers-ha.json:/usr/share/opensearch/config/analyzers/analyzers-ha.json:ro
+      - ./opensearch/analyzers-efi.json:/usr/share/opensearch/config/analyzers/analyzers-efi.json:ro
+      - ./opensearch/analyzers-sw.json:/usr/share/opensearch/config/analyzers/analyzers-sw.json:ro
+      - ./opensearch/analyzers-xh.json:/usr/share/opensearch/config/analyzers/analyzers-xh.json:ro
+      - ./opensearch/analyzers-ki.json:/usr/share/opensearch/config/analyzers/analyzers-ki.json:ro
+      - ./opensearch/synonyms-en.txt:/usr/share/opensearch/config/synonyms/synonyms-en.txt:ro
+      - ./opensearch/synonyms-es.txt:/usr/share/opensearch/config/synonyms/synonyms-es.txt:ro
+      - ./opensearch/synonyms-fr.txt:/usr/share/opensearch/config/synonyms/synonyms-fr.txt:ro
+      - ./opensearch/synonyms-ar.txt:/usr/share/opensearch/config/synonyms/synonyms-ar.txt:ro
+      - ./opensearch/synonyms-zh-Hans.txt:/usr/share/opensearch/config/synonyms/synonyms-zh-Hans.txt:ro
+      - ./opensearch/synonyms-hi.txt:/usr/share/opensearch/config/synonyms/synonyms-hi.txt:ro
+      - ./opensearch/synonyms-pt.txt:/usr/share/opensearch/config/synonyms/synonyms-pt.txt:ro
+      - ./opensearch/synonyms-ig.txt:/usr/share/opensearch/config/synonyms/synonyms-ig.txt:ro
+      - ./opensearch/synonyms-yo.txt:/usr/share/opensearch/config/synonyms/synonyms-yo.txt:ro
+      - ./opensearch/synonyms-ha.txt:/usr/share/opensearch/config/synonyms/synonyms-ha.txt:ro
+      - ./opensearch/synonyms-efi.txt:/usr/share/opensearch/config/synonyms/synonyms-efi.txt:ro
+      - ./opensearch/synonyms-sw.txt:/usr/share/opensearch/config/synonyms/synonyms-sw.txt:ro
+      - ./opensearch/synonyms-xh.txt:/usr/share/opensearch/config/synonyms/synonyms-xh.txt:ro
+      - ./opensearch/synonyms-ki.txt:/usr/share/opensearch/config/synonyms/synonyms-ki.txt:ro
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    networks:
+      - search-network
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.0
+    container_name: aivo-opensearch-dashboards
+    ports:
+      - "5601:5601"
+    expose:
+      - "5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["https://opensearch:9200"]'
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=false"
+    depends_on:
+      - opensearch
+    networks:
+      - search-network
+
+volumes:
+  opensearch-data:
+    driver: local
+
+networks:
+  search-network:
+    driver: bridge

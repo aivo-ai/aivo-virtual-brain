@@ -1,0 +1,171 @@
+# Swahili Educational Content Synonyms for OpenSearch
+# Mathematics and Numbers (Hisabati na Nambari)
+hisabati,mathematics,math,nambari
+kujumlisha,addition,kuongeza,plus
+kutoa,subtraction,kupunguza,minus
+kuzidisha,multiplication,mara,times
+kugawanya,division,mgawanyo,sharing
+nambari,number,tarakimu,digit
+sifuri,zero,hakuna kitu,nothing
+moja,one,wa kwanza,first
+mbili,two,wa pili,second
+tatu,three,wa tatu,third
+nne,four,wa nne,fourth
+tano,five,wa tano,fifth
+sita,six,wa sita,sixth
+saba,seven,wa saba,seventh
+nane,eight,wa nane,eighth
+tisa,nine,wa tisa,ninth
+kumi,ten,wa kumi,tenth
+mia,hundred,wengi,many
+elfu,thousand,wengi sana,numerous
+
+# Language Arts (Lugha na Fasihi)
+lugha,language,maneno,speech
+sarufi,grammar,kanuni za lugha,language rules
+kusoma,reading,kusoma vitabu,study
+kuandika,writing,uandishi,composition
+hadithi,story,simulizi,tale
+shairi,poem,poetry,mashairi
+alfabeti,alphabet,herufi,letters
+neno,word,jina,name
+sentensi,sentence,kifungu cha maneno,statement
+barua,letter,ujumbe,message
+insha,essay,makala,article
+fasihi,literature,vitabu,books
+hotuba,speech,mazungumzo,lecture
+mazungumzo,conversation,mjadala,discussion
+
+# Science (Sayansi)
+sayansi,science,elimu,knowledge
+asili,nature,mazingira,environment
+biolojia,biology,viumbe hai,living things
+kemia,chemistry,kemikali,chemical
+fizikia,physics,mwili,physical
+dunia,earth,ardhi,ground
+anga,sky,anga,space
+jua,sun,nyota,star
+mwezi,moon,mwanga wa usiku,lunar
+nyota,stars,kundinyota,constellation
+maji,water,H2O,unyevunyevu
+hewa,air,upepo,wind
+moto,fire,mwali,flame
+mwanga,light,mwangaza,illumination
+sauti,sound,kelele,noise
+mwendo,motion,harakati,movement
+nguvu,force,uwezo,power
+nishati,energy,nguvu,power
+
+# Social Studies (Utafiti wa Kijamii)
+historia,history,mambo ya zamani,historical
+jiografia,geography,mazingira,geographical
+utamaduni,culture,mila,cultural
+jamii,society,watu,social
+siasa,politics,serikali,political
+uchumi,economics,fedha,economic
+nchi,country,taifa,nation
+mkoa,state,kanda,province
+jiji,city,mji,town
+kijiji,village,mashambani,rural
+utamaduni,tradition,mila,custom
+sherehe,festival,karamu,celebration
+dini,religion,imani,faith
+sheria,law,haki,legal
+serikali,government,utawala,administration
+
+# School Terms (Maneno ya Shule)
+shule,school,chuoni,education place
+mwalimu,teacher,mkufunzi,instructor
+mwanafunzi,student,mjumbe,learner
+darasa,class,chumba cha masomo,classroom
+mtihani,exam,jaribio,test
+kazi ya nyumbani,homework,kazi,assignment
+kitabu,book,maandiko,text
+daftari,notebook,kielelezo,copy
+kalamu,pen,pencil,vifaa vya kuandika
+ubao,board,ubao mweusi,blackboard
+chaki,chalk,chaki nyeupe,white chalk
+meza,desk,dawati,table
+kiti,chair,mahali pa kuketi,seat
+mkoba,bag,mkoba wa vitabu,backpack
+
+# Time and Calendar (Wakati na Kalenda)
+wakati,time,muda,period
+siku,day,mchana,daylight
+usiku,night,giza,darkness
+asubuhi,morning,alfajiri,dawn
+mchana,afternoon,adhuhuri,noon
+jioni,evening,magharibi,dusk
+wiki,week,siku saba,seven days
+mwezi,month,siku thelathini,thirty days
+mwaka,year,kipindi cha miezi kumi na miwili,annual
+Jumatatu,monday,siku ya kwanza,first day
+Jumanne,tuesday,siku ya pili,second day
+Jumatano,wednesday,siku ya tatu,third day
+Alhamisi,thursday,siku ya nne,fourth day
+Ijumaa,friday,siku ya tano,fifth day
+Jumamosi,saturday,siku ya sita,sixth day
+Jumapili,sunday,siku ya saba,seventh day
+
+# Colors (Rangi)
+rangi,color,colour,shade
+nyekundu,red,crimson,damu
+buluu,blue,samawati,navy
+kijani,green,majani,emerald
+manjano,yellow,dhahabu,golden
+nyeusi,black,giza,dark
+nyeupe,white,mweupe,bright
+waridi,pink,ua la waridi,rose
+zambarau,purple,violet,magenta
+kahawia,brown,udongo,tan
+machungwa,orange,rangi ya machungwa,saffron
+
+# Body Parts (Sehemu za Mwili)
+mwili,body,physique,umbo
+kichwa,head,ubongo,skull
+jicho,eye,macho,eyes
+sikio,ear,masikio,ears
+pua,nose,harufu,smell
+mdomo,mouth,kinywa,oral
+mkono,hand,mikono,hands
+mguu,foot,miguu,feet
+tumbo,stomach,kiuno,belly
+moyo,heart,kipigo cha moyo,cardiac
+
+# Family (Familia)
+familia,family,jamii,household
+mama,mother,mzazi wa kike,mom
+baba,father,mzazi wa kiume,dad
+kaka,brother,ndugu wa kiume,male sibling
+dada,sister,ndugu wa kike,female sibling
+babu,grandfather,mzee,grandpa
+bibi,grandmother,mzee wa kike,grandma
+mjomba,uncle,ndugu wa baba,father's brother
+shangazi,aunt,ndugu wa mama,mother's sister
+
+# Education Levels
+msingi,primary,ya kwanza,elementary
+sekondari,secondary,ya kati,middle
+juu,high,ya juu,advanced
+chuo kikuu,university,elimu ya juu,college
+shahada,graduate,mhitimu,bachelor
+shahada ya uzamili,postgraduate,elimu ya juu zaidi,master
+
+# Subjects
+kujifunza,learning,masomo,study
+kufundisha,teaching,elimu,instruction
+jaribio,test,uchunguzi,examination
+hekima,wisdom,busara,knowledge
+uelewa,understanding,ufahamu,comprehension
+
+# Common Educational Terms
+somo,lesson,funzo,topic
+vitendo,practical,kwa mikono,hands-on
+marudio,review,kukagua tena,revision
+muhtasari,summary,hitimisho,conclusion
+tatizo,problem,changamoto,challenge
+jibu,answer,suluhisho,solution
+swali,question,ulizo,inquiry
+ugunduzi,discovery,kutambua,finding
+utafiti,research,uchunguzi,investigation
+masomo,study,kujifunza,learning

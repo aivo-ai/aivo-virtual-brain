@@ -1,0 +1,152 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_hindi": {
+          "type": "custom",
+          "tokenizer": "icu_tokenizer",
+          "filter": [
+            "lowercase",
+            "icu_folding",
+            "icu_normalizer",
+            "hindi_stopwords",
+            "hindi_synonyms",
+            "edge_ngrams"
+          ]
+        },
+        "aivo_hindi_search": {
+          "type": "custom",
+          "tokenizer": "icu_tokenizer",
+          "filter": [
+            "lowercase",
+            "icu_folding",
+            "icu_normalizer",
+            "hindi_stopwords",
+            "hindi_synonyms"
+          ]
+        },
+        "aivo_hindi_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "icu_folding", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "hindi_stopwords": {
+          "type": "stop",
+          "stopwords": [
+            "और",
+            "या",
+            "का",
+            "की",
+            "के",
+            "में",
+            "से",
+            "को",
+            "है",
+            "हैं",
+            "था",
+            "थी",
+            "थे",
+            "हो",
+            "होना",
+            "करना",
+            "किया",
+            "कि",
+            "यह",
+            "वह",
+            "जो",
+            "भी",
+            "तो",
+            "ही",
+            "पर",
+            "लिए",
+            "साथ",
+            "बाद",
+            "पहले",
+            "तक"
+          ]
+        },
+        "hindi_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-hi.txt"
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_hindi",
+        "search_analyzer": "aivo_hindi_search",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "aivo_hindi_suggest"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_hindi",
+        "search_analyzer": "aivo_hindi_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_hindi",
+        "search_analyzer": "aivo_hindi_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_hindi"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+}

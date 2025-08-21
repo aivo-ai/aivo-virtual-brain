@@ -1,0 +1,128 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_spanish": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "spanish_stop",
+            "spanish_stemmer",
+            "spanish_synonyms",
+            "edge_ngrams"
+          ]
+        },
+        "aivo_spanish_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "spanish_stop",
+            "spanish_stemmer",
+            "spanish_synonyms"
+          ]
+        },
+        "aivo_spanish_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "spanish_stop": {
+          "type": "stop",
+          "stopwords": "_spanish_"
+        },
+        "spanish_stemmer": {
+          "type": "stemmer",
+          "language": "spanish"
+        },
+        "spanish_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-es.txt",
+          "updateable": true
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_spanish",
+        "search_analyzer": "aivo_spanish_search",
+        "fields": {
+          "suggest": {
+            "type": "text",
+            "analyzer": "aivo_spanish_suggest"
+          },
+          "exact": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_spanish",
+        "search_analyzer": "aivo_spanish_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_spanish",
+        "search_analyzer": "aivo_spanish_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_spanish"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_spanish"
+          }
+        }
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      }
+    }
+  }
+}

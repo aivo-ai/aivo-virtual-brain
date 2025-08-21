@@ -1,0 +1,171 @@
+# Kikuyu Educational Content Synonyms for OpenSearch
+# Mathematics and Numbers (Mabataro na Namba)
+mabataro,mathematics,math,namba
+kuongera,addition,kuhurura,plus
+kuunana,subtraction,kuhoya,minus
+gukuragia,multiplication,kuragia,times
+kugayania,division,kugayia,sharing
+namba,number,muigana,digit
+itiri,zero,gũtirĩ kĩndũ,nothing
+ĩmwe,one,ya mbere,first
+igĩrĩ,two,ya keerĩ,second
+ithatũ,three,ya gatatũ,third
+inya,four,ya kana,fourth
+ithano,five,ya gatano,fifth
+ithathatũ,six,ya gatandatũ,sixth
+mũgwanja,seven,ya mũgwanja,seventh
+inyanya,eight,ya kanana,eighth
+kenda,nine,ya kenda,ninth
+ikũmi,ten,ya ikũmi,tenth
+igana,hundred,aingĩ,many
+ngiri,thousand,aingĩ mũno,numerous
+
+# Language Arts (Rũthiomi na Mwandĩko)
+rũthiomi,language,ciarĩo,speech
+kiruma,grammar,mĩthiturire ya rũthiomi,language rules
+gũthoma,reading,gũthoma ibuku,study
+kwandĩka,writing,mwandĩko,composition
+rũgano,story,nhenga,tale
+rwĩmbo,poem,poetry,nyĩmbo
+alfabeto,alphabet,mbarua,letters
+kiugo,word,rĩĩtwa,name
+rũgingo,sentence,kĩario,statement
+barua,letter,marũa,message
+mwandĩko,essay,ũhoro,article
+ibuku,literature,mabuku,books
+mariĩra,speech,mariĩra,lecture
+kaaria,conversation,kaaria,discussion
+
+# Science (Ũtaaro)
+ũtaaro,science,ũmenyo,knowledge
+gĩkeno,nature,maitho,environment
+biology,biology,cĩũmbe cia muoyo,living things
+chemistry,chemistry,ikemikerĩ,chemical
+physics,physics,mwĩrĩ,physical
+thĩ,earth,tĩĩri,ground
+igũrũ,sky,kũraya,space
+riũa,sun,njata,star
+mweri,moon,ũtheri wa ũtukũ,lunar
+njata,stars,njata,constellation
+maaĩ,water,H2O,maaĩ
+rũhuho,air,rũhuho,wind
+mwaki,fire,rũrĩrĩ,flame
+ũtheri,light,ũtheri,illumination
+mũgambo,sound,kĩrĩ,noise
+gũthiĩ,motion,wĩra,movement
+hinya,force,hinya,power
+hinya,energy,hinya,power
+
+# Social Studies (Ũtũire wa Andũ)
+rũgano rwa tene,history,maũndũ ma mahinda,historical
+mabũrũri,geography,kũndũ,geographical
+mĩtugo,culture,mĩtugo,cultural
+kĩrĩndĩ,society,andũ,social
+ũtongoria,politics,thirikari,political
+ũgĩmi,economics,mbeeca,economic
+bũrũri,country,rũrĩrĩ,nation
+kaunti,state,kĩhingo,province
+itũũra,city,itũũra,town
+gatĩ,village,ndũnyũ-inĩ,rural
+mũtugo,tradition,mĩtugo,custom
+gĩkeno,festival,gĩkeno,celebration
+itĩĩno,religion,wetĩkio,faith
+watho,law,kĩhooto,legal
+thirikari,government,gwatha,administration
+
+# School Terms (Ciugo cia Cukuru)
+cukuru,school,kũndũ kwa gũthoma,education place
+mũruti,teacher,mũmĩ,instructor
+mũthomi,student,mũthomi,learner
+gĩtharĩ,class,nyũmba ya gũthoma,classroom
+mũgeeto,exam,mũgeeto,test
+wĩra wa mũciĩ,homework,wĩra,assignment
+ibuku,book,mwandĩko,text
+ibuku rĩa mwandĩko,notebook,ibuku,copy
+karamu,pen,karamu,writing tool
+bũrĩti,board,bũrĩti mũirũ,blackboard
+cokĩ,chalk,cokĩ mwerũ,white chalk
+metha,desk,metha,table
+gĩtĩ,chair,kũndũ gwa gũikara,seat
+mũkwa,bag,mũkwa wa mabuku,backpack
+
+# Time and Calendar (Ihinda na Karendara)
+ihinda,time,ihinda,period
+mũthenya,day,mũthenya,daylight
+ũtukũ,night,nduma,darkness
+rũciinĩ,morning,rũciinĩ,dawn
+mũthenya,afternoon,mũthenya,noon
+hwaĩ-inĩ,evening,hwaĩ-inĩ,dusk
+kiumia,week,matuku mũgwanja,seven days
+mweri,month,matuku mirongo ĩtatũ,thirty days
+mwaka,year,mieri ikũmi na ĩĩrĩ,annual
+Jumatatu,monday,mũthenya wa mbere,first day
+Jumanne,tuesday,mũthenya wa keerĩ,second day
+Jumatano,wednesday,mũthenya wa gatatũ,third day
+Kamene,thursday,mũthenya wa kana,fourth day
+Njuguna,friday,mũthenya wa gatano,fifth day
+Njumamothii,saturday,mũthenya wa gatandatũ,sixth day
+Kiumia,sunday,mũthenya wa mũgwanja,seventh day
+
+# Colors (Mĩrangi)
+rangi,color,colour,shade
+mũtune,red,crimson,mũtune
+bururu,blue,wa igũrũ,navy
+mũruru,green,wa mĩtĩ,emerald
+mũrangarĩ,yellow,wa thahabu,golden
+mũirũ,black,nduma,dark
+mwerũ,white,mwerũ,bright
+pinki,pink,wa rũtua,rose
+zambarau,purple,violet,magenta
+wa tĩĩri,brown,wa tĩĩri,tan
+wa macungwa,orange,wa macungwa,saffron
+
+# Body Parts (Ciana cia Mwĩrĩ)
+mwĩrĩ,body,physique,mwĩrĩ
+mũtwe,head,mũtwe,skull
+riitho,eye,maitho,eyes
+gũtũ,ear,matũ,ears
+inyũrũ,nose,kũnua,smell
+kanua,mouth,kanua,oral
+guoko,hand,moko,hands
+kũgũrũ,foot,magũrũ,feet
+nda,stomach,nda,belly
+ngoro,heart,gũũkũrũka kwa ngoro,cardiac
+
+# Family (Nyũmba)
+nyũmba,family,nyũmba,household
+nyina,mother,mũciare wa mũndũ-wa-nja,mom
+ithe,father,mũciare wa mũndũ-mũrũme,dad
+mũrũ wa nyina,brother,mũrũ wa mũciare ũmwe,male sibling
+mwarĩ wa nyina,sister,mwarĩ wa mũciare ũmwe,female sibling
+guka,grandfather,guka,grandpa
+cũcũ,grandmother,cũcũ,grandma
+mamawe,uncle,mũrũ wa guka,father's brother
+maitũ,aunt,mwarĩ wa cũcũ,mother's sister
+
+# Education Levels
+mwĩrĩra,primary,wa mbere,elementary
+sekondere,secondary,wa gatagatĩ,middle
+ya igũrũ,high,ya igũrũ,advanced
+unibersiti,university,thomo ya igũrũ,college
+rũtano,graduate,rĩa ũrutani,bachelor
+rũtano rwa igũrũ,postgraduate,thomo ya igũrũ mũno,master
+
+# Subjects
+gũthoma,learning,ũthomo,study
+kũruta,teaching,ũrutani,instruction
+mũgeeto,test,kũgeetwo,examination
+ũũgĩ,wisdom,ũũgĩ,knowledge
+kũmenya,understanding,kũmenya,comprehension
+
+# Common Educational Terms
+ũthomo,lesson,ũthomo,topic
+wĩra wa moko,practical,na moko,hands-on
+kũrora rĩngĩ,review,kũrorania rĩngĩ,revision
+kũgoocithania,summary,mũthia,conclusion
+kĩria,problem,mwĩnyamaari,challenge
+macookio,answer,ũhoro,solution
+kĩũria,question,kĩũria,inquiry
+kũmenyania,discovery,kũgũa,finding
+ũtuuji,research,ũtuuji,investigation
+ũthomo,study,gũthoma,learning

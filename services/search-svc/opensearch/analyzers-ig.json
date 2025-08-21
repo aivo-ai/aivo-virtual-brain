@@ -1,0 +1,141 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_igbo": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "igbo_stopwords",
+            "igbo_synonyms",
+            "edge_ngrams"
+          ]
+        },
+        "aivo_igbo_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "igbo_stopwords", "igbo_synonyms"]
+        },
+        "aivo_igbo_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "igbo_stopwords": {
+          "type": "stop",
+          "stopwords": [
+            "na",
+            "ma",
+            "ka",
+            "ya",
+            "nke",
+            "nye",
+            "site",
+            "n'",
+            "n'ihi",
+            "mgbe",
+            "ebe",
+            "onye",
+            "ndi",
+            "ihe",
+            "otu",
+            "oge",
+            "aha",
+            "uzo",
+            "di",
+            "bu",
+            "ga",
+            "si",
+            "rue",
+            "kwu",
+            "gbo",
+            "tu",
+            "we"
+          ]
+        },
+        "igbo_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-ig.txt"
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_igbo",
+        "search_analyzer": "aivo_igbo_search",
+        "fields": {
+          "suggest": {
+            "type": "completion",
+            "analyzer": "aivo_igbo_suggest"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_igbo",
+        "search_analyzer": "aivo_igbo_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_igbo",
+        "search_analyzer": "aivo_igbo_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_igbo"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+}

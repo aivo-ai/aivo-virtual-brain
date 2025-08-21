@@ -1,12 +1,43 @@
 # AIVO Search Service Documentation
 
-# S1-13 Implementation - OpenSearch with Role-Based Access Control
+## S1-13 Implementation - OpenSearch with Role-Based Access Control
+
+## S4-16 Implementation - Search Relevance & Multilingual Synonyms
 
 ## Overview
 
-The AIVO Search Service provides powerful full-text search and intelligent suggestions across educational documents with comprehensive role-based access control (RBAC). Built on OpenSearch, it enables secure, multi-tenant search capabilities for IEPs, assessments, student records, curriculum, and educational resources.
+The AIVO Search Service provides powerful full-text search and intelligent suggestions across educational documents with comprehensive role-based access control (RBAC) and advanced multilingual capabilities. Built on OpenSearch, it enables secure, multi-tenant search capabilities for IEPs, assessments, student records, curriculum, and educational resources across 14 supported languages.
 
-## Features
+## 🌍 S4-16: Multilingual Search Features
+
+### Supported Languages (14 Total)
+
+| Language                 | Locale    | Analyzer Features                | Educational Synonyms |
+| ------------------------ | --------- | -------------------------------- | -------------------- |
+| **English**              | `en`      | Stemming, stopwords, synonyms    | ✅ 200+ terms        |
+| **Spanish**              | `es`      | Spanish stemming, accent folding | ✅ 200+ terms        |
+| **French**               | `fr`      | Elision filters, French stemming | ✅ 200+ terms        |
+| **Arabic**               | `ar`      | RTL support, normalization       | ✅ 200+ terms        |
+| **Chinese (Simplified)** | `zh-Hans` | IK tokenization, segmentation    | ✅ 200+ terms        |
+| **Hindi**                | `hi`      | Devanagari, ICU normalization    | ✅ 200+ terms        |
+| **Portuguese**           | `pt`      | Portuguese stemming, accents     | ✅ 200+ terms        |
+| **Igbo**                 | `ig`      | Tone preservation, compounds     | ✅ 200+ terms        |
+| **Yoruba**               | `yo`      | Tonal diacritics, harmony        | ✅ 200+ terms        |
+| **Hausa**                | `ha`      | Arabic loanwords, roots          | ✅ 200+ terms        |
+| **Efik**                 | `efi`     | Cross River linguistics          | ✅ 200+ terms        |
+| **Swahili**              | `sw`      | Bantu morphology, Arabic         | ✅ 200+ terms        |
+| **Xhosa**                | `xh`      | Click consonants, noun classes   | ✅ 200+ terms        |
+| **Kikuyu**               | `ki`      | Bantu tones, agglutination       | ✅ 200+ terms        |
+
+### Advanced Search Capabilities
+
+- **Educational Synonyms**: Subject-specific mappings (Math, ELA, Science, Social Studies)
+- **Fuzzy Matching**: Typo tolerance and approximate matching
+- **Autocomplete**: Edge n-gram based suggestions (2-20 characters)
+- **Relevance Boosting**: Recent content, tenant-specific, popularity scoring
+- **Query-time Optimization**: Multi-field search with weighted scoring
+
+## S1-13: Core Search Features
 
 ### Core Search Capabilities
 

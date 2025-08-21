@@ -1,0 +1,148 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "aivo_french": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "french_stop",
+            "french_stemmer",
+            "french_synonyms",
+            "edge_ngrams",
+            "elision"
+          ]
+        },
+        "aivo_french_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "french_stop",
+            "french_stemmer",
+            "french_synonyms",
+            "elision"
+          ]
+        },
+        "aivo_french_suggest": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "edge_ngrams"]
+        }
+      },
+      "filter": {
+        "french_stop": {
+          "type": "stop",
+          "stopwords": "_french_"
+        },
+        "french_stemmer": {
+          "type": "stemmer",
+          "language": "french"
+        },
+        "french_synonyms": {
+          "type": "synonym",
+          "synonyms_path": "synonyms-fr.txt",
+          "updateable": true
+        },
+        "elision": {
+          "type": "elision",
+          "articles": [
+            "l",
+            "m",
+            "t",
+            "qu",
+            "n",
+            "s",
+            "j",
+            "d",
+            "c",
+            "jusqu",
+            "quoiqu",
+            "lorsqu",
+            "puisqu"
+          ]
+        },
+        "edge_ngrams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "aivo_french",
+        "search_analyzer": "aivo_french_search",
+        "fields": {
+          "suggest": {
+            "type": "text",
+            "analyzer": "aivo_french_suggest"
+          },
+          "exact": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "aivo_french",
+        "search_analyzer": "aivo_french_search"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "aivo_french",
+        "search_analyzer": "aivo_french_search"
+      },
+      "subject": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_french"
+          }
+        }
+      },
+      "grade_band": {
+        "type": "keyword"
+      },
+      "lesson_type": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "aivo_french"
+          }
+        }
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "tenant_id": {
+        "type": "keyword"
+      },
+      "locale": {
+        "type": "keyword"
+      },
+      "difficulty_level": {
+        "type": "integer"
+      },
+      "popularity_score": {
+        "type": "float"
+      },
+      "completion_rate": {
+        "type": "float"
+      }
+    }
+  }
+}

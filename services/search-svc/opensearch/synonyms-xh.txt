@@ -1,0 +1,171 @@
+# Xhosa Educational Content Synonyms for OpenSearch
+# Mathematics and Numbers (IMathematika namaNamela)
+imathematika,mathematics,math,amanani
+ukudibanisa,addition,ukongeza,plus
+ukuthabatha,subtraction,ukunciphisa,minus
+ukuphinda-phinda,multiplication,ukuphindaphinda,times
+ukwahlula,division,ukwabiwa,sharing
+inani,number,inombolo,digit
+iqanda,zero,akukho nto,nothing
+nye,one,wokuqala,first
+mbini,two,wesibini,second
+ntathu,three,wesithathu,third
+ne,four,wesine,fourth
+ntlanu,five,wesihlanu,fifth
+ntandathu,six,wesithandathu,sixth
+sixhenxe,seven,wesixhenxe,seventh
+sibhozo,eight,wesibhozo,eighth
+lithoba,nine,welithoba,ninth
+lishumi,ten,welishumi,tenth
+likhulu,hundred,abaninzi,many
+liwaka,thousand,abaninzi kakhulu,numerous
+
+# Language Arts (IiLwimi neNcwadi)
+ulwimi,language,ilwimi,speech
+igramari,grammar,imithetho yolwimi,language rules
+ukufunda,reading,ukufunda iincwadi,study
+ukubhala,writing,ukubhalwa,composition
+ibali,story,intsomi,tale
+isixokelelwana,poem,poetry,iinkcazelo
+ialfabhethi,alphabet,oonobumba,letters
+igama,word,igama,name
+isivakalisi,sentence,isinongo,statement
+ileta,letter,umyalezo,message
+isincoko,essay,amanqaku,article
+uncwadi,literature,iincwadi,books
+intetho,speech,intetho,lecture
+incoko,conversation,ingxoxo,discussion
+
+# Science (Isayensi)
+isayensi,science,ulwazi,knowledge
+indalo,nature,okuvelayo,environment
+ibhayoloji,biology,izinto eziphilayo,living things
+ikhemistri,chemistry,amakhemikhali,chemical
+ifiziksi,physics,umzimba,physical
+umhlaba,earth,umhlaba,ground
+isibhakabhaka,sky,isithuba,space
+ilanga,sun,inkwenkwezi,star
+inyanga,moon,ukukhanya ebusuku,lunar
+iinkwenkwezi,stars,iinkwenkwezi,constellation
+amanzi,water,H2O,amanzi
+umoya,air,umoya,wind
+umlilo,fire,idangatye,flame
+ukukhanya,light,ukukhanya,illumination
+isandi,sound,ingxolo,noise
+ukuhamba,motion,ukusebenza,movement
+amandla,force,amandla,power
+amandla,energy,amandla,power
+
+# Social Studies (IziFundo zeNtlalo)
+imbali,history,izinto ezidlulileyo,historical
+ijografi,geography,iindawo,geographical
+inkcubeko,culture,amasiko,cultural
+uluntu,society,abantu,social
+ezopolitiko,politics,urhulumente,political
+uqoqosho,economics,imali,economic
+ilizwe,country,isizwe,nation
+iphondo,state,ingingqi,province
+isixeko,city,idolophu,town
+ilali,village,emaphandleni,rural
+isiko,tradition,amasiko,custom
+umsitho,festival,umbhiyozo,celebration
+unqulo,religion,ukholo,faith
+umthetho,law,ubulungisa,legal
+urhulumente,government,ulawulo,administration
+
+# School Terms (Amagama eSikolo)
+isikolo,school,esikolweni,education place
+utitshala,teacher,umfundisi,instructor
+umfundi,student,umfundi,learner
+iklasi,class,igumbi lokufundela,classroom
+uvavanyo,exam,uvavanyo,test
+umsebenzi wasekhaya,homework,umsebenzi,assignment
+incwadi,book,imibhalo,text
+incwadana,notebook,incwadana,copy
+ipen,pen,ipensile,writing tool
+ibhodi,board,ibhodi emnyama,blackboard
+itshoki,chalk,itshoki emhlophe,white chalk
+itafile,desk,itafile,table
+isitulo,chair,indawo yokuhlala,seat
+ibhegi,bag,ibhegi yeencwadi,backpack
+
+# Time and Calendar (Ixesha neKhalenda)
+ixesha,time,ixesha,period
+usuku,day,imini,daylight
+ubusuku,night,ubumnyama,darkness
+ekuseni,morning,ekuseni,dawn
+emini,afternoon,emini,noon
+ngokuhlwa,evening,ngokuhlwa,dusk
+iveki,week,iintsuku ezisixhenxe,seven days
+inyanga,month,iintsuku ezingamashumi amathathu,thirty days
+unyaka,year,inyanga ezilishumi elinesibini,annual
+uMvulo,monday,usuku lokuqala,first day
+uLwesibini,tuesday,usuku lwesibini,second day
+uLwesithathu,wednesday,usuku lwesithathu,third day
+uLwesine,thursday,usuku lwesine,fourth day
+uLwesihlanu,friday,usuku lwesihlanu,fifth day
+uMgqibelo,saturday,usuku lwesithandathu,sixth day
+iCawe,sunday,usuku lwesixhenxe,seventh day
+
+# Colors (Imibala)
+umbala,color,colour,shade
+bomvu,red,crimson,ubomvu
+luhlaza,blue,okwesibhakabhaka,navy
+luhlaza,green,okwamahlahla,emerald
+tyheli,yellow,okwegolide,golden
+mnyama,black,ubumnyama,dark
+mhlophe,white,okumhlophe,bright
+pinki,pink,okwerozi,rose
+mfusa,purple,violet,magenta
+mdaka,brown,okwomhlaba,tan
+orenji,orange,okweorenji,saffron
+
+# Body Parts (Amalungu oMzimba)
+umzimba,body,physique,umzimba
+intloko,head,intloko,skull
+iliso,eye,amehlo,eyes
+indlebe,ear,iindlebe,ears
+impumlo,nose,ukuvumba,smell
+umlomo,mouth,umlomo,oral
+isandla,hand,izandla,hands
+unyawo,foot,iinyawo,feet
+isisu,stomach,isisu,belly
+intliziyo,heart,ukubetha kwentliziyo,cardiac
+
+# Family (Usapho)
+usapho,family,intsapho,household
+umama,mother,umzali obhinqileyo,mom
+utata,father,umzali oyindoda,dad
+ubhuti,brother,umntakwabo oyindoda,male sibling
+udade,sister,umntakwabo obhinqileyo,female sibling
+utatomkhulu,grandfather,ixhego,grandpa
+umakhulu,grandmother,ixhego elibhinqileyo,grandma
+umalume,uncle,umntakwabo katata,father's brother
+udadebobawo,aunt,umntakwabo kamama,mother's sister
+
+# Education Levels
+isamabanga aphantsi,primary,eyokuqala,elementary
+isamabanga aphakamileyo,secondary,eyaphakathi,middle
+ephezulu,high,ephuculweyo,advanced
+iyunivesiti,university,imfundo ephakamileyo,college
+isidanga,graduate,ophumeleleyo,bachelor
+isidanga esiphakamileyo,postgraduate,imfundo ephakamileyo kakhulu,master
+
+# Subjects
+ukufunda,learning,izifundo,study
+ukufundisa,teaching,imfundo,instruction
+uvavanyo,test,ukuhlolwa,examination
+ubulumko,wisdom,ubulumko,knowledge
+ukuqonda,understanding,ukuqonda,comprehension
+
+# Common Educational Terms
+isifundo,lesson,isifundo,topic
+ukwenza,practical,ngezandla,hands-on
+ukuphinda,review,ukujonga kwakhona,revision
+isishwankathelo,summary,isiphetho,conclusion
+ingxaki,problem,umceli mngeni,challenge
+impendulo,answer,isisombululo,solution
+umbuzo,question,umbuzo,inquiry
+ukufumana,discovery,ukufumanisa,finding
+uphando,research,ukuphanda,investigation
+izifundo,study,ukufunda,learning
