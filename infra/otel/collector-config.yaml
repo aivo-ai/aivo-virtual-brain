@@ -28,19 +28,45 @@ processors:
     timeout: 1s
     send_batch_size: 1024
 
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+
+  # Attribute processor to ensure privacy compliance
+  attributes:
+    actions:
+      # Privacy compliance - remove any PII
+      - key: user.email
+        action: delete
+      - key: user.name
+        action: delete
+      - key: user.phone
+        action: delete
+      - key: user.address
+        action: delete
+      # Standard environment attribute
+      - key: environment
+        value: "development"
+        action: insert
+      # Ensure service instance ID is present
+      - key: service.instance.id
+        from_attribute: host.name
+        action: upsert
+
+  # Resource processor to add standard attributes
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: "${env:ENVIRONMENT}"
+        action: upsert
+      - key: service.namespace
+        value: "aivo-virtual-brains"
+        action: upsert
+
   resourcedetection:
     detectors: [env, system, docker]
     timeout: 2s
     override: false
-
-  attributes:
-    actions:
-      - key: environment
-        value: "development"
-        action: insert
-      - key: service.instance.id
-        from_attribute: host.name
-        action: insert
 
 exporters:
   # Jaeger for traces
