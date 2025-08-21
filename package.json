@@ -24,6 +24,7 @@
     "compose:down": "docker-compose down",
     "compose:logs": "docker-compose logs -f",
     "health:check": "node scripts/health-check.mjs",
+    "release:notes": "tsx scripts/release-notes.ts",
     "sec:all": "node scripts/sec-all.mjs",
     "sec:osv": "osv-scanner --recursive .",
     "sec:trivy": "trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --skip-dirs node_modules .",

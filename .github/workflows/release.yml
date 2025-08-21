@@ -1,0 +1,397 @@
+name: Release Packaging & Signing
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.2.3)'
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  COSIGN_EXPERIMENTAL: 1
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+
+jobs:
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      matrix: ${{ steps.changes.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # For manual releases, build all services
+            SERVICES=$(find services -name "Dockerfile" -type f | sed 's|services/||' | sed 's|/Dockerfile||' | jq -R -s -c 'split("\n")[:-1]')
+          else
+            # For tag releases, detect changes since last tag
+            LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+            if [[ -z "$LAST_TAG" ]]; then
+              SERVICES=$(find services -name "Dockerfile" -type f | sed 's|services/||' | sed 's|/Dockerfile||' | jq -R -s -c 'split("\n")[:-1]')
+            else
+              CHANGED_FILES=$(git diff --name-only $LAST_TAG HEAD)
+              SERVICES=$(echo "$CHANGED_FILES" | grep "^services/" | cut -d'/' -f2 | sort -u | xargs -I {} find services/{} -name "Dockerfile" -type f 2>/dev/null | sed 's|services/||' | sed 's|/Dockerfile||' | jq -R -s -c 'split("\n")[:-1]')
+            fi
+          fi
+          
+          if [[ "$SERVICES" == '[""]' || "$SERVICES" == "[]" ]]; then
+            SERVICES='[]'
+            MATRIX='{"include":[]}'
+          else
+            MATRIX=$(echo $SERVICES | jq -c '{include: [.[] | {service: .}]}')
+          fi
+          
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          echo "Detected services: $SERVICES"
+
+  build-and-sign:
+    name: Build & Sign Images
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      fail-fast: false
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      images: ${{ steps.collect.outputs.images }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=tag
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.service }}
+            org.opencontainers.image.description=AIVO ${{ matrix.service }} microservice
+            org.opencontainers.image.vendor=AIVO AI
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: services/${{ matrix.service }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+
+      - name: Sign container image
+        run: |
+          cosign sign --yes ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}
+
+      - name: Generate SBOM
+        run: |
+          syft ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}@${{ steps.build.outputs.digest }} \
+            -o spdx-json=sbom-${{ matrix.service }}-spdx.json \
+            -o cyclonedx-json=sbom-${{ matrix.service }}-cyclonedx.json
+
+      - name: Sign SBOM
+        run: |
+          cosign attest --yes --predicate sbom-${{ matrix.service }}-spdx.json \
+            --type spdx \
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}
+          
+          cosign attest --yes --predicate sbom-${{ matrix.service }}-cyclonedx.json \
+            --type cyclonedx \
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}
+
+      - name: Generate provenance attestation
+        run: |
+          echo '{
+            "buildType": "https://github.com/Attestations/GitHubActionsWorkflow@v1",
+            "builder": {
+              "id": "https://github.com/actions/runner"
+            },
+            "invocation": {
+              "configSource": {
+                "uri": "${{ github.server_url }}/${{ github.repository }}",
+                "digest": {
+                  "sha1": "${{ github.sha }}"
+                }
+              }
+            },
+            "metadata": {
+              "buildInvocationId": "${{ github.run_id }}",
+              "buildStartedOn": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+              "completeness": {
+                "parameters": true,
+                "environment": false,
+                "materials": false
+              },
+              "reproducible": false
+            },
+            "materials": [
+              {
+                "uri": "${{ github.server_url }}/${{ github.repository }}",
+                "digest": {
+                  "sha1": "${{ github.sha }}"
+                }
+              }
+            ]
+          }' > provenance-${{ matrix.service }}.json
+
+      - name: Attest provenance
+        run: |
+          cosign attest --yes --predicate provenance-${{ matrix.service }}.json \
+            --type slsaprovenance \
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service }}
+          path: |
+            sbom-${{ matrix.service }}-*.json
+            provenance-${{ matrix.service }}.json
+
+      - name: Collect image info
+        id: collect
+        run: |
+          echo "images=${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
+
+  verify-signatures:
+    name: Verify Signatures & Attestations
+    needs: [detect-changes, build-and-sign]
+    if: needs.detect-changes.outputs.services != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Verify image signature
+        run: |
+          cosign verify ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }} \
+            --certificate-identity-regexp="https://github.com/${{ github.repository }}" \
+            --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+
+      - name: Verify SBOM attestation
+        run: |
+          cosign verify-attestation ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }} \
+            --type spdx \
+            --certificate-identity-regexp="https://github.com/${{ github.repository }}" \
+            --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+
+      - name: Verify provenance attestation
+        run: |
+          cosign verify-attestation ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }} \
+            --type slsaprovenance \
+            --certificate-identity-regexp="https://github.com/${{ github.repository }}" \
+            --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+
+  build-helm-charts:
+    name: Build & Package Helm Charts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '3.13.0'
+
+      - name: Package Helm charts
+        run: |
+          mkdir -p dist/charts
+          for chart in infra/helm/*/; do
+            if [[ -f "$chart/Chart.yaml" ]]; then
+              chart_name=$(basename "$chart")
+              echo "Packaging chart: $chart_name"
+              helm package "$chart" --destination dist/charts/
+            fi
+          done
+
+      - name: Generate Helm index
+        run: |
+          helm repo index dist/charts --url https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/
+
+      - name: Upload Helm charts
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-charts
+          path: dist/charts/
+
+  generate-release-notes:
+    name: Generate Release Notes
+    runs-on: ubuntu-latest
+    outputs:
+      release-notes: ${{ steps.notes.outputs.release-notes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          npx tsx scripts/release-notes.ts > release-notes.md
+          echo "release-notes<<EOF" >> $GITHUB_OUTPUT
+          cat release-notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+
+  create-release:
+    name: Create GitHub Release
+    needs: [detect-changes, build-and-sign, verify-signatures, build-helm-charts, generate-release-notes]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          
+          # Combine all SBOMs
+          find release-artifacts -name "sbom-*.json" -exec cp {} release-assets/ \;
+          find release-artifacts -name "provenance-*.json" -exec cp {} release-assets/ \;
+          
+          # Copy Helm charts
+          if [[ -d "release-artifacts/helm-charts" ]]; then
+            cp release-artifacts/helm-charts/* release-assets/ 2>/dev/null || true
+          fi
+          
+          # Create checksums
+          cd release-assets
+          sha256sum * > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ needs.generate-release-notes.outputs.release-notes }}
+          files: release-assets/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  security-scan:
+    name: Security Scan
+    needs: [detect-changes, build-and-sign]
+    if: needs.detect-changes.outputs.services != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.service }}.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
+          category: 'trivy-${{ matrix.service }}'
+
+      - name: Generate vulnerability report
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+          format: 'json'
+          output: 'vulnerability-report-${{ matrix.service }}.json'
+
+      - name: Upload vulnerability report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-${{ matrix.service }}
+          path: vulnerability-report-${{ matrix.service }}.json
+
+  notify-completion:
+    name: Notify Release Completion
+    needs: [create-release, security-scan]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Summary
+        run: |
+          echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Services Built:** ${{ needs.detect-changes.outputs.services }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Status:** ${{ needs.build-and-sign.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Verification Status:** ${{ needs.verify-signatures.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Security Scan Status:** ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Release Status:** ${{ needs.create-release.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔒 Security Features" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Container images signed with Cosign keyless" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ SBOM generated (SPDX & CycloneDX formats)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Provenance attestations attached" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Vulnerability scanning completed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Multi-architecture builds (amd64, arm64)" >> $GITHUB_STEP_SUMMARY

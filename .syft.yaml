@@ -1,0 +1,102 @@
+# Syft Configuration for SBOM Generation
+# Generates comprehensive Software Bill of Materials
+
+# Output configuration
+output:
+  - "spdx-json"
+  - "cyclonedx-json"
+  - "syft-json"
+
+# Source configuration
+source:
+  name: ""
+  version: ""
+  type: "directory"
+
+# Cataloger configuration
+catalogers:
+  enabled:
+    - "alpm-db-cataloger"
+    - "apkdb-cataloger" 
+    - "binary-cataloger"
+    - "cocoapods-cataloger"
+    - "conan-cataloger"
+    - "dart-pub-cataloger"
+    - "dotnet-deps-cataloger"
+    - "dpkg-db-cataloger"
+    - "go-module-binary-cataloger"
+    - "go-mod-file-cataloger"
+    - "graalvm-native-image-cataloger"
+    - "java-cataloger"
+    - "javascript-package-cataloger"
+    - "nix-store-cataloger"
+    - "php-composer-installed-cataloger"
+    - "php-composer-lock-cataloger"
+    - "portage-cataloger"
+    - "python-package-cataloger"
+    - "rpm-db-cataloger"
+    - "ruby-gemfile-cataloger"
+    - "ruby-gemspec-cataloger"
+    - "rust-cargo-lock-cataloger"
+
+# Package configuration
+package:
+  search-unindexed-archives: true
+  search-indexed-archives: true
+
+# File classification
+file:
+  metadata:
+    # Enable detailed file metadata
+    digests: ["sha1", "sha256"]
+    selection: "owned-by-package"
+  
+  # File content classification
+  content:
+    skip-files-above-size: "1MB"
+    
+# Exclusions
+exclude:
+  - "**/.git/**"
+  - "**/node_modules/**"
+  - "**/vendor/**"
+  - "**/.npm/**"
+  - "**/.cache/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/__pycache__/**"
+  - "**/*.pyc"
+  - "**/.pytest_cache/**"
+  - "**/coverage/**"
+  - "**/.coverage"
+  - "**/test-results/**"
+  - "**/.turbo/**"
+
+# Attestation configuration
+attest:
+  # Include build environment
+  build-info: true
+  
+  # Include source information
+  source:
+    uri: ""
+    digest: ""
+    
+  # Include materials
+  materials:
+    - "source"
+    - "dependencies"
+
+# Registry configuration for container scanning
+registry:
+  insecure-skip-tls-verify: false
+  insecure-use-http: false
+  auth: []
+
+# Logging
+log:
+  level: "warn"
+  file: ""
+
+# Check for application updates
+check-for-app-update: false

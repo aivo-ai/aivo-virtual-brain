@@ -1,0 +1,35 @@
+# Cosign Configuration for AIVO Virtual Brain
+# Used for keyless signing of container images
+
+# OIDC Configuration
+oidc-issuer: "https://token.actions.githubusercontent.com"
+oidc-client-id: "sigstore"
+
+# Fulcio Configuration  
+fulcio-url: "https://fulcio.sigstore.dev"
+rekor-url: "https://rekor.sigstore.dev"
+
+# Keyless signing settings
+experimental: true
+oidc-redirect-url: ""
+
+# Output format for verification
+output-file: ""
+output-format: "json"
+
+# Certificate settings
+certificate-identity-regexp: "^https://github.com/aivo-ai/aivo-virtual-brain"
+certificate-oidc-issuer: "https://token.actions.githubusercontent.com"
+
+# Registry settings
+allow-insecure-registry: false
+allow-http-registry: false
+
+# Timeout settings
+timeout: "3m"
+
+# Annotations for attestations
+annotations:
+  - "build.system=github-actions"
+  - "build.repo=aivo-ai/aivo-virtual-brain"
+  - "build.workflow=release"
