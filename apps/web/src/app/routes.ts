@@ -51,6 +51,12 @@ export const ROUTES = {
   COURSEWORK_CONFIRM: '/coursework/confirm',
   COURSEWORK_DETAIL: '/coursework/:id',
 
+  // IEP Management
+  IEP_EDITOR: '/iep/:learnerId/editor',
+  IEP_ASSISTANT: '/iep/:learnerId/assistant',
+  IEP_REVIEW: '/iep/:learnerId/review',
+  IEP_APPROVALS: '/iep/:learnerId/approvals',
+
   // Legacy/dev routes
   HEALTH: '/health',
   DEV_MOCKS: '/_dev/mocks',
@@ -102,6 +108,10 @@ export const TEACHER_ROUTES = [
   ROUTES.COURSEWORK_REVIEW,
   ROUTES.COURSEWORK_CONFIRM,
   ROUTES.COURSEWORK_DETAIL,
+  ROUTES.IEP_EDITOR,
+  ROUTES.IEP_ASSISTANT,
+  ROUTES.IEP_REVIEW,
+  ROUTES.IEP_APPROVALS,
 ] as const
 
 export const DISTRICT_ADMIN_ROUTES = [
@@ -185,4 +195,23 @@ export function buildDistrictRoute(section?: string): string {
 export function buildTeacherRoute(section?: string): string {
   if (!section) return ROUTES.TEACHER
   return `${ROUTES.TEACHER}/${section}`
+}
+
+// IEP route building helpers
+export function buildIEPRoute(
+  learnerId: string,
+  section: 'editor' | 'assistant' | 'review' | 'approvals'
+): string {
+  switch (section) {
+    case 'editor':
+      return ROUTES.IEP_EDITOR.replace(':learnerId', learnerId)
+    case 'assistant':
+      return ROUTES.IEP_ASSISTANT.replace(':learnerId', learnerId)
+    case 'review':
+      return ROUTES.IEP_REVIEW.replace(':learnerId', learnerId)
+    case 'approvals':
+      return ROUTES.IEP_APPROVALS.replace(':learnerId', learnerId)
+    default:
+      return ROUTES.IEP_EDITOR.replace(':learnerId', learnerId)
+  }
 }

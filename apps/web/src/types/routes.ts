@@ -55,6 +55,13 @@ export const ROUTES = {
   COURSEWORK_CONFIRM: '/coursework/confirm',
   COURSEWORK_DETAIL: '/coursework/:id',
 
+  // IEP Management
+  IEP: '/iep',
+  IEP_EDITOR: '/iep/:learnerId/editor',
+  IEP_ASSISTANT: '/iep/:learnerId/assistant',
+  IEP_REVIEW: '/iep/:learnerId/review',
+  IEP_APPROVALS: '/iep/:learnerId/approvals',
+
   // Legacy/dev routes
   HEALTH: '/health',
   DEV_MOCKS: '/_dev/mocks',

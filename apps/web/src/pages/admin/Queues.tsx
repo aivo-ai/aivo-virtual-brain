@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import {
   QueueListIcon,
   ClockIcon,
   CheckCircleIcon,
@@ -13,10 +13,15 @@ import {
   FunnelIcon,
   ShieldCheckIcon,
   CpuChipIcon,
-  DocumentArrowUpIcon
+  DocumentArrowUpIcon,
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../../app/providers/AuthProvider'
-import { adminClient, JobQueue, QueueStats, JobItem } from '../../api/adminClient'
+import {
+  adminClient,
+  JobQueue,
+  QueueStats,
+  JobItem,
+} from '../../api/adminClient'
 import { FadeInWhenVisible } from '../../components/ui/Animations'
 
 interface QueueFilter {
@@ -38,13 +43,13 @@ export const Queues: React.FC = () => {
   const [filters, setFilters] = useState<QueueFilter>({
     service: 'all',
     status: 'all',
-    priority: 'all'
+    priority: 'all',
   })
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   // Check if user has staff role for admin access
-  const hasStaffAccess = user?.roles?.includes('staff') || user?.roles?.includes('system_admin')
+  const hasStaffAccess = user?.role === 'staff' || user?.role === 'system_admin'
 
   useEffect(() => {
     if (hasStaffAccess) {
@@ -63,9 +68,9 @@ export const Queues: React.FC = () => {
       setLoading(true)
       const [queuesData, statsData] = await Promise.all([
         adminClient.getJobQueues(),
-        adminClient.getQueueStats()
+        adminClient.getQueueStats(),
       ])
-      
+
       setQueues(queuesData)
       setStats(statsData)
     } catch (err) {
@@ -95,10 +100,13 @@ export const Queues: React.FC = () => {
     }
   }
 
-  const handleJobAction = async (jobId: string, action: 'requeue' | 'cancel' | 'retry') => {
+  const handleJobAction = async (
+    jobId: string,
+    action: 'requeue' | 'cancel' | 'retry'
+  ) => {
     try {
       setActionLoading(jobId)
-      
+
       switch (action) {
         case 'requeue':
           await adminClient.requeueJob(jobId)
@@ -110,7 +118,7 @@ export const Queues: React.FC = () => {
           await adminClient.retryJob(jobId)
           break
       }
-      
+
       // Refresh the jobs list
       if (selectedQueue) {
         loadQueueJobs(selectedQueue)
@@ -128,7 +136,9 @@ export const Queues: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
           <ShieldCheckIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Access Denied
+          </h1>
           <p className="text-gray-600 mb-4">
             You need staff-level permissions to access the job queue management.
           </p>
@@ -154,7 +164,7 @@ export const Queues: React.FC = () => {
         <div className="text-center">
           <XCircleIcon className="h-8 w-8 text-red-600 mx-auto mb-4" />
           <p className="text-red-600">{error}</p>
-          <button 
+          <button
             onClick={refreshData}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
@@ -183,32 +193,46 @@ export const Queues: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'text-green-800 bg-green-100 border-green-200'
-      case 'failed': return 'text-red-800 bg-red-100 border-red-200'
-      case 'running': return 'text-blue-800 bg-blue-100 border-blue-200'
-      case 'cancelled': return 'text-gray-800 bg-gray-100 border-gray-200'
+      case 'completed':
+        return 'text-green-800 bg-green-100 border-green-200'
+      case 'failed':
+        return 'text-red-800 bg-red-100 border-red-200'
+      case 'running':
+        return 'text-blue-800 bg-blue-100 border-blue-200'
+      case 'cancelled':
+        return 'text-gray-800 bg-gray-100 border-gray-200'
       case 'pending':
-      default: return 'text-yellow-800 bg-yellow-100 border-yellow-200'
+      default:
+        return 'text-yellow-800 bg-yellow-100 border-yellow-200'
     }
   }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'text-red-800 bg-red-100 border-red-200'
-      case 'high': return 'text-orange-800 bg-orange-100 border-orange-200'
-      case 'medium': return 'text-blue-800 bg-blue-100 border-blue-200'
+      case 'urgent':
+        return 'text-red-800 bg-red-100 border-red-200'
+      case 'high':
+        return 'text-orange-800 bg-orange-100 border-orange-200'
+      case 'medium':
+        return 'text-blue-800 bg-blue-100 border-blue-200'
       case 'low':
-      default: return 'text-gray-800 bg-gray-100 border-gray-200'
+      default:
+        return 'text-gray-800 bg-gray-100 border-gray-200'
     }
   }
 
   const getServiceIcon = (service: string) => {
     switch (service) {
-      case 'orchestrator': return <CpuChipIcon className="h-5 w-5" />
-      case 'ingest': return <DocumentArrowUpIcon className="h-5 w-5" />
-      case 'trainer': return <CpuChipIcon className="h-5 w-5" />
-      case 'analytics': return <ClockIcon className="h-5 w-5" />
-      default: return <QueueListIcon className="h-5 w-5" />
+      case 'orchestrator':
+        return <CpuChipIcon className="h-5 w-5" />
+      case 'ingest':
+        return <DocumentArrowUpIcon className="h-5 w-5" />
+      case 'trainer':
+        return <CpuChipIcon className="h-5 w-5" />
+      case 'analytics':
+        return <ClockIcon className="h-5 w-5" />
+      default:
+        return <QueueListIcon className="h-5 w-5" />
     }
   }
 
@@ -246,8 +270,12 @@ export const Queues: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Job Queue Management</h1>
-              <p className="text-gray-600 mt-1">Monitor and manage system job queues</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Job Queue Management
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Monitor and manage system job queues
+              </p>
             </div>
             <div className="flex space-x-3">
               <button
@@ -276,8 +304,12 @@ export const Queues: React.FC = () => {
                 <div className="flex items-center">
                   <QueueListIcon className="h-8 w-8 text-blue-600" />
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">Total Jobs</p>
-                    <p className="text-lg font-semibold text-gray-900">{stats.total_jobs}</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Total Jobs
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {stats.total_jobs}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -287,7 +319,9 @@ export const Queues: React.FC = () => {
                   <ClockIcon className="h-8 w-8 text-yellow-600" />
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">Pending</p>
-                    <p className="text-lg font-semibold text-gray-900">{stats.pending_jobs}</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {stats.pending_jobs}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -297,7 +331,9 @@ export const Queues: React.FC = () => {
                   <PlayIcon className="h-8 w-8 text-blue-600" />
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">Running</p>
-                    <p className="text-lg font-semibold text-gray-900">{stats.running_jobs}</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {stats.running_jobs}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -307,7 +343,9 @@ export const Queues: React.FC = () => {
                   <XCircleIcon className="h-8 w-8 text-red-600" />
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">Failed</p>
-                    <p className="text-lg font-semibold text-gray-900">{stats.failed_jobs}</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {stats.failed_jobs}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -316,8 +354,12 @@ export const Queues: React.FC = () => {
                 <div className="flex items-center">
                   <CheckCircleIcon className="h-8 w-8 text-green-600" />
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">Success Rate</p>
-                    <p className="text-lg font-semibold text-gray-900">{stats.success_rate}%</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Success Rate
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {stats.success_rate}%
+                    </p>
                   </div>
                 </div>
               </div>
@@ -328,9 +370,11 @@ export const Queues: React.FC = () => {
         {/* Queue Selection */}
         <FadeInWhenVisible>
           <div className="mb-8 bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Service Queues</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Service Queues
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {queues.map((queue) => (
+              {queues.map(queue => (
                 <button
                   key={queue.name}
                   onClick={() => setSelectedQueue(queue.name)}
@@ -342,16 +386,22 @@ export const Queues: React.FC = () => {
                 >
                   <div className="flex items-center mb-2">
                     {getServiceIcon(queue.service)}
-                    <h3 className="ml-2 font-medium text-gray-900 capitalize">{queue.name}</h3>
+                    <h3 className="ml-2 font-medium text-gray-900 capitalize">
+                      {queue.name}
+                    </h3>
                   </div>
                   <div className="space-y-1 text-sm text-gray-600">
                     <p>Pending: {queue.pending_count}</p>
                     <p>Running: {queue.running_count}</p>
                     <p>Failed: {queue.failed_count}</p>
                   </div>
-                  <div className={`mt-2 inline-flex items-center px-2 py-1 rounded text-xs ${
-                    queue.status === 'healthy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
+                  <div
+                    className={`mt-2 inline-flex items-center px-2 py-1 rounded text-xs ${
+                      queue.status === 'healthy'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
                     {queue.status}
                   </div>
                 </button>
@@ -364,13 +414,22 @@ export const Queues: React.FC = () => {
         {showFilters && (
           <FadeInWhenVisible>
             <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Filter Jobs</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Filter Jobs
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Service</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Service
+                  </label>
                   <select
                     value={filters.service}
-                    onChange={(e) => setFilters(prev => ({ ...prev, service: e.target.value as any }))}
+                    onChange={e =>
+                      setFilters(prev => ({
+                        ...prev,
+                        service: e.target.value as any,
+                      }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
                     <option value="all">All Services</option>
@@ -382,10 +441,17 @@ export const Queues: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
                   <select
                     value={filters.status}
-                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as any }))}
+                    onChange={e =>
+                      setFilters(prev => ({
+                        ...prev,
+                        status: e.target.value as any,
+                      }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
                     <option value="all">All Statuses</option>
@@ -398,10 +464,17 @@ export const Queues: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Priority
+                  </label>
                   <select
                     value={filters.priority}
-                    onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value as any }))}
+                    onChange={e =>
+                      setFilters(prev => ({
+                        ...prev,
+                        priority: e.target.value as any,
+                      }))
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
                     <option value="all">All Priorities</option>
@@ -425,7 +498,7 @@ export const Queues: React.FC = () => {
                   {selectedQueue} Queue Jobs ({queueJobs.length})
                 </h2>
               </div>
-              
+
               <div className="overflow-hidden">
                 {jobsLoading ? (
                   <div className="text-center py-12">
@@ -435,7 +508,9 @@ export const Queues: React.FC = () => {
                 ) : queueJobs.length === 0 ? (
                   <div className="text-center py-12">
                     <QueueListIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No jobs found in this queue.</p>
+                    <p className="text-gray-500">
+                      No jobs found in this queue.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-0">
@@ -454,30 +529,42 @@ export const Queues: React.FC = () => {
                                 <h3 className="text-lg font-medium text-gray-900">
                                   {job.name || job.type}
                                 </h3>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(job.status)}`}>
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(job.status)}`}
+                                >
                                   {getStatusIcon(job.status)}
-                                  <span className="ml-1 capitalize">{job.status}</span>
+                                  <span className="ml-1 capitalize">
+                                    {job.status}
+                                  </span>
                                 </span>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(job.priority)}`}>
-                                  <span className="capitalize">{job.priority}</span>
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(job.priority)}`}
+                                >
+                                  <span className="capitalize">
+                                    {job.priority}
+                                  </span>
                                 </span>
                               </div>
-                              
+
                               <div className="flex flex-wrap items-center space-x-6 text-sm text-gray-500 mb-2">
                                 <span>
-                                  <strong>ID:</strong> {job.id.substring(0, 8)}...
+                                  <strong>ID:</strong> {job.id.substring(0, 8)}
+                                  ...
                                 </span>
                                 <span>
-                                  <strong>Created:</strong> {formatTimeAgo(job.created_at)}
+                                  <strong>Created:</strong>{' '}
+                                  {formatTimeAgo(job.created_at)}
                                 </span>
                                 {job.started_at && (
                                   <span>
-                                    <strong>Started:</strong> {formatTimeAgo(job.started_at)}
+                                    <strong>Started:</strong>{' '}
+                                    {formatTimeAgo(job.started_at)}
                                   </span>
                                 )}
                                 {job.duration && (
                                   <span>
-                                    <strong>Duration:</strong> {formatDuration(job.duration)}
+                                    <strong>Duration:</strong>{' '}
+                                    {formatDuration(job.duration)}
                                   </span>
                                 )}
                                 {job.retry_count > 0 && (
@@ -486,33 +573,36 @@ export const Queues: React.FC = () => {
                                   </span>
                                 )}
                               </div>
-                              
+
                               {job.error_message && (
                                 <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
                                   <strong>Error:</strong> {job.error_message}
                                 </div>
                               )}
-                              
-                              {job.progress !== undefined && job.progress > 0 && (
-                                <div className="mt-2">
-                                  <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-                                    <span>Progress</span>
-                                    <span>{job.progress}%</span>
+
+                              {job.progress !== undefined &&
+                                job.progress > 0 && (
+                                  <div className="mt-2">
+                                    <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                                      <span>Progress</span>
+                                      <span>{job.progress}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                      <div
+                                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                        style={{ width: `${job.progress}%` }}
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                      style={{ width: `${job.progress}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
+                                )}
                             </div>
-                            
+
                             <div className="flex-shrink-0 ml-6 space-x-2">
                               {job.status === 'failed' && (
                                 <button
-                                  onClick={() => handleJobAction(job.id, 'retry')}
+                                  onClick={() =>
+                                    handleJobAction(job.id, 'retry')
+                                  }
                                   disabled={actionLoading === job.id}
                                   className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 disabled:opacity-50"
                                 >
@@ -524,10 +614,13 @@ export const Queues: React.FC = () => {
                                   Retry
                                 </button>
                               )}
-                              
-                              {(job.status === 'pending' || job.status === 'failed') && (
+
+                              {(job.status === 'pending' ||
+                                job.status === 'failed') && (
                                 <button
-                                  onClick={() => handleJobAction(job.id, 'requeue')}
+                                  onClick={() =>
+                                    handleJobAction(job.id, 'requeue')
+                                  }
                                   disabled={actionLoading === job.id}
                                   className="flex items-center px-3 py-2 bg-green-100 text-green-700 rounded-md text-sm hover:bg-green-200 disabled:opacity-50"
                                 >
@@ -539,10 +632,13 @@ export const Queues: React.FC = () => {
                                   Requeue
                                 </button>
                               )}
-                              
-                              {(job.status === 'running' || job.status === 'pending') && (
+
+                              {(job.status === 'running' ||
+                                job.status === 'pending') && (
                                 <button
-                                  onClick={() => handleJobAction(job.id, 'cancel')}
+                                  onClick={() =>
+                                    handleJobAction(job.id, 'cancel')
+                                  }
                                   disabled={actionLoading === job.id}
                                   className="flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 disabled:opacity-50"
                                 >
@@ -554,7 +650,7 @@ export const Queues: React.FC = () => {
                                   Cancel
                                 </button>
                               )}
-                              
+
                               <button
                                 onClick={() => setSelectedJob(job)}
                                 className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200"
@@ -579,7 +675,9 @@ export const Queues: React.FC = () => {
             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900">Job Details</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Job Details
+                  </h2>
                   <button
                     onClick={() => setSelectedJob(null)}
                     className="text-gray-400 hover:text-gray-600"
@@ -588,34 +686,67 @@ export const Queues: React.FC = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="px-6 py-4 space-y-4">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Job Information</h3>
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    Job Information
+                  </h3>
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <p><strong>ID:</strong> {selectedJob.id}</p>
-                    <p><strong>Name:</strong> {selectedJob.name || selectedJob.type}</p>
-                    <p><strong>Type:</strong> {selectedJob.type}</p>
-                    <p><strong>Status:</strong> <span className="capitalize">{selectedJob.status}</span></p>
-                    <p><strong>Priority:</strong> <span className="capitalize">{selectedJob.priority}</span></p>
-                    <p><strong>Queue:</strong> {selectedJob.queue}</p>
-                    <p><strong>Created:</strong> {new Date(selectedJob.created_at).toLocaleString()}</p>
+                    <p>
+                      <strong>ID:</strong> {selectedJob.id}
+                    </p>
+                    <p>
+                      <strong>Name:</strong>{' '}
+                      {selectedJob.name || selectedJob.type}
+                    </p>
+                    <p>
+                      <strong>Type:</strong> {selectedJob.type}
+                    </p>
+                    <p>
+                      <strong>Status:</strong>{' '}
+                      <span className="capitalize">{selectedJob.status}</span>
+                    </p>
+                    <p>
+                      <strong>Priority:</strong>{' '}
+                      <span className="capitalize">{selectedJob.priority}</span>
+                    </p>
+                    <p>
+                      <strong>Queue:</strong> {selectedJob.queue}
+                    </p>
+                    <p>
+                      <strong>Created:</strong>{' '}
+                      {new Date(selectedJob.created_at).toLocaleString()}
+                    </p>
                     {selectedJob.started_at && (
-                      <p><strong>Started:</strong> {new Date(selectedJob.started_at).toLocaleString()}</p>
+                      <p>
+                        <strong>Started:</strong>{' '}
+                        {new Date(selectedJob.started_at).toLocaleString()}
+                      </p>
                     )}
                     {selectedJob.completed_at && (
-                      <p><strong>Completed:</strong> {new Date(selectedJob.completed_at).toLocaleString()}</p>
+                      <p>
+                        <strong>Completed:</strong>{' '}
+                        {new Date(selectedJob.completed_at).toLocaleString()}
+                      </p>
                     )}
                     {selectedJob.duration && (
-                      <p><strong>Duration:</strong> {formatDuration(selectedJob.duration)}</p>
+                      <p>
+                        <strong>Duration:</strong>{' '}
+                        {formatDuration(selectedJob.duration)}
+                      </p>
                     )}
-                    <p><strong>Retry Count:</strong> {selectedJob.retry_count}</p>
+                    <p>
+                      <strong>Retry Count:</strong> {selectedJob.retry_count}
+                    </p>
                   </div>
                 </div>
-                
+
                 {selectedJob.payload && (
                   <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Job Payload</h3>
+                    <h3 className="font-medium text-gray-900 mb-2">
+                      Job Payload
+                    </h3>
                     <div className="bg-gray-50 rounded-lg p-4">
                       <pre className="text-sm text-gray-700 whitespace-pre-wrap overflow-x-auto">
                         {JSON.stringify(selectedJob.payload, null, 2)}
@@ -623,10 +754,12 @@ export const Queues: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedJob.result && (
                   <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Job Result</h3>
+                    <h3 className="font-medium text-gray-900 mb-2">
+                      Job Result
+                    </h3>
                     <div className="bg-gray-50 rounded-lg p-4">
                       <pre className="text-sm text-gray-700 whitespace-pre-wrap overflow-x-auto">
                         {JSON.stringify(selectedJob.result, null, 2)}
@@ -634,12 +767,16 @@ export const Queues: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedJob.error_message && (
                   <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Error Details</h3>
+                    <h3 className="font-medium text-gray-900 mb-2">
+                      Error Details
+                    </h3>
                     <div className="bg-red-50 rounded-lg p-4">
-                      <p className="text-red-700">{selectedJob.error_message}</p>
+                      <p className="text-red-700">
+                        {selectedJob.error_message}
+                      </p>
                       {selectedJob.error_stack && (
                         <pre className="text-sm text-red-600 mt-2 whitespace-pre-wrap overflow-x-auto">
                           {selectedJob.error_stack}
@@ -658,11 +795,14 @@ export const Queues: React.FC = () => {
           <div className="flex">
             <ExclamationTriangleIcon className="h-5 w-5 text-orange-600 flex-shrink-0" />
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-orange-800">Queue Management Notice</h3>
+              <h3 className="text-sm font-medium text-orange-800">
+                Queue Management Notice
+              </h3>
               <p className="text-sm text-orange-700 mt-1">
-                Job queue actions (requeue, cancel, retry) are incident tools for support purposes. 
-                All actions are logged and audited. Use only when necessary for system operations.
-                Do not directly modify data - only manage job execution state.
+                Job queue actions (requeue, cancel, retry) are incident tools
+                for support purposes. All actions are logged and audited. Use
+                only when necessary for system operations. Do not directly
+                modify data - only manage job execution state.
               </p>
             </div>
           </div>

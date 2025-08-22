@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { ScaleOnHover } from './Animations'
 
 interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link'
   size?: 'sm' | 'md' | 'lg' | 'xl'
   children: React.ReactNode
   loading?: boolean
@@ -40,6 +40,7 @@ export const Button: React.FC<ButtonProps> = ({
     outline:
       'border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white focus:ring-blue-500',
     ghost: 'text-blue-600 hover:bg-blue-50 focus:ring-blue-500',
+    link: 'text-blue-600 hover:text-blue-800 hover:underline p-0 h-auto',
   }
 
   const sizeClasses = {

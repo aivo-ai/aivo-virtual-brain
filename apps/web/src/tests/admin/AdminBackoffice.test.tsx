@@ -28,8 +28,8 @@ vi.mock('../../api/adminClient', () => ({
     getQueueJobs: vi.fn(),
     requeueJob: vi.fn(),
     cancelJob: vi.fn(),
-    retryJob: vi.fn()
-  }
+    retryJob: vi.fn(),
+  },
 }))
 
 // Mock the admin access hook
@@ -38,13 +38,21 @@ vi.mock('../../hooks/useAdminAccess')
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }) => <div {...props}>{children}</div>
-  }
+    div: ({
+      children,
+      ...props
+    }: {
+      children: React.ReactNode
+      [key: string]: any
+    }) => <div {...props}>{children}</div>,
+  },
 }))
 
 // Mock animations
 vi.mock('../../components/ui/Animations', () => ({
-  FadeInWhenVisible: ({ children }) => <div>{children}</div>
+  FadeInWhenVisible: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }))
 
 // Test helpers
@@ -53,7 +61,7 @@ const mockUser = (roles: string[]) => ({
   email: 'admin@test.com',
   name: 'Test Admin',
   roles,
-  token: 'mock-jwt-token'
+  token: 'mock-jwt-token',
 })
 
 const mockStaffUser = () => mockUser(['staff'])
@@ -73,16 +81,19 @@ const mockAdminSession = (permissions = {}) => ({
     canViewAudit: true,
     canToggleFlags: true,
     canExportData: true,
-    ...permissions
+    ...permissions,
   },
   auditContext: {
     ipAddress: '127.0.0.1',
     userAgent: 'test-browser',
-    location: 'test-location'
-  }
+    location: 'test-location',
+  },
 })
 
-const renderWithAuth = (component: React.ReactElement, user = mockStaffUser()) => {
+const renderWithAuth = (
+  component: React.ReactElement,
+  user = mockStaffUser()
+) => {
   const AuthWrapper = ({ children }: { children: React.ReactNode }) => (
     <AuthProvider>{children}</AuthProvider>
   )
@@ -90,7 +101,7 @@ const renderWithAuth = (component: React.ReactElement, user = mockStaffUser()) =
   // Mock useAuth hook
   vi.doMock('../../app/providers/AuthProvider', () => ({
     useAuth: () => ({ user, isAuthenticated: !!user }),
-    AuthProvider: AuthWrapper
+    AuthProvider: AuthWrapper,
   }))
 
   return render(component, { wrapper: AuthWrapper })
@@ -116,11 +127,11 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => false,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       renderWithAuth(<Dashboard />, mockRegularUser())
-      
+
       expect(screen.getByText('Access Denied')).toBeInTheDocument()
       expect(screen.getByText(/staff-level permissions/)).toBeInTheDocument()
     })
@@ -135,7 +146,7 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       // Mock API responses
@@ -143,29 +154,31 @@ describe('Admin RBAC and Access Control', () => {
         active_users: 100,
         pending_jobs: 5,
         pending_approvals: 3,
-        system_health: 'healthy'
+        system_health: 'healthy',
       })
 
       vi.mocked(adminClient.getSystemHealth).mockResolvedValue({
         overall_status: 'healthy',
         services: [],
-        last_updated: new Date().toISOString()
+        last_updated: new Date().toISOString(),
       })
 
       vi.mocked(adminClient.getAuditSummary).mockResolvedValue({
         login_events_24h: 50,
         data_access_events_24h: 25,
         admin_actions_24h: 10,
-        security_events_24h: 2
+        security_events_24h: 2,
       })
 
       vi.mocked(adminClient.getSystemAlerts).mockResolvedValue([])
 
       renderWithAuth(<Dashboard />, mockStaffUser())
-      
+
       await waitFor(() => {
         expect(screen.getByText('Admin Backoffice')).toBeInTheDocument()
-        expect(screen.getByText('Internal support tools and system monitoring')).toBeInTheDocument()
+        expect(
+          screen.getByText('Internal support tools and system monitoring')
+        ).toBeInTheDocument()
       })
     })
 
@@ -178,11 +191,11 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => false,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       renderWithAuth(<Dashboard />, mockStaffUser())
-      
+
       expect(screen.getByText('Loading admin dashboard...')).toBeInTheDocument()
     })
 
@@ -195,16 +208,20 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       // Mock API failure
-      vi.mocked(adminClient.getSystemStats).mockRejectedValue(new Error('API Error'))
+      vi.mocked(adminClient.getSystemStats).mockRejectedValue(
+        new Error('API Error')
+      )
 
       renderWithAuth(<Dashboard />, mockStaffUser())
-      
+
       await waitFor(() => {
-        expect(screen.getByText('Failed to load admin dashboard data')).toBeInTheDocument()
+        expect(
+          screen.getByText('Failed to load admin dashboard data')
+        ).toBeInTheDocument()
       })
     })
   })
@@ -219,7 +236,7 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
     })
 
@@ -234,8 +251,8 @@ describe('Admin RBAC and Access Control', () => {
           priority: 'high',
           requested_by: 'teacher@school.edu',
           requested_by_role: 'teacher',
-          created_at: new Date().toISOString()
-        }
+          created_at: new Date().toISOString(),
+        },
       ])
 
       vi.mocked(adminClient.getApprovalStats).mockResolvedValue({
@@ -244,15 +261,17 @@ describe('Admin RBAC and Access Control', () => {
         approved_count: 70,
         denied_count: 10,
         expired_count: 5,
-        avg_response_time: 24
+        avg_response_time: 24,
       })
 
       renderWithAuth(<Approvals />, mockStaffUser())
-      
+
       await waitFor(() => {
         expect(screen.getByText('Approval Queue Monitor')).toBeInTheDocument()
         expect(screen.getByText('IEP Modification Request')).toBeInTheDocument()
-        expect(screen.getByText('Read-only monitoring of approval requests')).toBeInTheDocument()
+        expect(
+          screen.getByText('Read-only monitoring of approval requests')
+        ).toBeInTheDocument()
       })
     })
 
@@ -267,7 +286,7 @@ describe('Admin RBAC and Access Control', () => {
           priority: 'high' as const,
           requested_by: 'teacher1',
           requested_by_role: 'teacher',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         },
         {
           id: 'approval-2',
@@ -278,8 +297,8 @@ describe('Admin RBAC and Access Control', () => {
           priority: 'medium' as const,
           requested_by: 'teacher2',
           requested_by_role: 'teacher',
-          created_at: new Date().toISOString()
-        }
+          created_at: new Date().toISOString(),
+        },
       ]
 
       vi.mocked(adminClient.getApprovalQueue).mockResolvedValue(approvals)
@@ -289,11 +308,11 @@ describe('Admin RBAC and Access Control', () => {
         approved_count: 1,
         denied_count: 0,
         expired_count: 0,
-        avg_response_time: 12
+        avg_response_time: 12,
       })
 
       renderWithAuth(<Approvals />, mockStaffUser())
-      
+
       await waitFor(() => {
         expect(screen.getByText('IEP Change')).toBeInTheDocument()
         // Should show pending by default, so approved shouldn't be visible
@@ -312,7 +331,7 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
     })
 
@@ -326,8 +345,8 @@ describe('Admin RBAC and Access Control', () => {
           running_count: 2,
           failed_count: 1,
           completed_count: 100,
-          last_updated: new Date().toISOString()
-        }
+          last_updated: new Date().toISOString(),
+        },
       ])
 
       vi.mocked(adminClient.getQueueStats).mockResolvedValue({
@@ -336,13 +355,13 @@ describe('Admin RBAC and Access Control', () => {
         running_jobs: 2,
         failed_jobs: 1,
         completed_jobs: 100,
-        success_rate: 99.1
+        success_rate: 99.1,
       })
 
       vi.mocked(adminClient.getQueueJobs).mockResolvedValue([])
 
       renderWithAuth(<Queues />, mockStaffUser())
-      
+
       await waitFor(() => {
         expect(screen.getByText('Job Queue Management')).toBeInTheDocument()
         expect(screen.getByText(/orchestrator/i)).toBeInTheDocument()
@@ -351,7 +370,7 @@ describe('Admin RBAC and Access Control', () => {
 
     it('should handle job actions with audit logging', async () => {
       const mockLogJobAction = vi.fn()
-      
+
       vi.mocked(useAdminAccess).mockReturnValue({
         hasStaffAccess: true,
         session: mockAdminSession(),
@@ -360,7 +379,7 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: mockLogJobAction
+        logJobAction: mockLogJobAction,
       })
 
       vi.mocked(adminClient.getJobQueues).mockResolvedValue([
@@ -372,8 +391,8 @@ describe('Admin RBAC and Access Control', () => {
           running_count: 0,
           failed_count: 1,
           completed_count: 0,
-          last_updated: new Date().toISOString()
-        }
+          last_updated: new Date().toISOString(),
+        },
       ])
 
       vi.mocked(adminClient.getQueueStats).mockResolvedValue({
@@ -382,7 +401,7 @@ describe('Admin RBAC and Access Control', () => {
         running_jobs: 0,
         failed_jobs: 1,
         completed_jobs: 0,
-        success_rate: 0
+        success_rate: 0,
       })
 
       vi.mocked(adminClient.getQueueJobs).mockResolvedValue([
@@ -395,14 +414,16 @@ describe('Admin RBAC and Access Control', () => {
           queue: 'orchestrator',
           created_at: new Date().toISOString(),
           retry_count: 0,
-          error_message: 'Connection timeout'
-        }
+          error_message: 'Connection timeout',
+        },
       ])
 
-      vi.mocked(adminClient.retryJob).mockResolvedValue({ message: 'Job requeued successfully' })
+      vi.mocked(adminClient.retryJob).mockResolvedValue({
+        message: 'Job requeued successfully',
+      })
 
       renderWithAuth(<Queues />, mockStaffUser())
-      
+
       await waitFor(() => {
         expect(screen.getByText('Failed Job')).toBeInTheDocument()
       })
@@ -421,20 +442,23 @@ describe('Admin RBAC and Access Control', () => {
       vi.mocked(useAdminAccess).mockReturnValue({
         hasStaffAccess: true,
         session: mockAdminSession({
-          canManageJobs: false // Staff can view but not manage
+          canManageJobs: false, // Staff can view but not manage
         }),
         loading: false,
         error: null,
-        hasPermission: (permission) => {
+        hasPermission: (permission: string) => {
           const limitedPermissions = {
             canViewQueues: true,
-            canManageJobs: false
+            canManageJobs: false,
           }
-          return limitedPermissions[permission] || false
+          return (
+            limitedPermissions[permission as keyof typeof limitedPermissions] ||
+            false
+          )
         },
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       vi.mocked(adminClient.getJobQueues).mockResolvedValue([])
@@ -444,11 +468,11 @@ describe('Admin RBAC and Access Control', () => {
         running_jobs: 0,
         failed_jobs: 0,
         completed_jobs: 0,
-        success_rate: 100
+        success_rate: 100,
       })
 
       renderWithAuth(<Queues />, mockStaffUser())
-      
+
       await waitFor(() => {
         expect(screen.getByText('Job Queue Management')).toBeInTheDocument()
         // Should be able to view but management actions should be limited
@@ -459,7 +483,7 @@ describe('Admin RBAC and Access Control', () => {
   describe('Audit Logging', () => {
     it('should log admin session start', async () => {
       const mockLogAdminAction = vi.fn()
-      
+
       vi.mocked(useAdminAccess).mockReturnValue({
         hasStaffAccess: true,
         session: mockAdminSession(),
@@ -468,7 +492,7 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: mockLogAdminAction,
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       // Mock API responses to prevent errors
@@ -476,23 +500,23 @@ describe('Admin RBAC and Access Control', () => {
         active_users: 0,
         pending_jobs: 0,
         pending_approvals: 0,
-        system_health: 'healthy'
+        system_health: 'healthy',
       })
       vi.mocked(adminClient.getSystemHealth).mockResolvedValue({
         overall_status: 'healthy',
         services: [],
-        last_updated: new Date().toISOString()
+        last_updated: new Date().toISOString(),
       })
       vi.mocked(adminClient.getAuditSummary).mockResolvedValue({
         login_events_24h: 0,
         data_access_events_24h: 0,
         admin_actions_24h: 0,
-        security_events_24h: 0
+        security_events_24h: 0,
       })
       vi.mocked(adminClient.getSystemAlerts).mockResolvedValue([])
 
       renderWithAuth(<Dashboard />, mockStaffUser())
-      
+
       // Verify admin action was logged (would be called during session initialization)
       await waitFor(() => {
         expect(screen.getByText('Admin Backoffice')).toBeInTheDocument()
@@ -510,7 +534,7 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       // Mock API responses
@@ -518,23 +542,23 @@ describe('Admin RBAC and Access Control', () => {
         active_users: 0,
         pending_jobs: 0,
         pending_approvals: 0,
-        system_health: 'healthy'
+        system_health: 'healthy',
       })
       vi.mocked(adminClient.getSystemHealth).mockResolvedValue({
         overall_status: 'healthy',
         services: [],
-        last_updated: new Date().toISOString()
+        last_updated: new Date().toISOString(),
       })
       vi.mocked(adminClient.getAuditSummary).mockResolvedValue({
         login_events_24h: 0,
         data_access_events_24h: 0,
         admin_actions_24h: 0,
-        security_events_24h: 0
+        security_events_24h: 0,
       })
       vi.mocked(adminClient.getSystemAlerts).mockResolvedValue([])
 
       renderWithAuth(<Dashboard />, mockStaffUser())
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Consent Required/)).toBeInTheDocument()
         expect(screen.getByText(/internal support tool/i)).toBeInTheDocument()
@@ -551,7 +575,7 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       vi.mocked(adminClient.getApprovalQueue).mockResolvedValue([])
@@ -561,14 +585,16 @@ describe('Admin RBAC and Access Control', () => {
         approved_count: 0,
         denied_count: 0,
         expired_count: 0,
-        avg_response_time: 0
+        avg_response_time: 0,
       })
 
       renderWithAuth(<Approvals />, mockStaffUser())
-      
+
       await waitFor(() => {
         expect(screen.getByText(/read-only monitoring/i)).toBeInTheDocument()
-        expect(screen.getByText(/staff cannot make approval decisions/i)).toBeInTheDocument()
+        expect(
+          screen.getByText(/staff cannot make approval decisions/i)
+        ).toBeInTheDocument()
       })
     })
 
@@ -581,7 +607,7 @@ describe('Admin RBAC and Access Control', () => {
         hasPermission: () => true,
         logAdminAction: vi.fn(),
         logDataAccess: vi.fn(),
-        logJobAction: vi.fn()
+        logJobAction: vi.fn(),
       })
 
       vi.mocked(adminClient.getJobQueues).mockResolvedValue([])
@@ -591,14 +617,18 @@ describe('Admin RBAC and Access Control', () => {
         running_jobs: 0,
         failed_jobs: 0,
         completed_jobs: 0,
-        success_rate: 100
+        success_rate: 100,
       })
 
       renderWithAuth(<Queues />, mockStaffUser())
-      
+
       await waitFor(() => {
-        expect(screen.getByText(/incident tools for support purposes/i)).toBeInTheDocument()
-        expect(screen.getByText(/do not directly modify data/i)).toBeInTheDocument()
+        expect(
+          screen.getByText(/incident tools for support purposes/i)
+        ).toBeInTheDocument()
+        expect(
+          screen.getByText(/do not directly modify data/i)
+        ).toBeInTheDocument()
       })
     })
   })

@@ -53,7 +53,11 @@ export interface ApprovalQueueItem {
   id: string
   title: string
   description: string
-  type: 'iep_change' | 'level_change' | 'parent_concern' | 'accommodation_request'
+  type:
+    | 'iep_change'
+    | 'level_change'
+    | 'parent_concern'
+    | 'accommodation_request'
   status: 'pending' | 'approved' | 'denied' | 'expired'
   priority: 'low' | 'medium' | 'high' | 'urgent'
   requested_by: string
@@ -162,19 +166,27 @@ class AdminAPIClient {
   private token: string | null = null
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:8000/admin'
+    this.baseUrl =
+      import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:8000/admin'
   }
 
   setAuthToken(token: string) {
     this.token = token
   }
 
-  private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async makeRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
-    
-    const headers: HeadersInit = {
+
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+    }
+
+    // Add any additional headers from options
+    if (options.headers) {
+      Object.assign(headers, options.headers)
     }
 
     if (this.token) {
@@ -238,53 +250,66 @@ class AdminAPIClient {
     const params = new URLSearchParams({
       service: filters.service,
       status: filters.status,
-      priority: filters.priority
+      priority: filters.priority,
     })
     return this.makeRequest<JobItem[]>(`/queues/${queueName}/jobs?${params}`)
   }
 
   async requeueJob(jobId: string): Promise<{ message: string }> {
     return this.makeRequest<{ message: string }>(`/jobs/${jobId}/requeue`, {
-      method: 'POST'
+      method: 'POST',
     })
   }
 
   async cancelJob(jobId: string): Promise<{ message: string }> {
     return this.makeRequest<{ message: string }>(`/jobs/${jobId}/cancel`, {
-      method: 'POST'
+      method: 'POST',
     })
   }
 
   async retryJob(jobId: string): Promise<{ message: string }> {
     return this.makeRequest<{ message: string }>(`/jobs/${jobId}/retry`, {
-      method: 'POST'
+      method: 'POST',
     })
   }
 
   // Learner State Inspection (requires consent)
-  async requestSupportSession(learnerId: string, purpose: string): Promise<{ consent_url: string }> {
-    return this.makeRequest<{ consent_url: string }>('/support-session/request', {
-      method: 'POST',
-      body: JSON.stringify({ learner_id: learnerId, purpose })
-    })
+  async requestSupportSession(
+    learnerId: string,
+    purpose: string
+  ): Promise<{ consent_url: string }> {
+    return this.makeRequest<{ consent_url: string }>(
+      '/support-session/request',
+      {
+        method: 'POST',
+        body: JSON.stringify({ learner_id: learnerId, purpose }),
+      }
+    )
   }
 
-  async getLearnerState(learnerId: string, consentToken: string): Promise<LearnerState> {
+  async getLearnerState(
+    learnerId: string,
+    consentToken: string
+  ): Promise<LearnerState> {
     return this.makeRequest<LearnerState>(`/learners/${learnerId}/state`, {
       headers: {
-        'X-Consent-Token': consentToken
-      }
+        'X-Consent-Token': consentToken,
+      },
     })
   }
 
-  async createSupportSession(learnerId: string, purpose: string, consentToken: string): Promise<SupportSession> {
+  async createSupportSession(
+    learnerId: string,
+    purpose: string,
+    consentToken: string
+  ): Promise<SupportSession> {
     return this.makeRequest<SupportSession>('/support-session', {
       method: 'POST',
       body: JSON.stringify({
         learner_id: learnerId,
         purpose,
-        consent_token: consentToken
-      })
+        consent_token: consentToken,
+      }),
     })
   }
 
@@ -308,8 +333,8 @@ class AdminAPIClient {
     const params = new URLSearchParams(filters)
     const response = await fetch(`${this.baseUrl}/audit/export?${params}`, {
       headers: {
-        'Authorization': `Bearer ${this.token}`
-      }
+        Authorization: `Bearer ${this.token}`,
+      },
     })
     return response.blob()
   }
@@ -319,10 +344,13 @@ class AdminAPIClient {
     return this.makeRequest<{ [key: string]: boolean }>('/flags')
   }
 
-  async toggleSystemFlag(flagName: string, enabled: boolean): Promise<{ message: string }> {
+  async toggleSystemFlag(
+    flagName: string,
+    enabled: boolean
+  ): Promise<{ message: string }> {
     return this.makeRequest<{ message: string }>(`/flags/${flagName}`, {
       method: 'PUT',
-      body: JSON.stringify({ enabled })
+      body: JSON.stringify({ enabled }),
     })
   }
 
@@ -333,7 +361,7 @@ class AdminAPIClient {
       active_users: 342,
       pending_jobs: 18,
       pending_approvals: 7,
-      system_health: 'healthy'
+      system_health: 'healthy',
     }
   }
 
@@ -343,11 +371,35 @@ class AdminAPIClient {
       overall_status: 'healthy',
       last_updated: new Date().toISOString(),
       services: [
-        { name: 'auth-svc', status: 'healthy', response_time: 45, uptime: 99.9, version: '1.2.3' },
-        { name: 'orchestrator-svc', status: 'healthy', response_time: 67, uptime: 99.8, version: '2.1.0' },
-        { name: 'search-svc', status: 'degraded', response_time: 150, uptime: 98.5, version: '1.4.2' },
-        { name: 'approval-svc', status: 'healthy', response_time: 23, uptime: 99.9, version: '1.1.0' }
-      ]
+        {
+          name: 'auth-svc',
+          status: 'healthy',
+          response_time: 45,
+          uptime: 99.9,
+          version: '1.2.3',
+        },
+        {
+          name: 'orchestrator-svc',
+          status: 'healthy',
+          response_time: 67,
+          uptime: 99.8,
+          version: '2.1.0',
+        },
+        {
+          name: 'search-svc',
+          status: 'degraded',
+          response_time: 150,
+          uptime: 98.5,
+          version: '1.4.2',
+        },
+        {
+          name: 'approval-svc',
+          status: 'healthy',
+          response_time: 23,
+          uptime: 99.9,
+          version: '1.1.0',
+        },
+      ],
     }
   }
 
@@ -357,7 +409,7 @@ class AdminAPIClient {
       login_events_24h: 156,
       data_access_events_24h: 89,
       admin_actions_24h: 12,
-      security_events_24h: 3
+      security_events_24h: 3,
     }
   }
 
@@ -370,16 +422,17 @@ class AdminAPIClient {
         description: 'Search service memory usage is at 85%',
         timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
         resolved: false,
-        service: 'search-svc'
+        service: 'search-svc',
       },
       {
         id: '2',
         type: 'info',
         title: 'Scheduled Maintenance',
-        description: 'Database maintenance window scheduled for tonight 2:00 AM',
+        description:
+          'Database maintenance window scheduled for tonight 2:00 AM',
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        resolved: false
-      }
+        resolved: false,
+      },
     ]
   }
 
@@ -390,7 +443,7 @@ class AdminAPIClient {
         stats: await this.mockSystemStats(),
         health: await this.mockSystemHealth(),
         auditSummary: await this.mockAuditSummary(),
-        alerts: await this.mockSystemAlerts()
+        alerts: await this.mockSystemAlerts(),
       }
     }
     return null

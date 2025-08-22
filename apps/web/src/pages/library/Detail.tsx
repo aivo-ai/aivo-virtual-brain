@@ -53,7 +53,7 @@ const Detail: React.FC = () => {
       let assetData: AssetDetail
 
       if (source === 'lessons') {
-        const lesson = await lessonRegistryClient.getLessonById(id)
+        const lesson = await lessonRegistryClient.getLesson(id)
         assetData = {
           id: lesson.id,
           title: lesson.title,
@@ -76,7 +76,7 @@ const Detail: React.FC = () => {
           },
         }
       } else {
-        const courseworkAsset = await courseworkClient.getAssetById(id)
+        const courseworkAsset = await courseworkClient.getAsset(id)
         assetData = {
           id: courseworkAsset.id,
           title: courseworkAsset.title,

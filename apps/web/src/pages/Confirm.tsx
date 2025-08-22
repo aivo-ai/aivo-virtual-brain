@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
@@ -155,7 +155,7 @@ export default function Confirm() {
         },
       }
 
-      const uploadedAsset = await courseworkClient.uploadCoursework(
+      const uploadedAsset = await courseworkClient.uploadAsset(
         uploadRequest,
         state.file
       )

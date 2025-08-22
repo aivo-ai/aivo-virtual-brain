@@ -88,7 +88,7 @@ const LibraryIndex: React.FC = () => {
           if (filters.source === 'all' || filters.source === 'lessons') {
             promises.push(
               lessonRegistryClient.searchLessons({
-                subjects: filters.subject ? [filters.subject] : undefined,
+                subject: filters.subject,
                 topics: filters.topic ? [filters.topic] : undefined,
                 gradeBands: filters.gradeBand ? [filters.gradeBand] : undefined,
                 limit: ITEMS_PER_PAGE,

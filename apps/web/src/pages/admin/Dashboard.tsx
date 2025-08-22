@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  ChartBarIcon, 
+import {
+  ChartBarIcon,
   ExclamationTriangleIcon,
   UserGroupIcon,
   ClockIcon,
   DocumentTextIcon,
   ShieldCheckIcon,
   ArrowPathIcon,
-  EyeIcon
+  EyeIcon,
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../../app/providers/AuthProvider'
-import { adminClient, AdminStats, SystemHealth, AuditSummary } from '../../api/adminClient'
+import {
+  adminClient,
+  AdminStats,
+  SystemHealth,
+  AuditSummary,
+} from '../../api/adminClient'
 import { FadeInWhenVisible } from '../../components/ui/Animations'
 
 interface QuickAction {
@@ -42,7 +47,7 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
 
   // Check if user has staff role for admin access
-  const hasStaffAccess = user?.roles?.includes('staff') || user?.roles?.includes('system_admin')
+  const hasStaffAccess = user?.role === 'staff' || user?.role === 'system_admin'
 
   useEffect(() => {
     if (hasStaffAccess) {
@@ -57,9 +62,9 @@ export const Dashboard: React.FC = () => {
         adminClient.getSystemStats(),
         adminClient.getSystemHealth(),
         adminClient.getAuditSummary(),
-        adminClient.getSystemAlerts()
+        adminClient.getSystemAlerts(),
       ])
-      
+
       setStats(statsData)
       setHealth(healthData)
       setAuditSummary(auditData)
@@ -82,12 +87,15 @@ export const Dashboard: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
           <ShieldCheckIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Access Denied
+          </h1>
           <p className="text-gray-600 mb-4">
             You need staff-level permissions to access the admin backoffice.
           </p>
           <p className="text-sm text-gray-500">
-            Contact your system administrator if you believe you should have access.
+            Contact your system administrator if you believe you should have
+            access.
           </p>
         </div>
       </div>
@@ -111,7 +119,7 @@ export const Dashboard: React.FC = () => {
         <div className="text-center">
           <ExclamationTriangleIcon className="h-8 w-8 text-red-600 mx-auto mb-4" />
           <p className="text-red-600">{error}</p>
-          <button 
+          <button
             onClick={refreshData}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
@@ -128,14 +136,14 @@ export const Dashboard: React.FC = () => {
       description: 'Monitor pending approvals and review requests',
       icon: <DocumentTextIcon className="h-6 w-6" />,
       href: '/admin/approvals',
-      color: 'orange'
+      color: 'orange',
     },
     {
       title: 'Job Queues',
       description: 'View and manage system job queues',
       icon: <ClockIcon className="h-6 w-6" />,
       href: '/admin/queues',
-      color: 'blue'
+      color: 'blue',
     },
     {
       title: 'Learner Inspector',
@@ -143,48 +151,54 @@ export const Dashboard: React.FC = () => {
       icon: <EyeIcon className="h-6 w-6" />,
       href: '/admin/learners',
       color: 'green',
-      requiresConsent: true
+      requiresConsent: true,
     },
     {
       title: 'System Health',
       description: 'Monitor service health and performance metrics',
       icon: <ChartBarIcon className="h-6 w-6" />,
       href: '/admin/health',
-      color: 'purple'
+      color: 'purple',
     },
     {
       title: 'Audit Logs',
       description: 'View system audit trail and security events',
       icon: <ShieldCheckIcon className="h-6 w-6" />,
       href: '/admin/audit',
-      color: 'gray'
+      color: 'gray',
     },
     {
       title: 'User Management',
       description: 'View user accounts and access patterns',
       icon: <UserGroupIcon className="h-6 w-6" />,
       href: '/admin/users',
-      color: 'indigo'
-    }
+      color: 'indigo',
+    },
   ]
 
   const getColorClasses = (color: string) => {
     const colorMap = {
-      orange: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
+      orange:
+        'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
       blue: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
       green: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
-      purple: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
+      purple:
+        'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
       gray: 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100',
-      indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+      indigo:
+        'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100',
     }
-    return colorMap[color] || colorMap.gray
+    return colorMap[color as keyof typeof colorMap] || colorMap.gray
   }
 
   const getAlertColor = (type: string) => {
     switch (type) {
-      case 'error': return 'border-red-300 bg-red-50 text-red-800'
-      case 'warning': return 'border-yellow-300 bg-yellow-50 text-yellow-800'
-      default: return 'border-blue-300 bg-blue-50 text-blue-800'
+      case 'error':
+        return 'border-red-300 bg-red-50 text-red-800'
+      case 'warning':
+        return 'border-yellow-300 bg-yellow-50 text-yellow-800'
+      default:
+        return 'border-blue-300 bg-blue-50 text-blue-800'
     }
   }
 
@@ -195,8 +209,12 @@ export const Dashboard: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Backoffice</h1>
-              <p className="text-gray-600 mt-1">Internal support tools and system monitoring</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Admin Backoffice
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Internal support tools and system monitoring
+              </p>
             </div>
             <button
               onClick={refreshData}
@@ -215,16 +233,26 @@ export const Dashboard: React.FC = () => {
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                      health.overall_status === 'healthy' ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
-                      <div className={`h-3 w-3 rounded-full ${
-                        health.overall_status === 'healthy' ? 'bg-green-600' : 'bg-red-600'
-                      }`} />
+                    <div
+                      className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                        health.overall_status === 'healthy'
+                          ? 'bg-green-100'
+                          : 'bg-red-100'
+                      }`}
+                    >
+                      <div
+                        className={`h-3 w-3 rounded-full ${
+                          health.overall_status === 'healthy'
+                            ? 'bg-green-600'
+                            : 'bg-red-600'
+                        }`}
+                      />
                     </div>
                   </div>
                   <div className="ml-5">
-                    <p className="text-sm font-medium text-gray-500">System Status</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      System Status
+                    </p>
                     <p className="text-lg font-semibold text-gray-900 capitalize">
                       {health.overall_status}
                     </p>
@@ -236,7 +264,9 @@ export const Dashboard: React.FC = () => {
                 <div className="flex items-center">
                   <UserGroupIcon className="h-8 w-8 text-blue-600" />
                   <div className="ml-5">
-                    <p className="text-sm font-medium text-gray-500">Active Users</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Active Users
+                    </p>
                     <p className="text-lg font-semibold text-gray-900">
                       {stats?.active_users || 0}
                     </p>
@@ -248,7 +278,9 @@ export const Dashboard: React.FC = () => {
                 <div className="flex items-center">
                   <ClockIcon className="h-8 w-8 text-orange-600" />
                   <div className="ml-5">
-                    <p className="text-sm font-medium text-gray-500">Pending Jobs</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Pending Jobs
+                    </p>
                     <p className="text-lg font-semibold text-gray-900">
                       {stats?.pending_jobs || 0}
                     </p>
@@ -260,7 +292,9 @@ export const Dashboard: React.FC = () => {
                 <div className="flex items-center">
                   <DocumentTextIcon className="h-8 w-8 text-purple-600" />
                   <div className="ml-5">
-                    <p className="text-sm font-medium text-gray-500">Pending Approvals</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      Pending Approvals
+                    </p>
                     <p className="text-lg font-semibold text-gray-900">
                       {stats?.pending_approvals || 0}
                     </p>
@@ -275,9 +309,11 @@ export const Dashboard: React.FC = () => {
         {alerts.length > 0 && (
           <FadeInWhenVisible>
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">System Alerts</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                System Alerts
+              </h2>
               <div className="space-y-3">
-                {alerts.slice(0, 3).map((alert) => (
+                {alerts.slice(0, 3).map(alert => (
                   <div
                     key={alert.id}
                     className={`border-l-4 p-4 rounded-r-md ${getAlertColor(alert.type)}`}
@@ -304,7 +340,9 @@ export const Dashboard: React.FC = () => {
         {/* Quick Actions Grid */}
         <FadeInWhenVisible>
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              Quick Actions
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {quickActions.map((action, index) => (
                 <motion.div
@@ -318,9 +356,7 @@ export const Dashboard: React.FC = () => {
                     className={`block p-6 border-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${getColorClasses(action.color)}`}
                   >
                     <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        {action.icon}
-                      </div>
+                      <div className="flex-shrink-0">{action.icon}</div>
                       <div className="ml-4 flex-1">
                         <h3 className="font-semibold text-lg mb-2">
                           {action.title}
@@ -330,7 +366,9 @@ export const Dashboard: React.FC = () => {
                             </span>
                           )}
                         </h3>
-                        <p className="text-sm opacity-80">{action.description}</p>
+                        <p className="text-sm opacity-80">
+                          {action.description}
+                        </p>
                       </div>
                     </div>
                   </a>
@@ -344,18 +382,26 @@ export const Dashboard: React.FC = () => {
         {auditSummary && (
           <FadeInWhenVisible>
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity Summary</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Recent Activity Summary
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{auditSummary.login_events_24h}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {auditSummary.login_events_24h}
+                  </p>
                   <p className="text-sm text-gray-600">Login Events (24h)</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{auditSummary.data_access_events_24h}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {auditSummary.data_access_events_24h}
+                  </p>
                   <p className="text-sm text-gray-600">Data Access (24h)</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{auditSummary.admin_actions_24h}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {auditSummary.admin_actions_24h}
+                  </p>
                   <p className="text-sm text-gray-600">Admin Actions (24h)</p>
                 </div>
               </div>
@@ -368,11 +414,13 @@ export const Dashboard: React.FC = () => {
           <div className="flex">
             <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 flex-shrink-0" />
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">Important Notice</h3>
+              <h3 className="text-sm font-medium text-yellow-800">
+                Important Notice
+              </h3>
               <p className="text-sm text-yellow-700 mt-1">
-                This is an internal support tool. All actions are audited and logged. 
-                Access to learner data requires proper consent tokens and guardian approval. 
-                Use only for legitimate support purposes.
+                This is an internal support tool. All actions are audited and
+                logged. Access to learner data requires proper consent tokens
+                and guardian approval. Use only for legitimate support purposes.
               </p>
             </div>
           </div>

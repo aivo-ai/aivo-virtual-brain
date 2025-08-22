@@ -44,6 +44,10 @@ import Upload from '@/pages/Upload'
 import Review from '@/pages/Review'
 import Confirm from '@/pages/Confirm'
 
+// IEP pages
+import AssistantEntry from '@/pages/iep/AssistantEntry'
+import Editor from '@/pages/iep/Editor'
+
 // Lazy load pages for better performance
 import { lazy, Suspense } from 'react'
 
@@ -277,6 +281,24 @@ function AppShell() {
                   element={
                     <RouteGuard>
                       <Confirm />
+                    </RouteGuard>
+                  }
+                />
+
+                {/* IEP routes */}
+                <Route
+                  path={ROUTES.IEP_ASSISTANT}
+                  element={
+                    <RouteGuard>
+                      <AssistantEntry />
+                    </RouteGuard>
+                  }
+                />
+                <Route
+                  path={ROUTES.IEP_EDITOR}
+                  element={
+                    <RouteGuard>
+                      <Editor />
                     </RouteGuard>
                   }
                 />

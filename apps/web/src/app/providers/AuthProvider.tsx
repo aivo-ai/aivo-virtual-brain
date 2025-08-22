@@ -11,7 +11,7 @@ export interface User {
   id: string
   email: string
   name: string
-  role: 'parent' | 'teacher' | 'district_admin'
+  role: 'parent' | 'teacher' | 'district_admin' | 'staff' | 'system_admin'
   dash_context: 'parent' | 'teacher' | 'district'
   avatar?: string
   settings?: {
