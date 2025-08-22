@@ -4,7 +4,7 @@ SQLAlchemy models for anonymized aggregates and metrics storage
 """
 import enum
 from datetime import datetime, date
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from uuid import UUID, uuid4
 from decimal import Decimal
 
@@ -389,3 +389,82 @@ class ETLJobStatus(BaseModel):
     epsilon_used: Optional[float] = Field(None, description="DP epsilon budget used")
     
     error_message: Optional[str] = Field(None, description="Error message if failed")
+
+
+# === Additional Models for Weekly Wins Digest ===
+
+class GoalProgress(Base):
+    """Progress tracking for learning goals."""
+    __tablename__ = "goal_progress"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
+    learner_id_hash = Column(String(64), nullable=False, index=True)
+    goal_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
+    
+    goal_title = Column(String(255), nullable=False)
+    goal_type = Column(String(50), nullable=False)  # academic, behavioral, social
+    goal_description = Column(Text, nullable=True)
+    
+    is_completed = Column(Boolean, default=False)
+    completion_percentage = Column(Float, default=0.0)
+    achievement_score = Column(Numeric(5, 4), nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    
+    __table_args__ = (
+        Index("ix_goal_progress_learner_goal", "learner_id_hash", "goal_id"),
+        CheckConstraint("completion_percentage >= 0 AND completion_percentage <= 100", 
+                       name="ck_completion_percentage_valid"),
+    )
+
+
+class SLPStreaks(Base):
+    """Speech Language Pathology activity streaks."""
+    __tablename__ = "slp_streaks"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
+    learner_id_hash = Column(String(64), nullable=False, index=True)
+    
+    activity_date = Column(Date, nullable=False, index=True)
+    activity_type = Column(String(100), nullable=False)  # articulation, fluency, etc.
+    
+    streak_days = Column(Integer, default=1)
+    longest_streak = Column(Integer, default=1)
+    is_active = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        Index("ix_slp_streaks_learner_date", "learner_id_hash", "activity_date"),
+        UniqueConstraint("learner_id_hash", "activity_date", "activity_type",
+                        name="uq_slp_streaks_daily"),
+    )
+
+
+class SELProgress(Base):
+    """Social Emotional Learning progress tracking."""
+    __tablename__ = "sel_progress"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
+    learner_id_hash = Column(String(64), nullable=False, index=True)
+    
+    assessment_date = Column(Date, nullable=False, index=True)
+    sel_skill = Column(String(100), nullable=False)  # self-awareness, empathy, etc.
+    skill_score = Column(Numeric(5, 4), nullable=False)  # 0.0000 to 1.0000
+    
+    assessment_type = Column(String(50), nullable=False)  # self-report, observation, etc.
+    confidence_level = Column(Float, nullable=True)  # confidence in the assessment
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        Index("ix_sel_progress_learner_skill", "learner_id_hash", "sel_skill", "assessment_date"),
+        CheckConstraint("skill_score >= 0 AND skill_score <= 1", 
+                       name="ck_sel_skill_score_valid"),
+    )

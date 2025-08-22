@@ -1,0 +1,236 @@
+<mjml>
+  <mj-head>
+    <mj-title>Weekly Wins Digest</mj-title>
+    <mj-preview>Your learner's amazing progress this week!</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"></mj-all>
+      <mj-text font-weight="400" font-size="16px" color="#000000" line-height="24px" padding="0"></mj-text>
+      <mj-section background-color="#ffffff" padding="0"></mj-section>
+    </mj-attributes>
+    <mj-style inline="inline">
+      .grade-elementary { color: #10B981; }
+      .grade-middle { color: #3B82F6; }
+      .grade-high { color: #8B5CF6; }
+      .celebration-badge { 
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        border-radius: 20px;
+        padding: 8px 16px;
+        color: #000;
+        font-weight: bold;
+        display: inline-block;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 16px;
+        margin: 20px 0;
+      }
+      .stat-card {
+        text-align: center;
+        padding: 16px;
+        background: #F8FAFC;
+        border-radius: 8px;
+        border-left: 4px solid #10B981;
+      }
+      .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1F2937;
+        display: block;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: #6B7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#F3F4F6">
+    
+    <!-- Header -->
+    <mj-section background-color="#ffffff" padding="32px 24px 24px">
+      <mj-column>
+        <mj-image src="https://aivo.ai/logo-email.png" alt="AIVO" width="120px" align="left"></mj-image>
+        <mj-spacer height="20px"></mj-spacer>
+        <mj-text font-size="28px" font-weight="600" color="#1F2937" line-height="32px">
+          🎉 Weekly Wins Digest
+        </mj-text>
+        <mj-text font-size="16px" color="#6B7280" line-height="22px">
+          {{ learner_name }}'s amazing progress from {{ week_start_formatted }} to {{ week_end_formatted }}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Celebration Highlight -->
+    <mj-section background-color="#ffffff" padding="0 24px 24px">
+      <mj-column>
+        <mj-text css-class="celebration-badge" align="center" font-size="18px">
+          ✨ {{ celebration_message }} ✨
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Stats Grid -->
+    <mj-section background-color="#ffffff" padding="0 24px 32px">
+      <mj-column width="50%">
+        <mj-text css-class="stat-card">
+          <span class="stat-number">{{ hours_learned }}</span>
+          <span class="stat-label">Hours Learned</span>
+        </mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="stat-card">
+          <span class="stat-number">{{ subjects_advanced }}</span>
+          <span class="stat-label">Subjects Advanced</span>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="0 24px 32px">
+      <mj-column width="50%">
+        <mj-text css-class="stat-card">
+          <span class="stat-number">{{ goals_completed }}</span>
+          <span class="stat-label">Goals Completed</span>
+        </mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="stat-card">
+          <span class="stat-number">{{ streak_days }}</span>
+          <span class="stat-label">Day Streak</span>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Subject Progress -->
+    {% if subjects_progress %}
+    <mj-section background-color="#ffffff" padding="0 24px 24px">
+      <mj-column>
+        <mj-text font-size="20px" font-weight="600" color="#1F2937" padding-bottom="16px">
+          📚 Subject Progress This Week
+        </mj-text>
+        {% for subject in subjects_progress %}
+        <mj-text font-size="14px" color="#374151" padding="8px 0">
+          <strong>{{ subject.name }}</strong>
+          <br>
+          <span style="color: #10B981;">+{{ subject.improvement_percentage }}% improvement</span>
+          • Mastery: {{ subject.current_score_percentage }}%
+        </mj-text>
+        {% endfor %}
+      </mj-column>
+    </mj-section>
+    {% endif %}
+
+    <!-- Goals Achieved -->
+    {% if completed_goals %}
+    <mj-section background-color="#F8FAFC" padding="24px">
+      <mj-column>
+        <mj-text font-size="20px" font-weight="600" color="#1F2937" padding-bottom="16px">
+          🎯 Goals Achieved This Week
+        </mj-text>
+        {% for goal in completed_goals %}
+        <mj-text font-size="14px" color="#374151" padding="8px 0">
+          <strong>{{ goal.title }}</strong>
+          <br>
+          <span style="color: #6B7280;">{{ goal.type | title }} Goal • Completed {{ goal.completed_date }}</span>
+        </mj-text>
+        {% endfor %}
+      </mj-column>
+    </mj-section>
+    {% endif %}
+
+    <!-- SLP & SEL Progress -->
+    {% if slp_progress or sel_progress %}
+    <mj-section background-color="#ffffff" padding="24px">
+      <mj-column>
+        <mj-text font-size="20px" font-weight="600" color="#1F2937" padding-bottom="16px">
+          🌱 Personal Growth
+        </mj-text>
+        
+        {% if slp_progress.streak_active %}
+        <mj-text font-size="14px" color="#374151" padding="8px 0">
+          <strong>Speech Practice Streak:</strong> {{ slp_progress.current_streak_days }} days in a row! 🗣️
+        </mj-text>
+        {% endif %}
+        
+        {% if sel_progress.skills_improved %}
+        <mj-text font-size="14px" color="#374151" padding="8px 0">
+          <strong>Social-Emotional Skills:</strong>
+          <br>
+          {% for skill in sel_progress.skills_improved %}
+          • {{ skill.name }}: +{{ skill.improvement_percentage }}% improvement
+          <br>
+          {% endfor %}
+        </mj-text>
+        {% endif %}
+      </mj-column>
+    </mj-section>
+    {% endif %}
+
+    <!-- Week Comparison -->
+    {% if week_comparison.has_comparison %}
+    <mj-section background-color="#F8FAFC" padding="24px">
+      <mj-column>
+        <mj-text font-size="16px" color="#374151" align="center">
+          {% if week_comparison.improvement > 0 %}
+          📈 <strong>{{ week_comparison.improvement_percentage }}% more learning time</strong> than last week!
+          {% elif week_comparison.improvement < 0 %}
+          That's okay! Last week was {{ week_comparison.decline_percentage }}% more active. Every week is different! 💪
+          {% else %}
+          Consistent learning time compared to last week! 🎯
+          {% endif %}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    {% endif %}
+
+    <!-- Encouragement Message -->
+    <mj-section background-color="#ffffff" padding="32px 24px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="500" color="#1F2937" align="center" padding-bottom="16px">
+          {{ encouragement_message }}
+        </mj-text>
+        <mj-text font-size="14px" color="#6B7280" align="center">
+          {% if grade_band == "elementary" %}
+          Keep up the fantastic work! Learning is an adventure! 🚀
+          {% elif grade_band == "middle" %}
+          You're building amazing skills! Stay curious and keep growing! 🌟
+          {% else %}
+          Your dedication to learning is inspiring! Keep pushing forward! 💎
+          {% endif %}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Action Buttons -->
+    <mj-section background-color="#ffffff" padding="0 24px 32px">
+      <mj-column width="50%">
+        <mj-button background-color="#10B981" color="#ffffff" font-weight="600" border-radius="6px" href="{{ dashboard_url }}">
+          View Dashboard
+        </mj-button>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-button background-color="#3B82F6" color="#ffffff" font-weight="600" border-radius="6px" href="{{ continue_learning_url }}">
+          Continue Learning
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#F9FAFB" padding="24px">
+      <mj-column>
+        <mj-text font-size="12px" color="#6B7280" align="center" line-height="18px">
+          This Weekly Wins digest was generated on {{ generated_date }}.
+          <br>
+          <a href="{{ preferences_url }}" style="color: #3B82F6;">Manage email preferences</a> • 
+          <a href="{{ unsubscribe_url }}" style="color: #6B7280;">Unsubscribe</a>
+        </mj-text>
+        <mj-spacer height="16px"></mj-spacer>
+        <mj-text font-size="12px" color="#9CA3AF" align="center">
+          AIVO Virtual Brains © {{ current_year }}. Empowering every learner.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+  </mj-body>
+</mjml>

@@ -57,6 +57,11 @@ export const ROUTES = {
   IEP_REVIEW: '/iep/:learnerId/review',
   IEP_APPROVALS: '/iep/:learnerId/approvals',
 
+  // Notifications
+  NOTIFICATIONS_CENTER: '/notifications',
+  NOTIFICATIONS_PREFERENCES: '/notifications/preferences',
+  NOTIFICATIONS_DIGESTS: '/notifications/digests',
+
   // Legacy/dev routes
   HEALTH: '/health',
   DEV_MOCKS: '/_dev/mocks',
