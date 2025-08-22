@@ -15,7 +15,13 @@
     "reset": "Reset",
     "confirm": "Confirm",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "create": "Create",
+    "retry": "Retry",
+    "back": "Back",
+    "optional": "optional",
+    "refresh": "Refresh",
+    "skip_to_content": "Skip to content"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -26,6 +32,11 @@
     "help": "Help",
     "logout": "Sign Out",
     "profile": "Profile"
+  },
+  "nav": {
+    "dev_mocks": "Dev Mocks",
+    "messages": "Messages",
+    "coursework": "Coursework"
   },
   "auth": {
     "login": "Sign In",
@@ -41,17 +52,17 @@
     "dontHaveAccount": "Don't have an account?",
     "resetPassword": "Reset Password",
     "backToLogin": "Back to Sign In",
-    
+
     "create_account_title": "Create Your Account",
     "create_account_subtitle": "Join AIVO to personalize your learning experience",
     "sign_in_link": "Sign in here",
     "sign_in_title": "Welcome Back",
     "sign_in_subtitle": "Don't have an account?",
     "sign_up_link": "Sign up here",
-    
+
     "first_name_label": "First Name",
     "first_name_placeholder": "Enter your first name",
-    "last_name_label": "Last Name", 
+    "last_name_label": "Last Name",
     "last_name_placeholder": "Enter your last name",
     "email_label": "Email Address",
     "email_placeholder": "Enter your email address",
@@ -59,17 +70,17 @@
     "password_placeholder": "Create a secure password",
     "confirm_password_label": "Confirm Password",
     "confirm_password_placeholder": "Confirm your password",
-    
+
     "agree_to": "I agree to the",
-    "terms_of_service": "Terms of Service", 
+    "terms_of_service": "Terms of Service",
     "and": "and",
     "privacy_policy": "Privacy Policy",
     "create_account": "Create Account",
     "or_register_with": "Or sign up with",
-    
+
     "verify_2fa_title": "Two-Factor Authentication",
     "verify_2fa_subtitle": "Enter the 6-digit code from your authenticator app",
-    
+
     "errors": {
       "invalid_credentials": "Invalid email or password",
       "account_locked": "Your account has been temporarily locked",
@@ -146,11 +157,227 @@
     "minutesAgo": "{{minutes}} minutes ago",
     "justNow": "Just now"
   },
+  "messages": {
+    "threads": "Conversations",
+    "new_thread": "New Conversation",
+    "no_threads": "No conversations yet",
+    "create_first_thread": "Start your first conversation with the AI assistant",
+    "thread_title": "Conversation Title",
+    "thread_title_placeholder": "Enter a title for this conversation",
+    "first_message": "First Message",
+    "first_message_placeholder": "Start the conversation...",
+    "delete_thread_confirm_title": "Delete Conversation",
+    "delete_thread_confirm_message": "Are you sure you want to delete this conversation? This action cannot be undone.",
+    "no_thread_selected": "No conversation selected",
+    "select_thread_or_create_new": "Select a conversation from the list or create a new one",
+    "created": "Created",
+    "ai_typing": "AI is typing...",
+    "thread_settings": "Conversation Settings",
+    "no_messages": "No messages yet",
+    "start_conversation": "Start the conversation by sending a message below",
+    "loading_messages": "Loading messages...",
+    "you": "You",
+    "ai": "AI",
+    "attach_to_iep": "Attach to IEP Evidence",
+    "copy_message": "Copy message",
+    "type_message": "Type your message...",
+    "composer_disabled": "Message composer is disabled",
+    "send_message": "Send message",
+    "enter_to_send": "Enter to send",
+    "shift_enter_new_line": "Shift+Enter for new line",
+    "enable_ai_responses": "Enable AI responses",
+    "ai_powered_by_inference_gateway": "AI powered by Inference Gateway",
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago": "{{count}} minute ago",
+      "minutes_ago_plural": "{{count}} minutes ago",
+      "hours_ago": "{{count}} hour ago",
+      "hours_ago_plural": "{{count}} hours ago",
+      "days_ago": "{{count}} day ago",
+      "days_ago_plural": "{{count}} days ago"
+    },
+    "errors": {
+      "load_threads_failed": "Failed to load conversations",
+      "load_thread_failed": "Failed to load conversation",
+      "create_thread_failed": "Failed to create conversation",
+      "delete_thread_failed": "Failed to delete conversation",
+      "load_messages_failed": "Failed to load messages",
+      "send_message_failed": "Failed to send message",
+      "ai_response_failed": "Failed to generate AI response",
+      "iep_attachment_failed": "Failed to attach to IEP evidence"
+    },
+    "iep": {
+      "message_to_attach": "Message to attach",
+      "evidence_type": "Evidence Type",
+      "evidence_title": "Evidence Title",
+      "evidence_title_placeholder": "Brief description of this evidence",
+      "additional_notes": "Additional Notes",
+      "additional_notes_placeholder": "Add context or observations about this evidence",
+      "privacy_notice_title": "Privacy & Consent",
+      "privacy_notice_text": "This message will be securely attached to the student's IEP record. All data is encrypted and FERPA compliant.",
+      "attaching": "Attaching...",
+      "attach_to_iep": "Attach to IEP",
+      "consent_required_title": "Consent Required",
+      "consent_required_message": "To attach messages to IEP evidence, consent for chat data sharing must be enabled in your settings.",
+      "checking_consent": "Checking consent settings...",
+      "evidence_types": {
+        "observation": "Behavioral Observation",
+        "assessment": "Assessment Data",
+        "goal_progress": "Goal Progress",
+        "intervention": "Intervention Note",
+        "other": "Other Evidence"
+      }
+    }
+  },
   "language": {
     "selectLanguage": "Select Language",
     "changeLanguage": "Change Language",
     "languageChanged": "Language changed to {{language}}",
     "currentLanguage": "Current Language",
     "switchTo": "Switch to {{language}}"
+  },
+  "coursework": {
+    "upload": {
+      "title": "Upload Coursework",
+      "subtitle": "Capture or upload your assignments, homework, or study materials",
+      "processing": "Processing...",
+      "grantConsent": "Grant Permission",
+      "camera": {
+        "title": "Take Photo",
+        "description": "Use your camera to capture documents, worksheets, or handwritten work",
+        "button": "Open Camera"
+      },
+      "file": {
+        "title": "Upload File",
+        "description": "Select images or PDF files from your device",
+        "button": "Choose File"
+      },
+      "instructions": {
+        "title": "Upload Guidelines",
+        "fileTypes": "Supported: Images (JPG, PNG, WebP) and PDF files",
+        "fileSize": "Maximum file size: 10MB",
+        "quality": "Ensure good lighting and clear text for best OCR results",
+        "consent": "Media consent required for uploads"
+      },
+      "errors": {
+        "consentRequired": "Media upload consent is required. Please grant permission in settings.",
+        "invalidFileType": "Please select a valid image or PDF file",
+        "fileTooLarge": "File size must be less than 10MB",
+        "uploadFailed": "Upload failed. Please try again."
+      }
+    },
+    "review": {
+      "title": "Review & Edit",
+      "subtitle": "Check the extracted content and edit topics before confirming",
+      "continue": "Continue",
+      "retry": "Try Again",
+      "backToUpload": "Back to Upload",
+      "continueToConfirm": "Continue to Confirm",
+      "readyToContinue": "{{confidence}}% confidence - Ready to continue",
+      "preview": {
+        "title": "File Preview"
+      },
+      "ocr": {
+        "title": "Text Recognition",
+        "processing": "Analyzing content...",
+        "processingDescription": "Our AI is extracting text and identifying topics",
+        "confidence": "Recognition Confidence",
+        "extractedText": "Extracted Text",
+        "showConfidence": "Show Confidence",
+        "hideConfidence": "Hide Confidence"
+      },
+      "metadata": {
+        "title": "Content Details",
+        "description": "Review and edit the subject, topics, and grade level"
+      },
+      "errors": {
+        "ocrFailed": "Failed to analyze content. Please try again."
+      }
+    },
+    "confirm": {
+      "title": "Confirm Upload",
+      "subtitle": "Review details and assign to a learner",
+      "uploading": "Uploading...",
+      "confirmUpload": "Confirm Upload",
+      "summary": {
+        "title": "Upload Summary",
+        "confidence": "confidence",
+        "subject": "Subject",
+        "gradeBand": "Grade Level",
+        "topics": "Topics",
+        "extractedText": "Extracted Text"
+      },
+      "learner": {
+        "title": "Assign to Learner",
+        "description": "Choose which learner this coursework belongs to",
+        "loading": "Loading learners...",
+        "select": "Select a learner"
+      },
+      "upload": {
+        "title": "Upload Progress",
+        "progress": "Uploading",
+        "uploading": "Uploading file...",
+        "processing": "Processing content...",
+        "analyzing": "Analyzing with AI...",
+        "completing": "Finalizing..."
+      },
+      "errors": {
+        "loadLearnersFailed": "Failed to load learners",
+        "uploadFailed": "Upload failed. Please try again."
+      }
+    },
+    "preview": {
+      "image": "Image",
+      "pdf": {
+        "title": "PDF Document",
+        "description": "PDF preview will be available after processing"
+      },
+      "unsupported": {
+        "title": "Preview Not Available",
+        "description": "Cannot preview {{fileType}} files"
+      }
+    },
+    "metadata": {
+      "subject": {
+        "label": "Subject",
+        "placeholder": "Select a subject",
+        "custom": "Add custom subject",
+        "customPlaceholder": "Enter subject name"
+      },
+      "gradeBand": {
+        "label": "Grade Level",
+        "placeholder": "Select grade level"
+      },
+      "topics": {
+        "label": "Topics",
+        "placeholder": "Add a topic",
+        "selected": "Selected Topics",
+        "suggested": "Suggested Topics"
+      },
+      "validation": {
+        "subjectRequired": "Please select a subject before continuing"
+      }
+    },
+    "capture": {
+      "mobile": "Take Photo",
+      "desktop": "Open Camera",
+      "processing": "Processing...",
+      "capabilities": {
+        "supported": "Camera supported",
+        "notSupported": "Camera not available",
+        "mobile": "Mobile camera optimized"
+      },
+      "errors": {
+        "noCamera": "Camera not available on this device",
+        "invalidType": "Please capture an image file",
+        "fileTooLarge": "Image too large. Please try again.",
+        "lowResolution": "Image resolution too low. Please try again.",
+        "badAspectRatio": "Invalid image dimensions. Please try again.",
+        "tooDark": "Image too dark. Please improve lighting.",
+        "tooBright": "Image too bright. Please adjust lighting.",
+        "invalidImage": "Invalid image file. Please try again.",
+        "captureFailed": "Failed to capture image. Please try again."
+      }
+    }
   }
 }

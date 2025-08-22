@@ -63,6 +63,16 @@ export interface OCRPreviewResponse {
   extractedTopics: string[]
   confidence: number
   suggestedTags: string[]
+  suggestedMetadata?: {
+    subject?: string
+    topic?: string
+    gradeBand?: string
+  }
+}
+
+export interface ConsentCheckResponse {
+  hasConsent: boolean
+  requiredConsents: string[]
 }
 
 class CourseworkClient {
@@ -219,11 +229,19 @@ class CourseworkClient {
   }
 
   async getOcrPreview(file: File): Promise<OCRPreviewResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+
     const response = await fetch(
-      `${API_BASE}/coursework-ingest-svc/assets/${assetId}/ocr`,
+      `${API_BASE}/coursework-ingest-svc/ocr/preview`,
       {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
+        method: 'POST',
+        headers: {
+          ...this.getAuthHeaders(),
+          // Remove Content-Type to let browser set boundary for FormData
+          'Content-Type': undefined as any,
+        },
+        body: formData,
       }
     )
 
@@ -234,52 +252,14 @@ class CourseworkClient {
     return response.json()
   }
 
-  async attachToLearner(assetId: string, learnerId: string): Promise<void> {
-    const response = await fetch(
-      `${API_BASE}/coursework-ingest-svc/assets/${assetId}/attach`,
-      {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify({ learnerId }),
-      }
-    )
+  async checkMediaConsent(): Promise<ConsentCheckResponse> {
+    const response = await fetch(`${API_BASE}/consent-svc/check/media`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    })
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to attach asset to learner: ${response.statusText}`
-      )
-    }
-  }
-
-  async deleteAsset(assetId: string): Promise<void> {
-    const response = await fetch(
-      `${API_BASE}/coursework-ingest-svc/assets/${assetId}`,
-      {
-        method: 'DELETE',
-        headers: this.getAuthHeaders(),
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(`Failed to delete asset: ${response.statusText}`)
-    }
-  }
-
-  async updateAsset(
-    assetId: string,
-    updates: Partial<CourseworkUploadRequest>
-  ): Promise<CourseworkAsset> {
-    const response = await fetch(
-      `${API_BASE}/coursework-ingest-svc/assets/${assetId}`,
-      {
-        method: 'PATCH',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(updates),
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(`Failed to update asset: ${response.statusText}`)
+      throw new Error(`Failed to check consent: ${response.statusText}`)
     }
 
     return response.json()
@@ -317,6 +297,40 @@ class CourseworkClient {
         `Failed to detach asset from learner: ${response.statusText}`
       )
     }
+  }
+
+  async deleteAsset(assetId: string): Promise<void> {
+    const response = await fetch(
+      `${API_BASE}/coursework-ingest-svc/assets/${assetId}`,
+      {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete asset: ${response.statusText}`)
+    }
+  }
+
+  async updateAsset(
+    assetId: string,
+    updates: Partial<CourseworkUploadRequest>
+  ): Promise<CourseworkAsset> {
+    const response = await fetch(
+      `${API_BASE}/coursework-ingest-svc/assets/${assetId}`,
+      {
+        method: 'PATCH',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(updates),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Failed to update asset: ${response.statusText}`)
+    }
+
+    return response.json()
   }
 }
 

@@ -44,6 +44,17 @@ export const ROUTES = {
   // Search
   SEARCH: '/search',
 
+  // Messages
+  MESSAGES: '/messages',
+  MESSAGES_THREAD: '/messages/:threadId',
+
+  // Coursework
+  COURSEWORK: '/coursework',
+  COURSEWORK_UPLOAD: '/coursework/upload',
+  COURSEWORK_REVIEW: '/coursework/review',
+  COURSEWORK_CONFIRM: '/coursework/confirm',
+  COURSEWORK_DETAIL: '/coursework/:id',
+
   // Legacy/dev routes
   HEALTH: '/health',
   DEV_MOCKS: '/_dev/mocks',
@@ -74,6 +85,8 @@ export const PARENT_ROUTES = [
   ROUTES.LEARNER_PROGRESS,
   ROUTES.LEARNER_ASSESSMENTS,
   ROUTES.LEARNER_GOALS,
+  ROUTES.MESSAGES,
+  ROUTES.MESSAGES_THREAD,
   ROUTES.SEARCH,
 ] as const
 
@@ -84,6 +97,8 @@ export const TEACHER_ROUTES = [
   ROUTES.TEACHER_STUDENTS,
   ROUTES.TEACHER_ASSIGNMENTS,
   ROUTES.TEACHER_REPORTS,
+  ROUTES.MESSAGES,
+  ROUTES.MESSAGES_THREAD,
   ROUTES.SEARCH,
 ] as const
 

@@ -18,7 +18,11 @@ import { ThemeProvider } from './providers/ThemeProvider'
 // Components
 import { TopNav } from '@/components/nav/TopNav'
 import { SideNav } from '@/components/nav/SideNav'
-import { OfflineToast, ConnectionStatus, PWAInstallPrompt } from '@/components/PWAComponents'
+import {
+  OfflineToast,
+  ConnectionStatus,
+  PWAInstallPrompt,
+} from '@/components/PWAComponents'
 
 // Routes and utilities
 import { ROUTES, canAccessRoute, isPublicRoute } from './routes'
@@ -34,6 +38,11 @@ import DashboardPage from '@/pages/DashboardPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import HealthPage from '@/pages/HealthPage'
 import DevMocksPage from '@/pages/DevMocksPage'
+
+// Coursework pages
+import Upload from '@/pages/Upload'
+import Review from '@/pages/Review'
+import Confirm from '@/pages/Confirm'
 
 // Lazy load pages for better performance
 import { lazy, Suspense } from 'react'
@@ -153,7 +162,7 @@ function AppShell() {
               <ConnectionStatus />
             </div>
           </div>
-          
+
           <div className="min-h-screen">
             <Suspense fallback={<PageLoading />}>
               <Routes>
@@ -242,6 +251,32 @@ function AppShell() {
                   element={
                     <RouteGuard>
                       <SearchPage />
+                    </RouteGuard>
+                  }
+                />
+
+                {/* Coursework routes */}
+                <Route
+                  path={ROUTES.COURSEWORK_UPLOAD}
+                  element={
+                    <RouteGuard>
+                      <Upload />
+                    </RouteGuard>
+                  }
+                />
+                <Route
+                  path={ROUTES.COURSEWORK_REVIEW}
+                  element={
+                    <RouteGuard>
+                      <Review />
+                    </RouteGuard>
+                  }
+                />
+                <Route
+                  path={ROUTES.COURSEWORK_CONFIRM}
+                  element={
+                    <RouteGuard>
+                      <Confirm />
                     </RouteGuard>
                   }
                 />

@@ -44,6 +44,13 @@ export const ROUTES = {
   // Search
   SEARCH: '/search',
 
+  // Coursework
+  COURSEWORK: '/coursework',
+  COURSEWORK_UPLOAD: '/coursework/upload',
+  COURSEWORK_REVIEW: '/coursework/review',
+  COURSEWORK_CONFIRM: '/coursework/confirm',
+  COURSEWORK_DETAIL: '/coursework/:id',
+
   // Legacy/dev routes
   HEALTH: '/health',
   DEV_MOCKS: '/_dev/mocks',
@@ -75,6 +82,11 @@ export const PARENT_ROUTES = [
   ROUTES.LEARNER_ASSESSMENTS,
   ROUTES.LEARNER_GOALS,
   ROUTES.SEARCH,
+  ROUTES.COURSEWORK,
+  ROUTES.COURSEWORK_UPLOAD,
+  ROUTES.COURSEWORK_REVIEW,
+  ROUTES.COURSEWORK_CONFIRM,
+  ROUTES.COURSEWORK_DETAIL,
 ] as const
 
 export const TEACHER_ROUTES = [
@@ -85,6 +97,11 @@ export const TEACHER_ROUTES = [
   ROUTES.TEACHER_ASSIGNMENTS,
   ROUTES.TEACHER_REPORTS,
   ROUTES.SEARCH,
+  ROUTES.COURSEWORK,
+  ROUTES.COURSEWORK_UPLOAD,
+  ROUTES.COURSEWORK_REVIEW,
+  ROUTES.COURSEWORK_CONFIRM,
+  ROUTES.COURSEWORK_DETAIL,
 ] as const
 
 export const DISTRICT_ADMIN_ROUTES = [

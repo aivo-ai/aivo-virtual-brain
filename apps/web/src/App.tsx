@@ -4,6 +4,10 @@ import { ROUTES } from '@/types/routes'
 import HomePage from '@/pages/HomePage'
 import HealthPage from '@/pages/HealthPage'
 import DevMocksPage from '@/pages/DevMocksPage'
+import MessagesPage from '@/pages/messages/MessagesPage'
+import Upload from '@/pages/Upload'
+import Review from '@/pages/Review'
+import Confirm from '@/pages/Confirm'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 function App() {
@@ -50,6 +54,22 @@ function App() {
                   >
                     {t('nav.dev_mocks')}
                   </Link>
+
+                  <Link
+                    to={ROUTES.MESSAGES}
+                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    data-testid="nav-messages-link"
+                  >
+                    {t('nav.messages')}
+                  </Link>
+
+                  <Link
+                    to={ROUTES.COURSEWORK_UPLOAD}
+                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    data-testid="nav-coursework-link"
+                  >
+                    {t('nav.coursework')}
+                  </Link>
                 </div>
               </div>
             </div>
@@ -62,6 +82,11 @@ function App() {
             <Route path={ROUTES.HOME} element={<HomePage />} />
             <Route path={ROUTES.HEALTH} element={<HealthPage />} />
             <Route path={ROUTES.DEV_MOCKS} element={<DevMocksPage />} />
+            <Route path={ROUTES.MESSAGES} element={<MessagesPage />} />
+            <Route path={ROUTES.MESSAGES_THREAD} element={<MessagesPage />} />
+            <Route path={ROUTES.COURSEWORK_UPLOAD} element={<Upload />} />
+            <Route path={ROUTES.COURSEWORK_REVIEW} element={<Review />} />
+            <Route path={ROUTES.COURSEWORK_CONFIRM} element={<Confirm />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
