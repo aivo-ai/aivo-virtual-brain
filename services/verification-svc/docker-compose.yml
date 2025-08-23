@@ -1,0 +1,98 @@
+version: "3.8"
+
+services:
+  verification-svc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: verification-svc
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://verification:verification@verification-db:5432/verification_db
+      - REDIS_URL=redis://verification-redis:6379/0
+      - APP_ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+    depends_on:
+      verification-db:
+        condition: service_healthy
+      verification-redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - verification-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  verification-db:
+    image: postgres:15-alpine
+    container_name: verification-db
+    environment:
+      - POSTGRES_DB=verification_db
+      - POSTGRES_USER=verification
+      - POSTGRES_PASSWORD=verification
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - verification_db_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - verification-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verification -d verification_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  verification-redis:
+    image: redis:7-alpine
+    container_name: verification-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - verification_redis_data:/data
+    networks:
+      - verification-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  verification-migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: verification-migrations
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://verification:verification@verification-db:5432/verification_db
+    depends_on:
+      verification-db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - verification-network
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+volumes:
+  verification_db_data:
+    driver: local
+  verification_redis_data:
+    driver: local
+
+networks:
+  verification-network:
+    driver: bridge

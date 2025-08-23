@@ -1,0 +1,246 @@
+name: Guardian Verification Service CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/verification-svc/**"
+      - ".github/workflows/verification-svc.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/verification-svc/**"
+
+env:
+  SERVICE_NAME: verification-svc
+  SERVICE_PATH: services/verification-svc
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: verification
+          POSTGRES_USER: verification
+          POSTGRES_DB: verification_test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install dependencies
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with flake8
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          flake8 app tests --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 app tests --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+
+      - name: Type check with mypy
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          mypy app --ignore-missing-imports
+
+      - name: Format check with black
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          black --check app tests
+
+      - name: Import sort check with isort
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          isort --check-only app tests
+
+      - name: Run database migrations
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: postgresql+asyncpg://verification:verification@localhost:5432/verification_test_db
+        run: |
+          alembic upgrade head
+
+      - name: Run tests with coverage
+        working-directory: ${{ env.SERVICE_PATH }}
+        env:
+          DATABASE_URL: postgresql+asyncpg://verification:verification@localhost:5432/verification_test_db
+          REDIS_URL: redis://localhost:6379/1
+          STRIPE_API_KEY: sk_test_mock_key
+          STRIPE_WEBHOOK_SECRET: whsec_mock_secret
+          SECRET_KEY: test-secret-key
+          JWT_SECRET_KEY: test-jwt-secret
+          MOCK_KBA_PROVIDER: true
+          BYPASS_RATE_LIMITING: false
+        run: |
+          pytest --cov=app --cov-report=xml --cov-report=html --cov-fail-under=80
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ${{ env.SERVICE_PATH }}/coverage.xml
+          flags: verification-svc
+          name: verification-service-coverage
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit semgrep
+
+      - name: Run safety check
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          safety check --json --output safety-report.json || true
+
+      - name: Run bandit security scan
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          bandit -r app -f json -o bandit-report.json || true
+
+      - name: Run semgrep scan
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          semgrep --config=auto app --json --output=semgrep-report.json || true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            ${{ env.SERVICE_PATH }}/safety-report.json
+            ${{ env.SERVICE_PATH }}/bandit-report.json
+            ${{ env.SERVICE_PATH }}/semgrep-report.json
+
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/${{ env.SERVICE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.SERVICE_PATH }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+      - name: Deploy to staging
+        run: |
+          echo "Deploying verification-svc to staging environment"
+          # Add your deployment commands here
+          # kubectl apply -f k8s/staging/
+          # helm upgrade verification-svc ./helm-chart --namespace staging
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: Deploy to production
+        run: |
+          echo "Deploying verification-svc to production environment"
+          # Add your deployment commands here
+          # kubectl apply -f k8s/production/
+          # helm upgrade verification-svc ./helm-chart --namespace production
+
+  notify:
+    name: Notify Teams
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+
+    steps:
+      - name: Notify deployment status
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: "#deployments"
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,186 @@
+<mjml>
+  <mj-head>
+    <mj-title>AIVO Invoice {{invoice_number}}</mj-title>
+    <mj-preview>Invoice {{invoice_number}} from AIVO Education Platform</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"></mj-all>
+      <mj-text font-weight="400" font-size="14px" color="#333333" line-height="24px"></mj-text>
+      <mj-section background-color="white"></mj-section>
+    </mj-attributes>
+    <mj-style>
+      .invoice-header { border-bottom: 2px solid #0066cc; padding-bottom: 20px; }
+      .invoice-details { background-color: #f8f9fa; padding: 20px; border-radius: 8px; }
+      .line-item-header { background-color: #0066cc; color: white; font-weight: bold; }
+      .line-item { border-bottom: 1px solid #e9ecef; }
+      .total-row { background-color: #f8f9fa; font-weight: bold; }
+      .payment-terms { background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px; }
+      .footer-text { font-size: 12px; color: #6c757d; }
+    </mj-style>
+  </mj-head>
+  
+  <mj-body background-color="#f4f4f4">
+    <!-- Header -->
+    <mj-section css-class="invoice-header" background-color="white" padding="40px 25px 20px">
+      <mj-column>
+        <mj-image src="https://cdn.aivo.com/logo-full.png" alt="AIVO" width="180px" align="left"></mj-image>
+      </mj-column>
+      <mj-column>
+        <mj-text align="right" font-size="32px" font-weight="bold" color="#0066cc">
+          INVOICE
+        </mj-text>
+        <mj-text align="right" font-size="18px" color="#333">
+          {{invoice_number}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Company Info & Invoice Details -->
+    <mj-section background-color="white" padding="0 25px">
+      <mj-column width="50%">
+        <mj-text font-weight="bold" font-size="16px" color="#333" margin-bottom="10px">
+          From:
+        </mj-text>
+        <mj-text font-size="14px" line-height="20px">
+          AIVO Education, Inc.<br/>
+          1234 Education Way<br/>
+          San Francisco, CA 94105<br/>
+          United States<br/>
+          <br/>
+          Tax ID: 12-3456789<br/>
+          Email: billing@aivo.com<br/>
+          Phone: (555) 123-4567
+        </mj-text>
+      </mj-column>
+      
+      <mj-column width="50%">
+        <mj-text font-weight="bold" font-size="16px" color="#333" margin-bottom="10px">
+          Bill To:
+        </mj-text>
+        <mj-text font-size="14px" line-height="20px">
+          {{billing_contact.name}}<br/>
+          {{billing_contact.title}}<br/>
+          {{billing_address.line1}}<br/>
+          {% if billing_address.line2 %}{{billing_address.line2}}<br/>{% endif %}
+          {{billing_address.city}}, {{billing_address.state}} {{billing_address.postal_code}}<br/>
+          {{billing_address.country}}<br/>
+          <br/>
+          Email: {{billing_contact.email}}<br/>
+          {% if billing_contact.phone %}Phone: {{billing_contact.phone}}<br/>{% endif %}
+          {% if po_number %}PO Number: {{po_number}}<br/>{% endif %}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Invoice Details Box -->
+    <mj-section background-color="white" padding="20px 25px">
+      <mj-column>
+        <mj-table css-class="invoice-details">
+          <tr>
+            <td style="padding: 10px; font-weight: bold;">Invoice Date:</td>
+            <td style="padding: 10px;">{{issue_date.strftime('%B %d, %Y')}}</td>
+            <td style="padding: 10px; font-weight: bold;">Due Date:</td>
+            <td style="padding: 10px; color: #dc3545;">{{due_date.strftime('%B %d, %Y')}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; font-weight: bold;">Payment Terms:</td>
+            <td style="padding: 10px;">{{payment_terms.replace('_', ' ').title()}}</td>
+            <td style="padding: 10px; font-weight: bold;">Total Amount:</td>
+            <td style="padding: 10px; font-size: 18px; font-weight: bold; color: #0066cc;">${{total}}</td>
+          </tr>
+        </mj-table>
+      </mj-column>
+    </mj-section>
+
+    <!-- Line Items -->
+    <mj-section background-color="white" padding="20px 25px 0">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" margin-bottom="15px">
+          Invoice Details
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="white" padding="0 25px">
+      <mj-column>
+        <mj-table>
+          <tr class="line-item-header">
+            <th style="padding: 12px; text-align: left; background-color: #0066cc; color: white;">Description</th>
+            <th style="padding: 12px; text-align: center; background-color: #0066cc; color: white; width: 80px;">Qty</th>
+            <th style="padding: 12px; text-align: right; background-color: #0066cc; color: white; width: 100px;">Unit Price</th>
+            <th style="padding: 12px; text-align: right; background-color: #0066cc; color: white; width: 100px;">Total</th>
+          </tr>
+          {% for item in line_items %}
+          <tr class="line-item">
+            <td style="padding: 12px; border-bottom: 1px solid #e9ecef;">{{item.description}}</td>
+            <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e9ecef;">{{item.quantity}}</td>
+            <td style="padding: 12px; text-align: right; border-bottom: 1px solid #e9ecef;">${{item.unit_price}}</td>
+            <td style="padding: 12px; text-align: right; border-bottom: 1px solid #e9ecef;">${{item.total_price}}</td>
+          </tr>
+          {% endfor %}
+          
+          <!-- Totals -->
+          <tr>
+            <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold; border-top: 2px solid #dee2e6;">Subtotal:</td>
+            <td style="padding: 12px; text-align: right; font-weight: bold; border-top: 2px solid #dee2e6;">${{subtotal}}</td>
+          </tr>
+          {% if tax_total > 0 %}
+          <tr>
+            <td colspan="3" style="padding: 12px; text-align: right;">Tax:</td>
+            <td style="padding: 12px; text-align: right;">${{tax_total}}</td>
+          </tr>
+          {% endif %}
+          <tr class="total-row">
+            <td colspan="3" style="padding: 15px; text-align: right; font-size: 18px; font-weight: bold; background-color: #f8f9fa;">Total Amount Due:</td>
+            <td style="padding: 15px; text-align: right; font-size: 18px; font-weight: bold; color: #0066cc; background-color: #f8f9fa;">${{total}}</td>
+          </tr>
+        </mj-table>
+      </mj-column>
+    </mj-section>
+
+    <!-- Payment Terms & Instructions -->
+    <mj-section background-color="white" padding="30px 25px">
+      <mj-column>
+        <mj-text css-class="payment-terms" font-size="14px" line-height="22px">
+          <strong>Payment Terms:</strong> {{payment_terms.replace('_', ' ').title()}}<br/>
+          <strong>Due Date:</strong> {{due_date.strftime('%B %d, %Y')}}<br/>
+          <br/>
+          <strong>Payment Instructions:</strong><br/>
+          • Mail check payable to "AIVO Education, Inc." to the address above<br/>
+          • Wire transfer details available upon request<br/>
+          • Include invoice number {{invoice_number}} with your payment<br/>
+          • Contact billing@aivo.com for payment questions
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    {% if notes %}
+    <!-- Additional Notes -->
+    <mj-section background-color="white" padding="0 25px 20px">
+      <mj-column>
+        <mj-text font-weight="bold" font-size="16px" margin-bottom="10px">
+          Additional Notes:
+        </mj-text>
+        <mj-text font-size="14px" line-height="20px" color="#555">
+          {{notes}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    {% endif %}
+
+    <!-- Footer -->
+    <mj-section background-color="#f8f9fa" padding="20px 25px">
+      <mj-column>
+        <mj-divider border-color="#dee2e6" border-width="1px"></mj-divider>
+        <mj-text css-class="footer-text" align="center" margin-top="20px">
+          Thank you for your business! For questions about this invoice, please contact us at billing@aivo.com or (555) 123-4567.
+        </mj-text>
+        <mj-text css-class="footer-text" align="center" margin-top="10px">
+          AIVO Education, Inc. | 1234 Education Way, San Francisco, CA 94105 | www.aivo.com
+        </mj-text>
+        <mj-text css-class="footer-text" align="center" margin-top="10px">
+          This invoice was generated on {{current_date.strftime('%B %d, %Y at %I:%M %p UTC')}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -19,10 +19,16 @@ from app.schemas import (
 from app.stripe_service import stripe_service
 from app.webhook_handler import webhook_handler
 from app.subscription_service import subscription_service
+from app.routes.tax import router as tax_router
+from app.routes.po_invoices import router as po_invoices_router
 
 logger = structlog.get_logger(__name__)
 
 router = APIRouter()
+
+# Include sub-routers
+router.include_router(tax_router, prefix="/tax", tags=["Tax"])
+router.include_router(po_invoices_router, prefix="/po", tags=["PO Invoices"])
 
 
 @router.post(

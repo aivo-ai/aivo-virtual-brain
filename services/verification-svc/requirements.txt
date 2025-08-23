@@ -1,0 +1,55 @@
+# FastAPI and ASGI server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database
+sqlalchemy[asyncio]==2.0.23
+asyncpg==0.29.0
+alembic==1.12.1
+
+# Authentication and Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# HTTP clients and validation
+httpx==0.25.2
+aiohttp==3.9.1
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Payment processing
+stripe==7.8.0
+
+# Rate limiting and caching
+slowapi==0.1.9
+redis==5.0.1
+
+# Geographic and country data
+pycountry==22.3.13
+geoip2==4.7.0
+
+# Logging and monitoring
+structlog==23.2.0
+prometheus-client==0.19.0
+
+# Environment and configuration
+python-dotenv==1.0.0
+click==8.1.7
+
+# Testing (dev dependencies)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+httpx==0.25.2
+factory-boy==3.3.0
+
+# Development tools
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Additional utilities
+python-dateutil==2.8.2
+pytz==2023.3
