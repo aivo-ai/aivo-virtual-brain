@@ -3,7 +3,7 @@
  * Captures Web Vitals and sends telemetry to OTEL collector
  */
 
-import { getCLS, getFID, getFCP, getLCP, getTTFB, Metric } from 'web-vitals'
+import React from 'react'
 import { trace, context, SpanStatusCode, SpanKind } from '@opentelemetry/api'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { Resource } from '@opentelemetry/resources'

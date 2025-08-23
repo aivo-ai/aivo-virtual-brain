@@ -36,6 +36,10 @@ const Detail: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [attachmentLoading, setAttachmentLoading] = useState(false)
+  const [linkbackModalOpen, setLinkbackModalOpen] = useState(false)
+  const [availableLessons, setAvailableLessons] = useState<any[]>([])
+  const [linkedLessons, setLinkedLessons] = useState<any[]>([])
+  const [linkbackLoading, setLinkbackLoading] = useState(false)
 
   useEffect(() => {
     if (source && id) {

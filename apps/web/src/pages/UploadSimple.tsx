@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+// Removed unused imports
 
 export default function Upload() {
   return (

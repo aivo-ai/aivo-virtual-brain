@@ -387,6 +387,89 @@ class LessonRegistryClient {
     if (!response.ok) throw new Error('Failed to get lesson analytics')
     return response.json()
   }
+
+  // Coursework-Lesson Linkback methods (S5-10)
+
+  async searchLessons(params: {
+    subject?: string
+    gradeBand?: string
+    limit?: number
+  }): Promise<Lesson[]> {
+    const searchParams = new URLSearchParams()
+    if (params.subject) searchParams.append('subject', params.subject)
+    if (params.gradeBand) searchParams.append('grade_band', params.gradeBand)
+    if (params.limit) searchParams.append('limit', params.limit.toString())
+
+    const response = await fetch(
+      `${API_BASE}/lesson-registry-svc/lessons?${searchParams}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Context': 'linkback',
+        },
+      }
+    )
+
+    if (!response.ok) throw new Error('Failed to search lessons')
+    return response.json()
+  }
+
+  async createCourseworkLink(request: {
+    coursework_id: string
+    lesson_id: string
+    learner_id?: string
+    mastery_weight?: number
+    difficulty_adjustment?: number
+    link_context?: any
+  }): Promise<any> {
+    const response = await fetch(`${API_BASE}/lesson-registry-svc/linkback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Context': 'linkback',
+      },
+      body: JSON.stringify(request),
+    })
+
+    if (!response.ok) throw new Error('Failed to create coursework link')
+    return response.json()
+  }
+
+  async getCourseworkLinks(
+    courseworkId: string,
+    learnerId?: string
+  ): Promise<any> {
+    const params = new URLSearchParams()
+    if (learnerId) params.append('learner_id', learnerId)
+
+    const response = await fetch(
+      `${API_BASE}/lesson-registry-svc/linkback/coursework/${courseworkId}/links?${params}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Context': 'linkback',
+        },
+      }
+    )
+
+    if (!response.ok) throw new Error('Failed to get coursework links')
+    return response.json()
+  }
+
+  async deleteCourseworkLink(linkId: string): Promise<void> {
+    const response = await fetch(
+      `${API_BASE}/lesson-registry-svc/linkback/links/${linkId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Context': 'linkback',
+        },
+      }
+    )
+
+    if (!response.ok) throw new Error('Failed to delete coursework link')
+  }
 }
 
 export const lessonRegistryClient = new LessonRegistryClient()

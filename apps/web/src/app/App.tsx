@@ -25,7 +25,7 @@ import {
 } from '@/components/PWAComponents'
 
 // Routes and utilities
-import { ROUTES, canAccessRoute, isPublicRoute } from './routes'
+import { ROUTES, canAccessRoute, isPublicRoute } from '../types/routes'
 import { analytics } from '@/utils/analytics'
 
 // Pages (these would be created separately)

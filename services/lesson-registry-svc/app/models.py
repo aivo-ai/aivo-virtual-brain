@@ -47,6 +47,7 @@ class Lesson(Base):
     
     # Relationships
     versions = relationship("Version", back_populates="lesson", cascade="all, delete-orphan")
+    coursework_links = relationship("CourseworkLink", back_populates="lesson", cascade="all, delete-orphan")
     
     # Indexes for performance
     __table_args__ = (
@@ -198,6 +199,46 @@ def get_lesson_versions(lesson_id: uuid.UUID, include_drafts: bool = False) -> L
         return query.order_by(Version.created_at.desc()).all()
     finally:
         session.close()
+
+
+class CourseworkLink(Base):
+    """
+    Links coursework items to lessons for progress tracking.
+    
+    Enables the orchestrator to credit mastery and recommend
+    remediations based on coursework completion.
+    """
+    __tablename__ = "coursework_link"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    coursework_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    lesson_id = Column(UUID(as_uuid=True), ForeignKey("lesson.id"), nullable=False, index=True)
+    learner_id = Column(UUID(as_uuid=True), nullable=True, index=True)  # Optional learner scope
+    
+    # Link metadata
+    created_by = Column(UUID(as_uuid=True), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Soft delete support
+    is_active = Column(Boolean, default=True, index=True)
+    deleted_at = Column(DateTime, nullable=True)
+    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    
+    # Progress tracking parameters
+    mastery_weight = Column(Integer, default=100)  # Weight in mastery calculation (0-100)
+    difficulty_adjustment = Column(Integer, default=0)  # Difficulty modifier (-100 to +100)
+    link_context = Column(Text)  # JSON context data for analytics
+    
+    # Relationships
+    lesson = relationship("Lesson", back_populates="coursework_links")
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_coursework_lesson', 'coursework_id', 'lesson_id'),
+        Index('idx_learner_active', 'learner_id', 'is_active'),
+        Index('idx_created_date', 'created_at'),
+    )
 
 
 def validate_asset_integrity(asset: Asset, file_content: bytes) -> bool:

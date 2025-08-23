@@ -133,9 +133,13 @@ export default function TopicChips({
           <div className="flex space-x-2">
             <Input
               value={customSubject}
-              onChange={e => setCustomSubject(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setCustomSubject(e.target.value)
+              }
               placeholder={t('metadata.subject.customPlaceholder')}
-              onKeyPress={e => handleKeyPress(e, handleCustomSubjectSubmit)}
+              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) =>
+                handleKeyPress(e, handleCustomSubjectSubmit)
+              }
             />
             <Button onClick={handleCustomSubjectSubmit} size="sm">
               <Plus className="h-4 w-4" />
@@ -221,9 +225,13 @@ export default function TopicChips({
         <div className="flex space-x-2">
           <Input
             value={newTopic}
-            onChange={e => setNewTopic(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setNewTopic(e.target.value)
+            }
             placeholder={t('metadata.topics.placeholder')}
-            onKeyPress={e => handleKeyPress(e, handleAddTopic)}
+            onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) =>
+              handleKeyPress(e, handleAddTopic)
+            }
           />
           <Button
             onClick={handleAddTopic}

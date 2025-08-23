@@ -62,11 +62,6 @@ export const ROUTES = {
   IEP_REVIEW: '/iep/:learnerId/review',
   IEP_APPROVALS: '/iep/:learnerId/approvals',
 
-  // Compliance Evidence Dashboard
-  COMPLIANCE: '/compliance',
-  COMPLIANCE_TENANT: '/compliance/tenant/:tenantId',
-  COMPLIANCE_LEARNER: '/compliance/learner/:learnerId',
-
   // Legacy/dev routes
   HEALTH: '/health',
   DEV_MOCKS: '/_dev/mocks',
@@ -122,19 +117,11 @@ export const DISTRICT_ADMIN_ROUTES = [
   ROUTES.DISTRICT_TEACHERS,
   ROUTES.DISTRICT_REPORTS,
   ROUTES.DISTRICT_SETTINGS,
-  ROUTES.COMPLIANCE,
-  ROUTES.COMPLIANCE_TENANT,
-  ROUTES.COMPLIANCE_LEARNER,
   ROUTES.SEARCH,
 ] as const
 
 // User roles
-export type UserRole =
-  | 'parent'
-  | 'teacher'
-  | 'district_admin'
-  | 'staff'
-  | 'system_admin'
+export type UserRole = 'parent' | 'teacher' | 'district_admin'
 
 // Dashboard context
 export type DashContext = 'parent' | 'teacher' | 'district'
@@ -163,10 +150,6 @@ export function getRoutesForRole(role: UserRole): readonly Route[] {
       return TEACHER_ROUTES
     case 'district_admin':
       return DISTRICT_ADMIN_ROUTES
-    case 'staff':
-      return DISTRICT_ADMIN_ROUTES // Staff gets district admin access
-    case 'system_admin':
-      return getAllRoutes() // System admin gets access to all routes
     default:
       return []
   }

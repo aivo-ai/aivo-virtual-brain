@@ -28,7 +28,7 @@ export interface NavigationEvent {
 
 export interface UserContext {
   user_id?: string
-  role?: 'parent' | 'teacher' | 'district_admin'
+  role?: 'parent' | 'teacher' | 'district_admin' | 'staff' | 'system_admin'
   dash_context?: 'parent' | 'teacher' | 'district'
   session_id?: string
 }

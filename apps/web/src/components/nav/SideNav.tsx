@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { ROUTES, type UserRole } from '@/app/routes'
+import { ROUTES, type UserRole } from '@/types/routes'
 import { analytics, trackLinkClick } from '@/utils/analytics'
 
 interface NavItem {
