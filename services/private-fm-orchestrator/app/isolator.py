@@ -627,3 +627,252 @@ class NamespaceIsolator:
             "reason": reason.value
         }
         await self.redis.lpush("fallback_queue", json.dumps(fallback_data))
+
+    # Adapter Reset Methods (S5-08)
+    async def delete_subject_adapter(self, learner_id: UUID, subject: str) -> bool:
+        """
+        Delete the existing adapter for a specific subject.
+        
+        Args:
+            learner_id: The learner's unique identifier
+            subject: The subject to delete the adapter for
+            
+        Returns:
+            bool: True if deletion was successful
+        """
+        try:
+            self.logger.info(
+                "Deleting subject adapter",
+                learner_id=str(learner_id),
+                subject=subject
+            )
+            
+            # Get namespace
+            namespace = await self.get_namespace(learner_id)
+            if not namespace:
+                raise ValueError(f"Namespace not found for learner {learner_id}")
+            
+            # Delete subject-specific model files and checkpoints
+            adapter_key = f"adapter:{namespace.ns_uid}:{subject}"
+            checkpoint_pattern = f"checkpoint:{namespace.ns_uid}:{subject}:*"
+            
+            # Remove from foundation model store
+            await self.fm_store.delete(adapter_key)
+            
+            # Clean up checkpoints
+            checkpoint_keys = await self.fm_store.list_keys(checkpoint_pattern)
+            for key in checkpoint_keys:
+                await self.fm_store.delete(key)
+            
+            # Remove from Redis cache
+            cache_key = f"model_cache:{learner_id}:{subject}"
+            await self.redis.delete(cache_key)
+            
+            self.logger.info(
+                "Subject adapter deleted successfully",
+                learner_id=str(learner_id),
+                subject=subject,
+                files_deleted=len(checkpoint_keys) + 1
+            )
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(
+                "Failed to delete subject adapter",
+                learner_id=str(learner_id),
+                subject=subject,
+                error=str(e)
+            )
+            raise
+
+    async def clone_base_model_for_subject(self, learner_id: UUID, subject: str) -> bool:
+        """
+        Re-clone the base foundation model for a specific subject.
+        
+        Args:
+            learner_id: The learner's unique identifier
+            subject: The subject to clone the base model for
+            
+        Returns:
+            bool: True if cloning was successful
+        """
+        try:
+            self.logger.info(
+                "Cloning base foundation model",
+                learner_id=str(learner_id),
+                subject=subject
+            )
+            
+            # Get namespace
+            namespace = await self.get_namespace(learner_id)
+            if not namespace:
+                raise ValueError(f"Namespace not found for learner {learner_id}")
+            
+            # Get the base foundation model for this subject
+            base_model_key = f"base_fm:{namespace.base_fm_version}:{subject}"
+            
+            # Clone to subject-specific adapter location
+            adapter_key = f"adapter:{namespace.ns_uid}:{subject}"
+            
+            # Copy base model to adapter location
+            base_model_data = await self.fm_store.get(base_model_key)
+            if not base_model_data:
+                raise ValueError(f"Base model not found for subject {subject}")
+            
+            await self.fm_store.put(adapter_key, base_model_data)
+            
+            # Initialize training metadata
+            training_metadata = {
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "base_fm_version": namespace.base_fm_version,
+                "subject": subject,
+                "learner_id": str(learner_id),
+                "training_steps": 0,
+                "last_checkpoint": None
+            }
+            
+            metadata_key = f"metadata:{namespace.ns_uid}:{subject}"
+            await self.fm_store.put(metadata_key, json.dumps(training_metadata))
+            
+            # Clear any cached data
+            cache_key = f"model_cache:{learner_id}:{subject}"
+            await self.redis.delete(cache_key)
+            
+            self.logger.info(
+                "Base foundation model cloned successfully",
+                learner_id=str(learner_id),
+                subject=subject,
+                base_fm_version=namespace.base_fm_version
+            )
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(
+                "Failed to clone base foundation model",
+                learner_id=str(learner_id),
+                subject=subject,
+                error=str(e)
+            )
+            raise
+
+    async def replay_event(self, learner_id: UUID, subject: str, event: EventLog) -> bool:
+        """
+        Replay a single learner event for model training.
+        
+        Args:
+            learner_id: The learner's unique identifier
+            subject: The subject being trained
+            event: The event data to replay
+            
+        Returns:
+            bool: True if replay was successful
+        """
+        try:
+            # Get namespace
+            namespace = await self.get_namespace(learner_id)
+            if not namespace:
+                raise ValueError(f"Namespace not found for learner {learner_id}")
+            
+            # Load current adapter
+            adapter_key = f"adapter:{namespace.ns_uid}:{subject}"
+            
+            # Apply the learning update based on event type
+            update_applied = await self._apply_learning_update(
+                adapter_key,
+                event.event_type,
+                event.event_data,
+                subject
+            )
+            
+            if update_applied:
+                # Update training metadata
+                metadata_key = f"metadata:{namespace.ns_uid}:{subject}"
+                metadata_str = await self.fm_store.get(metadata_key)
+                
+                if metadata_str:
+                    metadata = json.loads(metadata_str)
+                    metadata["training_steps"] = metadata.get("training_steps", 0) + 1
+                    metadata["last_event_replayed"] = event.id
+                    metadata["last_update"] = datetime.now(timezone.utc).isoformat()
+                    
+                    await self.fm_store.put(metadata_key, json.dumps(metadata))
+            
+            return update_applied
+            
+        except Exception as e:
+            self.logger.error(
+                "Failed to replay event",
+                learner_id=str(learner_id),
+                subject=subject,
+                event_id=str(event.id),
+                error=str(e)
+            )
+            raise
+
+    async def _apply_learning_update(
+        self, 
+        adapter_key: str, 
+        event_type: str, 
+        event_data: Dict[str, Any],
+        subject: str
+    ) -> bool:
+        """
+        Apply a learning update to the model based on event data.
+        
+        Args:
+            adapter_key: Key for the adapter in storage
+            event_type: Type of learning event
+            event_data: Event data to apply
+            subject: Subject being trained
+            
+        Returns:
+            bool: True if update was applied
+        """
+        try:
+            # Simulate learning update application
+            # In a real implementation, this would:
+            # 1. Load the current model weights
+            # 2. Apply the learning update based on event_type
+            # 3. Update the model parameters
+            # 4. Save the updated model
+            
+            supported_events = [
+                "PROBLEM_SOLVED",
+                "ANSWER_SUBMITTED", 
+                "HINT_REQUESTED",
+                "MISTAKE_MADE",
+                "CONCEPT_MASTERED",
+                "SKILL_PRACTICED"
+            ]
+            
+            if event_type in supported_events:
+                # Simulate processing time based on event complexity
+                processing_time = 0.1 if event_type in ["HINT_REQUESTED"] else 0.3
+                await asyncio.sleep(processing_time)
+                
+                self.logger.debug(
+                    "Learning update applied",
+                    adapter_key=adapter_key,
+                    event_type=event_type,
+                    subject=subject
+                )
+                
+                return True
+            else:
+                self.logger.debug(
+                    "Event type not applicable for learning update",
+                    event_type=event_type,
+                    subject=subject
+                )
+                return False
+                
+        except Exception as e:
+            self.logger.error(
+                "Failed to apply learning update",
+                adapter_key=adapter_key,
+                event_type=event_type,
+                error=str(e)
+            )
+            return False

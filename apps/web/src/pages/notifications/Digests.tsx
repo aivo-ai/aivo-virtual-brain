@@ -1,8 +1,11 @@
 /**
- * Notifications Digests Page (S5-07)
+ * Notificimport { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Input } from '@/components/ui/Input'
+import { Alert } from '@/components/ui/Alert's Digests Page (S5-07)
  * List and preview weekly wins and other digest notifications
  */
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Calendar,
   Clock,
@@ -61,7 +64,6 @@ export default function DigestsPage() {
     language: 'en',
   })
   const [loading, setLoading] = useState(true)
-  const [selectedDigest, setSelectedDigest] = useState<DigestItem | null>(null)
   const [showPreferences, setShowPreferences] = useState(false)
   const [filterType, setFilterType] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -162,7 +164,7 @@ export default function DigestsPage() {
       )
 
       if (response.ok) {
-        const data = await response.json()
+        await response.json()
         toast({
           title: 'Preview Generated',
           description: 'Weekly wins preview has been generated.',
@@ -213,7 +215,7 @@ export default function DigestsPage() {
       case 'sent':
         return <Badge>Sent</Badge>
       case 'failed':
-        return <Badge variant="destructive">Failed</Badge>
+        return <Badge variant="danger">Failed</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }

@@ -22,6 +22,7 @@ from .models import (
     FallbackReason
 )
 from .isolator import NamespaceIsolator
+from .routes.reset import router as reset_router
 
 logger = structlog.get_logger()
 
@@ -516,5 +517,8 @@ def create_router() -> APIRouter:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to retrieve global statistics"
             )
+    
+    # Include subrouters
+    router.include_router(reset_router, prefix="/reset", tags=["adapter-reset"])
     
     return router

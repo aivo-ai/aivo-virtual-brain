@@ -42,6 +42,16 @@ class FallbackReason(str, Enum):
     INTEGRITY_FAILURE = "integrity_failure"
 
 
+class AdapterResetStatus(str, Enum):
+    """Status of an adapter reset request."""
+    PENDING_APPROVAL = "pending_approval"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    EXECUTING = "executing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 # Database Models
 class LearnerNamespace(Base):
     """Database model for learner namespaces."""
@@ -111,13 +121,55 @@ class EventLog(Base):
     event_type = Column(String(50), nullable=False, index=True)
     event_data = Column(JSON, nullable=False)
     checkpoint_hash = Column(String(64), nullable=True)
+    subject = Column(String(50), nullable=True, index=True)  # Subject for event filtering
     
     # Sequence tracking for replay
     sequence_number = Column(Integer, nullable=False, index=True)
     correlation_id = Column(String(64), nullable=True, index=True)
+    timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
     
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     created_by = Column(String(100), nullable=False)  # system, guardian, api
+
+
+class AdapterResetRequest(Base):
+    """Database model for adapter reset requests."""
+    __tablename__ = "adapter_reset_requests"
+    
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    learner_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
+    subject = Column(String(50), nullable=False, index=True)
+    
+    # Request details
+    reason = Column(Text, nullable=False)
+    requested_by = Column(PGUUID(as_uuid=True), nullable=False)
+    requester_role = Column(String(50), nullable=False)
+    
+    # Status tracking
+    status = Column(String(20), nullable=False, default=AdapterResetStatus.PENDING_APPROVAL)
+    approval_request_id = Column(PGUUID(as_uuid=True), nullable=True, index=True)
+    
+    # Approval details
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    approved_by = Column(PGUUID(as_uuid=True), nullable=True)
+    rejected_at = Column(DateTime(timezone=True), nullable=True)
+    rejected_by = Column(PGUUID(as_uuid=True), nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+    
+    # Execution tracking
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    progress_percent = Column(Integer, nullable=True)
+    current_stage = Column(String(100), nullable=True)
+    error_message = Column(Text, nullable=True)
+    events_replayed = Column(Integer, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    
+    # Additional metadata
+    metadata = Column(JSON, nullable=True)
 
 
 # Pydantic Models

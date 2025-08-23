@@ -2,17 +2,8 @@
  * Notification Preferences Page (S5-07)
  * Manage notification settings including Weekly Wins digest preferences
  */
-import React, { useState, useEffect } from 'react'
-import {
-  Bell,
-  Mail,
-  Smartphone,
-  Clock,
-  Calendar,
-  Globe,
-  Save,
-  X,
-} from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Bell, Mail, Smartphone, Clock, Calendar, Save, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'

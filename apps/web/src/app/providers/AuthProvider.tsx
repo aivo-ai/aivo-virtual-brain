@@ -6,14 +6,16 @@ import {
   ReactNode,
 } from 'react'
 import { analytics } from '@/utils/analytics'
+import { UserRole } from '@/types/routes'
 
 export interface User {
   id: string
   email: string
   name: string
-  role: 'parent' | 'teacher' | 'district_admin' | 'staff' | 'system_admin'
+  role: UserRole
   dash_context: 'parent' | 'teacher' | 'district'
   avatar?: string
+  token?: string // Authentication token
   settings?: {
     language?: string
     timezone?: string
