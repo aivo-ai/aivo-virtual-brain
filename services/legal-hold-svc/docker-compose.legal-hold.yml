@@ -1,0 +1,219 @@
+services:
+  legal-hold-svc:
+    build:
+      context: ./services/legal-hold-svc
+      dockerfile: Dockerfile
+    container_name: legal-hold-svc
+    environment:
+      # Database Configuration
+      LEGAL_HOLD_DB_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/legal_hold_db
+      LEGAL_HOLD_DB_POOL_SIZE: 20
+      LEGAL_HOLD_DB_MAX_OVERFLOW: 30
+
+      # S3 Configuration for eDiscovery exports
+      EDISCOVERY_S3_ENDPOINT: http://minio:9000
+      EDISCOVERY_S3_BUCKET: legal-exports
+      EDISCOVERY_S3_REGION: us-east-1
+      EDISCOVERY_S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      EDISCOVERY_S3_SECRET_KEY: ${MINIO_SECRET_KEY}
+      EDISCOVERY_STORAGE_CLASS: STANDARD
+
+      # Security Configuration
+      LEGAL_HOLD_ENCRYPTION_KEY: ${LEGAL_HOLD_ENCRYPTION_KEY}
+      EXPORT_SIGNING_KEY: ${EXPORT_SIGNING_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+
+      # Service Integration URLs
+      PRIVACY_SVC_URL: http://privacy-svc:8000
+      AUDIT_SVC_URL: http://audit-svc:8000
+      NOTIFICATION_SVC_URL: http://notification-svc:8000
+      CHAT_SVC_URL: http://chat-svc:8000
+
+      # Compliance Configuration
+      RETENTION_CHECK_ENABLED: "true"
+      AUTO_EXPORT_ENCRYPTION: "true"
+      CHAIN_OF_CUSTODY_REQUIRED: "true"
+      LEGAL_HOLD_NOTIFICATIONS_ENABLED: "true"
+
+      # Background Task Configuration
+      CELERY_BROKER_URL: redis://redis:6379/5
+      CELERY_RESULT_BACKEND: redis://redis:6379/5
+      EXPORT_PROCESSING_TIMEOUT: 3600
+
+      # Monitoring
+      PROMETHEUS_ENABLED: "true"
+      METRICS_PORT: 9090
+      LOG_LEVEL: INFO
+
+    ports:
+      - "8080:8000" # Legal Hold API
+      - "9095:9090" # Metrics endpoint
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+    networks:
+      - backend
+      - monitoring
+
+    volumes:
+      # Mount for temporary export files
+      - legal_exports_temp:/tmp/exports
+      # Mount for audit logs
+      - ./logs/legal-hold:/var/log/legal-hold
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+
+  # Background worker for export processing
+  legal-hold-worker:
+    build:
+      context: ./services/legal-hold-svc
+      dockerfile: Dockerfile
+    container_name: legal-hold-worker
+    command:
+      [
+        "celery",
+        "worker",
+        "-A",
+        "app.tasks",
+        "--loglevel=info",
+        "--concurrency=4",
+      ]
+    environment:
+      # Inherit same configuration as main service
+      LEGAL_HOLD_DB_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/legal_hold_db
+      EDISCOVERY_S3_ENDPOINT: http://minio:9000
+      EDISCOVERY_S3_BUCKET: legal-exports
+      EDISCOVERY_S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      EDISCOVERY_S3_SECRET_KEY: ${MINIO_SECRET_KEY}
+      LEGAL_HOLD_ENCRYPTION_KEY: ${LEGAL_HOLD_ENCRYPTION_KEY}
+      EXPORT_SIGNING_KEY: ${EXPORT_SIGNING_KEY}
+      CELERY_BROKER_URL: redis://redis:6379/5
+      CELERY_RESULT_BACKEND: redis://redis:6379/5
+      LOG_LEVEL: INFO
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+    networks:
+      - backend
+
+    volumes:
+      - legal_exports_temp:/tmp/exports
+      - ./logs/legal-hold-worker:/var/log/legal-hold-worker
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+          cpus: "1.0"
+
+  # Celery beat scheduler for periodic tasks
+  legal-hold-scheduler:
+    build:
+      context: ./services/legal-hold-svc
+      dockerfile: Dockerfile
+    container_name: legal-hold-scheduler
+    command:
+      [
+        "celery",
+        "beat",
+        "-A",
+        "app.tasks",
+        "--loglevel=info",
+        "--schedule=/tmp/celerybeat-schedule",
+      ]
+    environment:
+      LEGAL_HOLD_DB_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/legal_hold_db
+      CELERY_BROKER_URL: redis://redis:6379/5
+      CELERY_RESULT_BACKEND: redis://redis:6379/5
+      LOG_LEVEL: INFO
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - backend
+
+    volumes:
+      - celery_beat_schedule:/tmp
+      - ./logs/legal-hold-scheduler:/var/log/legal-hold-scheduler
+
+    restart: unless-stopped
+
+  # Flower for monitoring Celery tasks
+  legal-hold-flower:
+    build:
+      context: ./services/legal-hold-svc
+      dockerfile: Dockerfile
+    container_name: legal-hold-flower
+    command:
+      [
+        "celery",
+        "flower",
+        "-A",
+        "app.tasks",
+        "--port=5555",
+        "--broker=redis://redis:6379/5",
+      ]
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/5
+      CELERY_RESULT_BACKEND: redis://redis:6379/5
+
+    ports:
+      - "5555:5555"
+
+    depends_on:
+      - redis
+
+    networks:
+      - backend
+      - monitoring
+
+    restart: unless-stopped
+
+volumes:
+  legal_exports_temp:
+    driver: local
+  celery_beat_schedule:
+    driver: local
+
+networks:
+  backend:
+    external: true
+  monitoring:
+    external: true
