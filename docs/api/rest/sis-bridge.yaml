@@ -1,0 +1,556 @@
+openapi: 3.0.3
+info:
+  title: SIS Bridge API
+  description: |
+    Student Information System bridge for automated data synchronization and enrollment management.
+    
+    ## Features
+    - **SIS Integration**: Connect with major SIS platforms (PowerSchool, Infinite Campus, Clever, etc.)
+    - **Real-time Sync**: Automated synchronization of student data and enrollments
+    - **Data Mapping**: Flexible field mapping and transformation rules
+    - **Webhook Support**: Real-time notifications of SIS changes
+    - **Audit Trail**: Complete logging of all data synchronization operations
+  version: 1.0.0
+  contact:
+    name: AIVO Platform Team
+    email: platform@aivo.io
+
+servers:
+  - url: https://api.aivo.io/sis
+    description: Production
+  - url: https://staging-api.aivo.io/sis
+    description: Staging
+
+security:
+  - BearerAuth: []
+
+paths:
+  /connections:
+    get:
+      summary: List SIS connections
+      operationId: listConnections
+      tags: [Connections]
+      responses:
+        '200':
+          description: List of SIS connections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SISConnection'
+
+    post:
+      summary: Create SIS connection
+      operationId: createConnection
+      tags: [Connections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSISConnection'
+      responses:
+        '201':
+          description: Connection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SISConnection'
+
+  /connections/{connection_id}/sync:
+    post:
+      summary: Trigger manual sync
+      operationId: triggerSync
+      tags: [Sync]
+      parameters:
+        - name: connection_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sync_type:
+                  type: string
+                  enum: [full, incremental, students_only, enrollments_only]
+                  default: incremental
+      responses:
+        '202':
+          description: Sync initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJob'
+
+  /sync-jobs/{job_id}:
+    get:
+      summary: Get sync job status
+      operationId: getSyncJob
+      tags: [Sync]
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sync job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJob'
+
+  /students:
+    get:
+      summary: List students from SIS
+      operationId: listStudents
+      tags: [Students]
+      parameters:
+        - name: connection_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: school_id
+          in: query
+          schema:
+            type: string
+        - name: grade_level
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, enrolled, withdrawn]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of students
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  students:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Student'
+                  total:
+                    type: integer
+                  has_more:
+                    type: boolean
+
+  /enrollments:
+    get:
+      summary: List course enrollments
+      operationId: listEnrollments
+      tags: [Enrollments]
+      parameters:
+        - name: connection_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: student_id
+          in: query
+          schema:
+            type: string
+        - name: course_id
+          in: query
+          schema:
+            type: string
+        - name: term_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, completed, dropped, withdrawn]
+      responses:
+        '200':
+          description: List of enrollments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enrollments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Enrollment'
+
+  /webhooks:
+    get:
+      summary: List configured webhooks
+      operationId: listWebhooks
+      tags: [Webhooks]
+      responses:
+        '200':
+          description: List of webhooks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  webhooks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Webhook'
+
+    post:
+      summary: Create webhook endpoint
+      operationId: createWebhook
+      tags: [Webhooks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhook'
+      responses:
+        '201':
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [System]
+      security: []
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  connections:
+                    type: object
+                    additionalProperties:
+                      type: string
+                      enum: [connected, disconnected, error]
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SISConnection:
+      type: object
+      required: [id, name, sis_type, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sis_type:
+          type: string
+          enum: [powerschool, infinite_campus, clever, skyward, synergy, aspen, google_classroom]
+        status:
+          type: string
+          enum: [active, inactive, error, pending]
+        config:
+          type: object
+          properties:
+            base_url:
+              type: string
+              format: uri
+            client_id:
+              type: string
+            sync_schedule:
+              type: string
+              description: Cron expression for sync schedule
+            field_mappings:
+              type: object
+              additionalProperties: true
+        last_sync:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateSISConnection:
+      type: object
+      required: [name, sis_type, config]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        sis_type:
+          type: string
+          enum: [powerschool, infinite_campus, clever, skyward, synergy, aspen, google_classroom]
+        config:
+          type: object
+          required: [base_url, client_id, client_secret]
+          properties:
+            base_url:
+              type: string
+              format: uri
+            client_id:
+              type: string
+            client_secret:
+              type: string
+            sync_schedule:
+              type: string
+              default: "0 2 * * *"
+            field_mappings:
+              type: object
+              additionalProperties: true
+
+    SyncJob:
+      type: object
+      required: [id, connection_id, sync_type, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        connection_id:
+          type: string
+          format: uuid
+        sync_type:
+          type: string
+          enum: [full, incremental, students_only, enrollments_only]
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+        progress:
+          type: object
+          properties:
+            current_step:
+              type: string
+            total_steps:
+              type: integer
+            processed_records:
+              type: integer
+            total_records:
+              type: integer
+            error_count:
+              type: integer
+        results:
+          type: object
+          properties:
+            students_synced:
+              type: integer
+            enrollments_synced:
+              type: integer
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  record_id:
+                    type: string
+                  error_message:
+                    type: string
+                  error_code:
+                    type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    Student:
+      type: object
+      required: [sis_id, first_name, last_name, email]
+      properties:
+        sis_id:
+          type: string
+        student_number:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        middle_name:
+          type: string
+        email:
+          type: string
+          format: email
+        grade_level:
+          type: string
+        school_id:
+          type: string
+        school_name:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, enrolled, withdrawn]
+        birth_date:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [M, F, X, U]
+        guardian_info:
+          type: object
+          properties:
+            primary_guardian:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                relationship:
+                  type: string
+            emergency_contacts:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  phone:
+                    type: string
+                  relationship:
+                    type: string
+        custom_fields:
+          type: object
+          additionalProperties: true
+        last_updated:
+          type: string
+          format: date-time
+
+    Enrollment:
+      type: object
+      required: [sis_id, student_id, course_id, status]
+      properties:
+        sis_id:
+          type: string
+        student_id:
+          type: string
+        course_id:
+          type: string
+        course_name:
+          type: string
+        course_code:
+          type: string
+        section_id:
+          type: string
+        section_name:
+          type: string
+        teacher_id:
+          type: string
+        teacher_name:
+          type: string
+        term_id:
+          type: string
+        term_name:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, dropped, withdrawn]
+        enrollment_date:
+          type: string
+          format: date
+        completion_date:
+          type: string
+          format: date
+        grade:
+          type: string
+        credits:
+          type: number
+        custom_fields:
+          type: object
+          additionalProperties: true
+        last_updated:
+          type: string
+          format: date-time
+
+    Webhook:
+      type: object
+      required: [id, url, events, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [student.created, student.updated, student.deleted, enrollment.created, enrollment.updated, enrollment.deleted, sync.completed, sync.failed]
+        status:
+          type: string
+          enum: [active, inactive]
+        secret:
+          type: string
+          writeOnly: true
+        created_at:
+          type: string
+          format: date-time
+        last_triggered:
+          type: string
+          format: date-time
+
+    CreateWebhook:
+      type: object
+      required: [url, events]
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [student.created, student.updated, student.deleted, enrollment.created, enrollment.updated, enrollment.deleted, sync.completed, sync.failed]
+        secret:
+          type: string
+          minLength: 16

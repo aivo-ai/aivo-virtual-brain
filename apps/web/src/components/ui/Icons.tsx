@@ -616,7 +616,10 @@ export const Star: React.FC<IconProps> = ({ className = '', size = 24 }) => (
   </svg>
 )
 
-export const HelpCircle: React.FC<IconProps> = ({ className = '', size = 24 }) => (
+export const HelpCircle: React.FC<IconProps> = ({
+  className = '',
+  size = 24,
+}) => (
   <svg
     width={size}
     height={size}
@@ -684,7 +687,10 @@ export const XCircle: React.FC<IconProps> = ({ className = '', size = 24 }) => (
   </svg>
 )
 
-export const ExternalLink: React.FC<IconProps> = ({ className = '', size = 24 }) => (
+export const ExternalLink: React.FC<IconProps> = ({
+  className = '',
+  size = 24,
+}) => (
   <svg
     width={size}
     height={size}

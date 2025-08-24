@@ -4,7 +4,7 @@ import {
   CourseworkUploadRequest,
   OCRPreviewResponse,
 } from '../../api/courseworkClient'
-import { consentClient, ConsentResponse } from '../../api/consentClient'
+import { consentClient, ConsentRecord } from '../../api/consentClient'
 import { UploadDropzone } from '../../components/library/UploadDropzone'
 
 interface UploadForm {

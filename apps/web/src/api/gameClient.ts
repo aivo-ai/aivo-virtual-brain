@@ -1,9 +1,9 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080'
 
 // Game Types from game-gen-svc
-export type GameType = 
+export type GameType =
   | 'vocabulary_builder'
-  | 'math_puzzle' 
+  | 'math_puzzle'
   | 'science_experiment'
   | 'history_timeline'
   | 'reading_comprehension'
@@ -14,8 +14,21 @@ export type GameType =
   | 'critical_thinking'
 
 export type GameDifficulty = 'beginner' | 'easy' | 'medium' | 'hard' | 'expert'
-export type GameStatus = 'draft' | 'ready' | 'in_progress' | 'completed' | 'failed'
-export type SubjectArea = 'english' | 'mathematics' | 'science' | 'history' | 'geography' | 'arts' | 'physical_education' | 'foreign_language'
+export type GameStatus =
+  | 'draft'
+  | 'ready'
+  | 'in_progress'
+  | 'completed'
+  | 'failed'
+export type SubjectArea =
+  | 'english'
+  | 'mathematics'
+  | 'science'
+  | 'history'
+  | 'geography'
+  | 'arts'
+  | 'physical_education'
+  | 'foreign_language'
 export type GradeBand = 'K-2' | '3-5' | '6-8' | '9-12'
 
 // Game Asset Types
@@ -121,20 +134,20 @@ export interface GameManifest {
   target_duration_minutes: number
   difficulty_level: GameDifficulty
   grade_band: GradeBand
-  
+
   // Game Content
   game_scenes: GameScene[]
   game_assets: GameAsset[]
   game_rules: GameRules
   game_config?: Record<string, any>
-  
+
   // UI Configuration
   user_interface?: {
     theme: string
     layout: string
     controls: Record<string, any>
   }
-  
+
   // Status and Metadata
   status: GameStatus
   estimated_duration_minutes: number
@@ -184,7 +197,16 @@ export interface PerformanceMetrics {
 
 // Event Types
 export interface GameEvent {
-  event_type: 'GAME_STARTED' | 'GAME_PAUSED' | 'GAME_RESUMED' | 'GAME_COMPLETED' | 'SCENE_COMPLETED' | 'INTERACTION_COMPLETED' | 'SCORE_UPDATED' | 'HINT_REQUESTED' | 'ERROR_OCCURRED'
+  event_type:
+    | 'GAME_STARTED'
+    | 'GAME_PAUSED'
+    | 'GAME_RESUMED'
+    | 'GAME_COMPLETED'
+    | 'SCENE_COMPLETED'
+    | 'INTERACTION_COMPLETED'
+    | 'SCORE_UPDATED'
+    | 'HINT_REQUESTED'
+    | 'ERROR_OCCURRED'
   session_id: string
   learner_id: string
   game_id: string
@@ -235,7 +257,9 @@ class GameClient {
   }
 
   // Generate a new game
-  async generateGame(request: GameGenerationRequest): Promise<GameGenerationResponse> {
+  async generateGame(
+    request: GameGenerationRequest
+  ): Promise<GameGenerationResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/games/generate`, {
         method: 'POST',
@@ -244,7 +268,7 @@ class GameClient {
         },
         body: JSON.stringify({
           ...request,
-          minutes: request.duration_minutes // API expects 'minutes' field
+          minutes: request.duration_minutes, // API expects 'minutes' field
         }),
       })
 
@@ -253,7 +277,7 @@ class GameClient {
       }
 
       const result: ApiResponse<GameGenerationResponse> = await response.json()
-      
+
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Game generation failed')
       }
@@ -268,19 +292,22 @@ class GameClient {
   // Get game manifest by ID
   async getGameManifest(gameId: string): Promise<GameManifest> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/games/${gameId}/manifest`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/games/${gameId}/manifest`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
 
       if (!response.ok) {
         throw new Error(`Failed to fetch game manifest: ${response.statusText}`)
       }
 
       const result: ApiResponse<GameManifest> = await response.json()
-      
+
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to fetch game manifest')
       }
@@ -293,31 +320,38 @@ class GameClient {
   }
 
   // Create a new game session
-  async createGameSession(gameId: string, learnerId: string, expectedDuration?: number): Promise<GameSession> {
+  async createGameSession(
+    gameId: string,
+    learnerId: string,
+    expectedDuration?: number
+  ): Promise<GameSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/games/${gameId}/sessions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          game_id: gameId,
-          learner_id: learnerId,
-          expected_duration: expectedDuration,
-          session_context: {
-            client_type: 'web',
-            browser: navigator.userAgent,
-            timestamp: new Date().toISOString()
-          }
-        }),
-      })
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/games/${gameId}/sessions`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            game_id: gameId,
+            learner_id: learnerId,
+            expected_duration: expectedDuration,
+            session_context: {
+              client_type: 'web',
+              browser: navigator.userAgent,
+              timestamp: new Date().toISOString(),
+            },
+          }),
+        }
+      )
 
       if (!response.ok) {
         throw new Error(`Failed to create game session: ${response.statusText}`)
       }
 
       const result: ApiResponse<GameSession> = await response.json()
-      
+
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to create game session')
       }
@@ -330,22 +364,28 @@ class GameClient {
   }
 
   // Update game session progress
-  async updateGameSession(sessionId: string, updates: Partial<GameSession>): Promise<GameSession> {
+  async updateGameSession(
+    sessionId: string,
+    updates: Partial<GameSession>
+  ): Promise<GameSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/games/sessions/${sessionId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      })
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/games/sessions/${sessionId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updates),
+        }
+      )
 
       if (!response.ok) {
         throw new Error(`Failed to update game session: ${response.statusText}`)
       }
 
       const result: ApiResponse<GameSession> = await response.json()
-      
+
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to update game session')
       }
@@ -373,7 +413,7 @@ class GameClient {
       }
 
       const result: ApiResponse = await response.json()
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to send game event')
       }
@@ -384,7 +424,10 @@ class GameClient {
   }
 
   // Complete game session
-  async completeGame(sessionId: string, finalMetrics: PerformanceMetrics): Promise<GameSession> {
+  async completeGame(
+    sessionId: string,
+    finalMetrics: PerformanceMetrics
+  ): Promise<GameSession> {
     try {
       // Send completion event first
       await this.sendGameEvent({
@@ -393,28 +436,31 @@ class GameClient {
         learner_id: '', // Will be filled by server
         game_id: '', // Will be filled by server
         timestamp: new Date().toISOString(),
-        data: finalMetrics
+        data: finalMetrics,
       })
 
       // Update session with final data
-      const response = await fetch(`${this.baseUrl}/api/v1/games/sessions/${sessionId}/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          performance_metrics: finalMetrics,
-          completion_percentage: 100,
-          ended_at: new Date().toISOString()
-        }),
-      })
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/games/sessions/${sessionId}/complete`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            performance_metrics: finalMetrics,
+            completion_percentage: 100,
+            ended_at: new Date().toISOString(),
+          }),
+        }
+      )
 
       if (!response.ok) {
         throw new Error(`Failed to complete game: ${response.statusText}`)
       }
 
       const result: ApiResponse<GameSession> = await response.json()
-      
+
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to complete game')
       }
@@ -431,7 +477,7 @@ class GameClient {
     try {
       return await this.updateGameSession(sessionId, {
         status: 'in_progress',
-        paused_at: new Date().toISOString()
+        paused_at: new Date().toISOString(),
       })
     } catch (error) {
       console.error('Error pausing game:', error)
@@ -440,12 +486,15 @@ class GameClient {
   }
 
   // Resume game session
-  async resumeGame(sessionId: string, pauseDurationSeconds: number): Promise<GameSession> {
+  async resumeGame(
+    sessionId: string,
+    pauseDurationSeconds: number
+  ): Promise<GameSession> {
     try {
       return await this.updateGameSession(sessionId, {
         status: 'in_progress',
         paused_at: undefined,
-        pause_duration_seconds: pauseDurationSeconds
+        pause_duration_seconds: pauseDurationSeconds,
       })
     } catch (error) {
       console.error('Error resuming game:', error)

@@ -1,0 +1,1122 @@
+openapi: 3.0.3
+info:
+  title: Compliance Management API
+  description: API for compliance monitoring, assessment, and reporting across various regulatory frameworks
+  version: 1.0.0
+  contact:
+    name: AIVO Platform Team
+    email: platform@aivo.io
+
+servers:
+  - url: https://api.aivo.io/compliance
+    description: Production server
+  - url: https://staging-api.aivo.io/compliance
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /dashboard:
+    get:
+      summary: Get compliance dashboard
+      description: Retrieve overall compliance status and metrics for a tenant
+      operationId: getComplianceDashboard
+      tags:
+        - Dashboard
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Tenant ID (if not provided, uses current user's tenant)
+        - name: framework
+          in: query
+          schema:
+            type: string
+            enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+          description: Filter by specific compliance framework
+      responses:
+        '200':
+          description: Compliance dashboard data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /assessments:
+    post:
+      summary: Start compliance assessment
+      description: Initiate a new compliance assessment for a specific framework
+      operationId: startComplianceAssessment
+      tags:
+        - Assessments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentRequest'
+      responses:
+        '201':
+          description: Assessment started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      summary: List compliance assessments
+      description: Retrieve list of compliance assessments for a tenant
+      operationId: listAssessments
+      tags:
+        - Assessments
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: framework
+          in: query
+          schema:
+            type: string
+            enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [in_progress, completed, failed, cancelled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Assessments retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /assessments/{assessmentId}:
+    get:
+      summary: Get assessment details
+      description: Retrieve detailed information about a specific assessment
+      operationId: getAssessment
+      tags:
+        - Assessments
+      parameters:
+        - name: assessmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Assessment details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /policies:
+    get:
+      summary: List compliance policies
+      description: Retrieve compliance policies for specified frameworks
+      operationId: listPolicies
+      tags:
+        - Policies
+      parameters:
+        - name: framework
+          in: query
+          schema:
+            type: string
+            enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [data_retention, consent_management, access_control, data_transfer, privacy_rights, security]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, draft, deprecated]
+        - name: enforcement_level
+          in: query
+          schema:
+            type: string
+            enum: [mandatory, recommended, optional]
+      responses:
+        '200':
+          description: Policies retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create compliance policy
+      description: Create a new compliance policy
+      operationId: createPolicy
+      tags:
+        - Policies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyRequest'
+      responses:
+        '201':
+          description: Policy created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /policies/{policyId}:
+    get:
+      summary: Get policy details
+      description: Retrieve detailed information about a specific policy
+      operationId: getPolicy
+      tags:
+        - Policies
+      parameters:
+        - name: policyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Policy details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      summary: Update compliance policy
+      description: Update an existing compliance policy
+      operationId: updatePolicy
+      tags:
+        - Policies
+      parameters:
+        - name: policyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyRequest'
+      responses:
+        '200':
+          description: Policy updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /reports:
+    post:
+      summary: Generate compliance report
+      description: Generate a compliance report for specified frameworks and time periods
+      operationId: generateReport
+      tags:
+        - Reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        '201':
+          description: Report generation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      summary: List compliance reports
+      description: Retrieve list of generated compliance reports
+      operationId: listReports
+      tags:
+        - Reports
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: framework
+          in: query
+          schema:
+            type: string
+            enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [generating, completed, failed]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /reports/{reportId}:
+    get:
+      summary: Get report details
+      description: Retrieve details about a specific compliance report
+      operationId: getReport
+      tags:
+        - Reports
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /reports/{reportId}/download:
+    get:
+      summary: Download compliance report
+      description: Download the generated compliance report file
+      operationId: downloadReport
+      tags:
+        - Reports
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /findings:
+    get:
+      summary: List compliance findings
+      description: Retrieve compliance findings and violations
+      operationId: listFindings
+      tags:
+        - Findings
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: framework
+          in: query
+          schema:
+            type: string
+            enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, in_progress, resolved, acknowledged]
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [data_retention, consent_management, access_control, data_transfer, privacy_rights, security]
+      responses:
+        '200':
+          description: Findings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindingList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /findings/{findingId}/resolve:
+    post:
+      summary: Resolve compliance finding
+      description: Mark a compliance finding as resolved with remediation details
+      operationId: resolveFinding
+      tags:
+        - Findings
+      parameters:
+        - name: findingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FindingResolution'
+      responses:
+        '200':
+          description: Finding resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Check the health status of the compliance service
+      operationId: getHealth
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ComplianceDashboard:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        overall_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Overall compliance score
+        compliance_frameworks:
+          type: array
+          items:
+            $ref: '#/components/schemas/FrameworkStatus'
+        recent_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceActivity'
+        risk_summary:
+          $ref: '#/components/schemas/RiskSummary'
+        generated_at:
+          type: string
+          format: date-time
+
+    FrameworkStatus:
+      type: object
+      properties:
+        framework:
+          type: string
+          enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        status:
+          type: string
+          enum: [compliant, non_compliant, partially_compliant, under_review]
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        last_assessment:
+          type: string
+          format: date-time
+        next_review:
+          type: string
+          format: date-time
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Finding'
+        policies_count:
+          type: integer
+        active_violations:
+          type: integer
+
+    AssessmentRequest:
+      type: object
+      required:
+        - framework
+        - assessment_type
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        framework:
+          type: string
+          enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        assessment_type:
+          type: string
+          enum: [full, incremental, targeted]
+          description: Type of assessment to perform
+        scope:
+          $ref: '#/components/schemas/AssessmentScope'
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+          default: medium
+
+    Assessment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        framework:
+          type: string
+          enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        assessment_type:
+          type: string
+          enum: [full, incremental, targeted]
+        status:
+          type: string
+          enum: [in_progress, completed, failed, cancelled]
+        progress:
+          $ref: '#/components/schemas/AssessmentProgress'
+        scope:
+          $ref: '#/components/schemas/AssessmentScope'
+        results:
+          $ref: '#/components/schemas/AssessmentResults'
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        estimated_completion:
+          type: string
+          format: date-time
+
+    AssessmentScope:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            type: string
+          description: List of services to include in assessment
+        data_types:
+          type: array
+          items:
+            type: string
+            enum: [pii, educational_records, financial_data, health_data, behavioral_data]
+        date_range:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+        include_archived:
+          type: boolean
+          default: false
+
+    AssessmentProgress:
+      type: object
+      properties:
+        current_stage:
+          type: string
+          enum: [data_collection, policy_review, system_analysis, risk_assessment, report_generation, completed]
+        total_stages:
+          type: integer
+        completed_stages:
+          type: integer
+        percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        estimated_remaining:
+          type: string
+          description: Estimated time remaining (e.g., "2h 30m")
+
+    AssessmentResults:
+      type: object
+      properties:
+        overall_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        status:
+          type: string
+          enum: [compliant, non_compliant, partially_compliant]
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Finding'
+        recommendations:
+          type: array
+          items:
+            type: string
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+        compliance_gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceGap'
+
+    Finding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        assessment_id:
+          type: string
+          format: uuid
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        category:
+          type: string
+          enum: [data_retention, consent_management, access_control, data_transfer, privacy_rights, security, documentation]
+        rule:
+          type: string
+          description: Specific regulation rule or requirement
+        title:
+          type: string
+          description: Brief title of the finding
+        description:
+          type: string
+          description: Detailed description of the compliance issue
+        evidence:
+          type: array
+          items:
+            type: string
+          description: Evidence supporting the finding
+        recommendation:
+          type: string
+          description: Recommended remediation action
+        remediation_effort:
+          type: string
+          enum: [low, medium, high, very_high]
+        status:
+          type: string
+          enum: [open, in_progress, resolved, acknowledged]
+        due_date:
+          type: string
+          format: date-time
+        assigned_to:
+          type: string
+          description: User or team assigned to resolve
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+
+    PolicyRequest:
+      type: object
+      required:
+        - name
+        - framework
+        - category
+        - description
+        - enforcement_level
+      properties:
+        name:
+          type: string
+          description: Policy name
+        framework:
+          type: string
+          enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        category:
+          type: string
+          enum: [data_retention, consent_management, access_control, data_transfer, privacy_rights, security]
+        description:
+          type: string
+          description: Detailed policy description
+        enforcement_level:
+          type: string
+          enum: [mandatory, recommended, optional]
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyRule'
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyException'
+
+    Policy:
+      allOf:
+        - $ref: '#/components/schemas/PolicyRequest'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            tenant_id:
+              type: string
+              format: uuid
+            version:
+              type: string
+            status:
+              type: string
+              enum: [active, draft, deprecated]
+            compliance_score:
+              type: integer
+              minimum: 0
+              maximum: 100
+            last_updated:
+              type: string
+              format: date-time
+            next_review:
+              type: string
+              format: date-time
+            created_by:
+              type: string
+              format: uuid
+            approved_by:
+              type: string
+              format: uuid
+
+    PolicyRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        condition:
+          type: string
+          description: Rule condition/trigger
+        action:
+          type: string
+          description: Required action when condition is met
+        automated:
+          type: boolean
+          description: Whether rule can be automatically enforced
+
+    PolicyException:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        rule_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        justification:
+          type: string
+        approved_by:
+          type: string
+          format: uuid
+        expires_at:
+          type: string
+          format: date-time
+
+    ReportRequest:
+      type: object
+      required:
+        - report_type
+        - framework
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        report_type:
+          type: string
+          enum: [compliance_status, assessment_summary, findings_report, policy_review, audit_trail]
+        framework:
+          type: string
+          enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        format:
+          type: string
+          enum: [pdf, xlsx, json]
+          default: pdf
+        date_range:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+        include_evidence:
+          type: boolean
+          default: false
+        include_remediation:
+          type: boolean
+          default: true
+        recipients:
+          type: array
+          items:
+            type: string
+            format: email
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        report_type:
+          type: string
+          enum: [compliance_status, assessment_summary, findings_report, policy_review, audit_trail]
+        framework:
+          type: string
+          enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        format:
+          type: string
+          enum: [pdf, xlsx, json]
+        status:
+          type: string
+          enum: [generating, completed, failed]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        file_url:
+          type: string
+          format: uri
+          description: Download URL when completed
+        file_size:
+          type: integer
+          description: File size in bytes
+        parameters:
+          type: object
+          description: Report generation parameters
+        requested_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        requested_by:
+          type: string
+          format: uuid
+
+    ComplianceActivity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [assessment, finding, remediation, policy_update, audit]
+        description:
+          type: string
+        framework:
+          type: string
+          enum: [COPPA, FERPA, GDPR, CCPA, PIPEDA, SOX, HIPAA]
+        status:
+          type: string
+          enum: [completed, in_progress, pending, failed]
+        user_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+
+    RiskSummary:
+      type: object
+      properties:
+        overall_risk:
+          type: string
+          enum: [low, medium, high, critical]
+        high_risk_findings:
+          type: integer
+        critical_findings:
+          type: integer
+        risk_trends:
+          type: object
+          properties:
+            direction:
+              type: string
+              enum: [improving, stable, declining]
+            change_percentage:
+              type: number
+              format: float
+
+    ComplianceGap:
+      type: object
+      properties:
+        requirement:
+          type: string
+        current_state:
+          type: string
+        required_state:
+          type: string
+        gap_severity:
+          type: string
+          enum: [low, medium, high, critical]
+        estimated_effort:
+          type: string
+
+    FindingResolution:
+      type: object
+      required:
+        - resolution_notes
+        - remediation_actions
+      properties:
+        resolution_notes:
+          type: string
+          description: Notes explaining how the finding was resolved
+        remediation_actions:
+          type: array
+          items:
+            type: string
+          description: List of actions taken to remediate
+        evidence_attachments:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: URLs to evidence of remediation
+        verified_by:
+          type: string
+          format: uuid
+          description: User who verified the resolution
+
+    AssessmentList:
+      type: object
+      properties:
+        assessments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assessment'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    PolicyList:
+      type: object
+      properties:
+        policies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        total:
+          type: integer
+
+    ReportList:
+      type: object
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/Report'
+        total:
+          type: integer
+
+    FindingList:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Finding'
+        total:
+          type: integer
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        frameworks_monitored:
+          type: array
+          items:
+            type: string
+        version:
+          type: string
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Additional error details
+        request_id:
+          type: string
+          description: Unique request identifier for tracking
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+tags:
+  - name: Dashboard
+    description: Compliance overview and metrics
+  - name: Assessments
+    description: Compliance assessment operations
+  - name: Policies
+    description: Compliance policy management
+  - name: Reports
+    description: Compliance reporting and documentation
+  - name: Findings
+    description: Compliance findings and violations
+  - name: Health
+    description: Service health monitoring

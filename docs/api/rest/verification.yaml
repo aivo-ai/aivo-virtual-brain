@@ -1,0 +1,571 @@
+openapi: 3.0.3
+info:
+  title: Guardian Verification API
+  description: |
+    Identity verification service for guardian and staff authentication with multi-provider support.
+    
+    ## Features
+    - **Multi-Provider Support**: Integration with ID.me, Jumio, Onfido, and government databases
+    - **Document Verification**: Driver's license, passport, and state ID verification
+    - **Biometric Matching**: Facial recognition and liveness detection
+    - **Compliance**: COPPA, FERPA, and state-specific verification requirements
+    - **Audit Trail**: Complete verification audit logs for compliance
+  version: 1.0.0
+  contact:
+    name: AIVO Platform Team
+    email: platform@aivo.io
+
+servers:
+  - url: https://api.aivo.io/verify
+    description: Production
+  - url: https://staging-api.aivo.io/verify
+    description: Staging
+
+security:
+  - BearerAuth: []
+
+paths:
+  /sessions:
+    post:
+      summary: Start verification session
+      operationId: startVerification
+      tags: [Verification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRequest'
+      responses:
+        '201':
+          description: Verification session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSession'
+
+  /sessions/{session_id}:
+    get:
+      summary: Get verification session status
+      operationId: getVerificationStatus
+      tags: [Verification]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Verification session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSession'
+
+  /sessions/{session_id}/documents:
+    post:
+      summary: Upload verification document
+      operationId: uploadDocument
+      tags: [Documents]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                document_type:
+                  type: string
+                  enum: [drivers_license, passport, state_id, government_id]
+                side:
+                  type: string
+                  enum: [front, back]
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentUpload'
+
+  /sessions/{session_id}/selfie:
+    post:
+      summary: Upload verification selfie
+      operationId: uploadSelfie
+      tags: [Biometrics]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                liveness_data:
+                  type: string
+                  description: JSON data from liveness detection
+      responses:
+        '201':
+          description: Selfie uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfieUpload'
+
+  /sessions/{session_id}/submit:
+    post:
+      summary: Submit verification for processing
+      operationId: submitVerification
+      tags: [Verification]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Verification submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+
+  /providers:
+    get:
+      summary: List available verification providers
+      operationId: listProviders
+      tags: [Providers]
+      responses:
+        '200':
+          description: Available providers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VerificationProvider'
+
+  /admin/verifications:
+    get:
+      summary: List verifications for admin review
+      operationId: adminListVerifications
+      tags: [Admin]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, expired, manual_review]
+        - name: provider
+          in: query
+          schema:
+            type: string
+        - name: created_after
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of verifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminVerificationView'
+                  total:
+                    type: integer
+                  has_more:
+                    type: boolean
+
+  /admin/verifications/{session_id}/review:
+    post:
+      summary: Perform manual verification review
+      operationId: adminReviewVerification
+      tags: [Admin]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, notes]
+              properties:
+                decision:
+                  type: string
+                  enum: [approve, reject, request_additional]
+                notes:
+                  type: string
+                  maxLength: 1000
+                reviewer_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Review completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [System]
+      security: []
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  providers:
+                    type: object
+                    additionalProperties:
+                      type: string
+                      enum: [available, unavailable]
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    VerificationRequest:
+      type: object
+      required: [verification_type, user_id]
+      properties:
+        verification_type:
+          type: string
+          enum: [guardian, staff, teacher, admin]
+        user_id:
+          type: string
+          format: uuid
+        preferred_provider:
+          type: string
+          enum: [idme, jumio, onfido, government_db, manual]
+        required_documents:
+          type: array
+          items:
+            type: string
+            enum: [drivers_license, passport, state_id, government_id]
+        callback_url:
+          type: string
+          format: uri
+        metadata:
+          type: object
+          additionalProperties: true
+
+    VerificationSession:
+      type: object
+      required: [id, user_id, verification_type, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        verification_type:
+          type: string
+          enum: [guardian, staff, teacher, admin]
+        status:
+          type: string
+          enum: [pending, document_upload, selfie_required, processing, completed, failed, expired, manual_review]
+        provider:
+          type: string
+          enum: [idme, jumio, onfido, government_db, manual]
+        provider_session_id:
+          type: string
+        verification_url:
+          type: string
+          format: uri
+        required_documents:
+          type: array
+          items:
+            type: string
+        uploaded_documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentInfo'
+        progress:
+          type: object
+          properties:
+            current_step:
+              type: string
+            total_steps:
+              type: integer
+            completed_steps:
+              type: integer
+        result:
+          $ref: '#/components/schemas/VerificationResult'
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DocumentUpload:
+      type: object
+      required: [id, document_type, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        document_type:
+          type: string
+          enum: [drivers_license, passport, state_id, government_id]
+        side:
+          type: string
+          enum: [front, back]
+        status:
+          type: string
+          enum: [uploaded, processing, verified, failed]
+        file_url:
+          type: string
+          format: uri
+        extracted_data:
+          type: object
+          properties:
+            name:
+              type: string
+            date_of_birth:
+              type: string
+              format: date
+            document_number:
+              type: string
+            expiration_date:
+              type: string
+              format: date
+            issuing_state:
+              type: string
+            address:
+              type: object
+              properties:
+                street:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+                zip_code:
+                  type: string
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        uploaded_at:
+          type: string
+          format: date-time
+
+    SelfieUpload:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [uploaded, processing, verified, failed]
+        file_url:
+          type: string
+          format: uri
+        liveness_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        face_match_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        uploaded_at:
+          type: string
+          format: date-time
+
+    VerificationResult:
+      type: object
+      required: [status, decision]
+      properties:
+        status:
+          type: string
+          enum: [completed, failed, manual_review]
+        decision:
+          type: string
+          enum: [approved, rejected, pending_review]
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        verification_level:
+          type: string
+          enum: [low, medium, high, verified]
+        verified_attributes:
+          type: object
+          properties:
+            identity_verified:
+              type: boolean
+            age_verified:
+              type: boolean
+            address_verified:
+              type: boolean
+            document_authentic:
+              type: boolean
+            biometric_match:
+              type: boolean
+        failure_reasons:
+          type: array
+          items:
+            type: string
+            enum: [document_expired, poor_image_quality, document_not_supported, biometric_mismatch, suspicious_activity, manual_review_required]
+        provider_reference:
+          type: string
+        completed_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+
+    DocumentInfo:
+      type: object
+      properties:
+        document_type:
+          type: string
+        side:
+          type: string
+        status:
+          type: string
+        uploaded_at:
+          type: string
+          format: date-time
+
+    VerificationProvider:
+      type: object
+      required: [name, supported_documents, features]
+      properties:
+        name:
+          type: string
+          enum: [idme, jumio, onfido, government_db, manual]
+        display_name:
+          type: string
+        supported_documents:
+          type: array
+          items:
+            type: string
+        features:
+          type: object
+          properties:
+            document_verification:
+              type: boolean
+            biometric_matching:
+              type: boolean
+            liveness_detection:
+              type: boolean
+            real_time_processing:
+              type: boolean
+        availability:
+          type: string
+          enum: [available, unavailable, maintenance]
+        cost_per_verification:
+          type: number
+        average_processing_time:
+          type: integer
+          description: Average processing time in seconds
+
+    AdminVerificationView:
+      type: object
+      required: [session_id, user_id, status, created_at]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        user_email:
+          type: string
+          format: email
+        verification_type:
+          type: string
+        status:
+          type: string
+        provider:
+          type: string
+        confidence_score:
+          type: number
+        flags:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        reviewed_by:
+          type: string
+          format: uuid
+        reviewed_at:
+          type: string
+          format: date-time

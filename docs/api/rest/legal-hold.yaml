@@ -1,0 +1,1234 @@
+openapi: 3.0.3
+info:
+  title: Legal Hold API
+  description: API for managing legal holds, litigation holds, and eDiscovery processes
+  version: 1.0.0
+  contact:
+    name: AIVO Platform Team
+    email: platform@aivo.io
+
+servers:
+  - url: https://api.aivo.io/legal-holds
+    description: Production server
+  - url: https://staging-api.aivo.io/legal-holds  
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /:
+    get:
+      summary: List legal holds
+      description: Retrieve list of legal holds with optional filtering
+      operationId: listLegalHolds
+      tags:
+        - Legal Holds
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, released, expired, suspended]
+          description: Filter by hold status
+        - name: legal_basis
+          in: query
+          schema:
+            type: string
+            enum: [litigation, investigation, regulatory, compliance, audit]
+          description: Filter by legal basis
+        - name: case_number
+          in: query
+          schema:
+            type: string
+          description: Filter by case number
+        - name: effective_date_from
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter holds effective from this date
+        - name: effective_date_to
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter holds effective to this date
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Legal holds retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      summary: Create legal hold
+      description: Create a new legal hold with specified scope and parameters
+      operationId: createLegalHold
+      tags:
+        - Legal Holds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalHoldRequest'
+      responses:
+        '201':
+          description: Legal hold created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHold'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /{holdId}:
+    get:
+      summary: Get legal hold details
+      description: Retrieve detailed information about a specific legal hold
+      operationId: getLegalHold
+      tags:
+        - Legal Holds
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Legal hold ID
+      responses:
+        '200':
+          description: Legal hold retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHold'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      summary: Update legal hold
+      description: Update an existing legal hold
+      operationId: updateLegalHold
+      tags:
+        - Legal Holds
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalHoldUpdate'
+      responses:
+        '200':
+          description: Legal hold updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHold'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /{holdId}/release:
+    post:
+      summary: Release legal hold
+      description: Release a legal hold and stop data preservation
+      operationId: releaseLegalHold
+      tags:
+        - Legal Holds
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseRequest'
+      responses:
+        '200':
+          description: Legal hold released successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHold'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /{holdId}/custodians:
+    get:
+      summary: List hold custodians
+      description: Get list of custodians assigned to a legal hold
+      operationId: getHoldCustodians
+      tags:
+        - Custodians
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Custodians retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustodianList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Add custodians to hold
+      description: Add custodians to an existing legal hold
+      operationId: addCustodians
+      tags:
+        - Custodians
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCustodiansRequest'
+      responses:
+        '201':
+          description: Custodians added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustodianList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /{holdId}/custodians/{custodianId}:
+    delete:
+      summary: Remove custodian from hold
+      description: Remove a custodian from a legal hold
+      operationId: removeCustodian
+      tags:
+        - Custodians
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: custodianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Custodian removed successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /{holdId}/notifications:
+    post:
+      summary: Send hold notifications
+      description: Send legal hold notifications to custodians
+      operationId: sendHoldNotifications
+      tags:
+        - Notifications
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      responses:
+        '201':
+          description: Notifications sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      summary: List hold notifications
+      description: Get list of notifications sent for a legal hold
+      operationId: getHoldNotifications
+      tags:
+        - Notifications
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: custodian_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by custodian
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [sent, delivered, read, acknowledged, failed]
+          description: Filter by notification status
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ediscovery/{holdId}/exports:
+    post:
+      summary: Create eDiscovery export
+      description: Create a new eDiscovery export for a legal hold
+      operationId: createExport
+      tags:
+        - eDiscovery
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        '201':
+          description: Export created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      summary: List exports for hold
+      description: Get list of eDiscovery exports for a legal hold
+      operationId: listExports
+      tags:
+        - eDiscovery
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, failed, cancelled]
+          description: Filter by export status
+      responses:
+        '200':
+          description: Exports retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ediscovery/exports/{exportId}:
+    get:
+      summary: Get export details
+      description: Retrieve detailed information about an eDiscovery export
+      operationId: getExport
+      tags:
+        - eDiscovery
+      parameters:
+        - name: exportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Export retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ediscovery/exports/{exportId}/download:
+    get:
+      summary: Download export archive
+      description: Download the eDiscovery export archive
+      operationId: downloadExport
+      tags:
+        - eDiscovery
+      parameters:
+        - name: exportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Export archive file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Export not ready for download
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /search:
+    post:
+      summary: Search preserved data
+      description: Search across preserved data for legal holds
+      operationId: searchPreservedData
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Check the health status of the legal hold service
+      operationId: getHealth
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LegalHoldRequest:
+      type: object
+      required:
+        - title
+        - legal_basis
+        - scope_type
+        - scope_parameters
+        - custodian_user_ids
+      properties:
+        title:
+          type: string
+          description: Descriptive title for the legal hold
+          example: "Smith v. District - Student Data Preservation"
+        description:
+          type: string
+          description: Detailed description of the legal hold
+        case_number:
+          type: string
+          description: Associated case or matter number
+          example: "CASE-2024-001"
+        legal_basis:
+          type: string
+          enum: [litigation, investigation, regulatory, compliance, audit]
+          description: Legal basis for the hold
+        scope_type:
+          type: string
+          enum: [tenant, learner, teacher, classroom, timerange, custom]
+          description: Type of data scope for preservation
+        scope_parameters:
+          type: object
+          description: Parameters defining the scope of preservation
+          oneOf:
+            - $ref: '#/components/schemas/TenantScope'
+            - $ref: '#/components/schemas/LearnerScope'
+            - $ref: '#/components/schemas/TeacherScope'
+            - $ref: '#/components/schemas/ClassroomScope'
+            - $ref: '#/components/schemas/TimerangeScope'
+            - $ref: '#/components/schemas/CustomScope'
+        custodian_user_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of user IDs who will be custodians for this hold
+        effective_date:
+          type: string
+          format: date-time
+          description: When the hold becomes effective (defaults to creation time)
+        expiration_date:
+          type: string
+          format: date-time
+          description: Optional expiration date for the hold
+        auto_notify:
+          type: boolean
+          default: true
+          description: Whether to automatically send notifications to custodians
+
+    LegalHoldUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        expiration_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, suspended]
+          description: Can only transition to suspended; use release endpoint to release
+
+    LegalHold:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        hold_number:
+          type: string
+          description: System-generated hold number
+          example: "LH-000123"
+        title:
+          type: string
+        description:
+          type: string
+        case_number:
+          type: string
+        legal_basis:
+          type: string
+          enum: [litigation, investigation, regulatory, compliance, audit]
+        status:
+          type: string
+          enum: [active, released, expired, suspended]
+        scope_type:
+          type: string
+          enum: [tenant, learner, teacher, classroom, timerange, custom]
+        scope_parameters:
+          type: object
+        effective_date:
+          type: string
+          format: date-time
+        expiration_date:
+          type: string
+          format: date-time
+        released_date:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+        affected_entities_count:
+          type: integer
+          description: Number of data entities affected by this hold
+        custodians_count:
+          type: integer
+          description: Number of custodians assigned to this hold
+        preservation_statistics:
+          $ref: '#/components/schemas/PreservationStatistics'
+
+    TenantScope:
+      type: object
+      required:
+        - tenant_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID for tenant-wide preservation
+
+    LearnerScope:
+      type: object
+      required:
+        - learner_ids
+      properties:
+        learner_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Specific learner IDs to preserve data for
+        include_related:
+          type: boolean
+          default: true
+          description: Include related data (assignments, communications, etc.)
+
+    TeacherScope:
+      type: object
+      required:
+        - teacher_ids
+      properties:
+        teacher_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Specific teacher IDs to preserve data for
+        include_student_interactions:
+          type: boolean
+          default: true
+          description: Include teacher-student interaction data
+
+    ClassroomScope:
+      type: object
+      required:
+        - classroom_ids
+      properties:
+        classroom_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Specific classroom IDs to preserve data for
+
+    TimerangeScope:
+      type: object
+      required:
+        - start_date
+        - end_date
+      properties:
+        start_date:
+          type: string
+          format: date-time
+          description: Start of time range for data preservation
+        end_date:
+          type: string
+          format: date-time
+          description: End of time range for data preservation
+        entity_filter:
+          type: object
+          description: Optional filters for entities within the timerange
+
+    CustomScope:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          description: Custom query parameters for data selection
+        description:
+          type: string
+          description: Human-readable description of the custom scope
+
+    ReleaseRequest:
+      type: object
+      required:
+        - release_reason
+      properties:
+        release_reason:
+          type: string
+          description: Reason for releasing the hold
+          example: "Case settled, preservation no longer required"
+        release_date:
+          type: string
+          format: date-time
+          description: Effective date of release (defaults to current time)
+        notify_custodians:
+          type: boolean
+          default: true
+          description: Whether to notify custodians of the release
+
+    AddCustodiansRequest:
+      type: object
+      required:
+        - custodian_user_ids
+      properties:
+        custodian_user_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: User IDs to add as custodians
+        send_notifications:
+          type: boolean
+          default: true
+          description: Whether to send hold notifications to new custodians
+
+    Custodian:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        hold_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        user_email:
+          type: string
+          format: email
+        department:
+          type: string
+        notification_status:
+          type: string
+          enum: [pending, sent, delivered, acknowledged, failed]
+        acknowledgment_date:
+          type: string
+          format: date-time
+        added_date:
+          type: string
+          format: date-time
+        data_sources:
+          type: array
+          items:
+            type: string
+          description: Data sources associated with this custodian
+
+    NotificationRequest:
+      type: object
+      required:
+        - notification_type
+      properties:
+        notification_type:
+          type: string
+          enum: [initial_hold, hold_reminder, hold_release, escalation]
+          description: Type of notification to send
+        custodian_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Specific custodians to notify (if empty, notifies all)
+        custom_message:
+          type: string
+          description: Additional custom message to include
+        delivery_method:
+          type: array
+          items:
+            type: string
+            enum: [email, sms, platform_notification]
+          default: [email]
+        require_acknowledgment:
+          type: boolean
+          default: true
+          description: Whether custodian acknowledgment is required
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        hold_id:
+          type: string
+          format: uuid
+        custodian_id:
+          type: string
+          format: uuid
+        notification_type:
+          type: string
+          enum: [initial_hold, hold_reminder, hold_release, escalation]
+        status:
+          type: string
+          enum: [sent, delivered, read, acknowledged, failed]
+        delivery_method:
+          type: string
+          enum: [email, sms, platform_notification]
+        sent_date:
+          type: string
+          format: date-time
+        delivered_date:
+          type: string
+          format: date-time
+        read_date:
+          type: string
+          format: date-time
+        acknowledged_date:
+          type: string
+          format: date-time
+        acknowledgment_details:
+          type: object
+          description: Details of custodian acknowledgment
+
+    ExportRequest:
+      type: object
+      required:
+        - title
+        - format
+      properties:
+        title:
+          type: string
+          description: Title for the export
+        format:
+          type: string
+          enum: [pst, eml, pdf, native]
+          description: Export format
+        date_range:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+        data_types:
+          type: array
+          items:
+            type: string
+            enum: [email, documents, chat, assignments, assessments, user_data]
+          description: Types of data to include in export
+        custodian_filter:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Filter by specific custodians
+        include_metadata:
+          type: boolean
+          default: true
+          description: Include metadata in export
+        deduplicate:
+          type: boolean
+          default: true
+          description: Remove duplicate files from export
+
+    Export:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        export_number:
+          type: string
+          description: System-generated export number
+          example: "EXP-000456"
+        hold_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        format:
+          type: string
+          enum: [pst, eml, pdf, native]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed, cancelled]
+        progress_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        total_records:
+          type: integer
+          description: Total number of records to export
+        exported_records:
+          type: integer
+          description: Number of records exported so far
+        file_count:
+          type: integer
+          description: Number of files in the export
+        total_size_bytes:
+          type: integer
+          description: Total size of export in bytes
+        requested_date:
+          type: string
+          format: date-time
+        started_date:
+          type: string
+          format: date-time
+        completed_date:
+          type: string
+          format: date-time
+        archive_location:
+          type: string
+          format: uri
+          description: Location of completed export archive
+        requested_by:
+          type: string
+          format: uuid
+        error_message:
+          type: string
+          description: Error message if export failed
+
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Search query string
+        hold_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Limit search to specific holds
+        data_types:
+          type: array
+          items:
+            type: string
+            enum: [email, documents, chat, assignments, assessments]
+        date_range:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+        custodian_filter:
+          type: array
+          items:
+            type: string
+            format: uuid
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+
+    SearchResults:
+      type: object
+      properties:
+        query:
+          type: string
+        total_hits:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        aggregations:
+          type: object
+          properties:
+            by_data_type:
+              type: object
+            by_custodian:
+              type: object
+            by_hold:
+              type: object
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        data_type:
+          type: string
+          enum: [email, document, chat, assignment, assessment]
+        preview:
+          type: string
+          description: Text preview of the content
+        custodian_id:
+          type: string
+          format: uuid
+        hold_id:
+          type: string
+          format: uuid
+        created_date:
+          type: string
+          format: date-time
+        relevance_score:
+          type: number
+          format: float
+        metadata:
+          type: object
+          description: Additional metadata about the result
+
+    PreservationStatistics:
+      type: object
+      properties:
+        total_records_preserved:
+          type: integer
+        records_by_type:
+          type: object
+          properties:
+            emails:
+              type: integer
+            documents:
+              type: integer
+            chat_messages:
+              type: integer
+            assignments:
+              type: integer
+            assessments:
+              type: integer
+        storage_size_bytes:
+          type: integer
+        last_updated:
+          type: string
+          format: date-time
+
+    NotificationStatus:
+      type: object
+      properties:
+        notifications_sent:
+          type: integer
+        successful_deliveries:
+          type: integer
+        failed_deliveries:
+          type: integer
+        acknowledgments_received:
+          type: integer
+        acknowledgments_pending:
+          type: integer
+
+    LegalHoldList:
+      type: object
+      properties:
+        holds:
+          type: array
+          items:
+            $ref: '#/components/schemas/LegalHold'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    CustodianList:
+      type: object
+      properties:
+        custodians:
+          type: array
+          items:
+            $ref: '#/components/schemas/Custodian'
+        total:
+          type: integer
+
+    NotificationList:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        total:
+          type: integer
+
+    ExportList:
+      type: object
+      properties:
+        exports:
+          type: array
+          items:
+            $ref: '#/components/schemas/Export'
+        total:
+          type: integer
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        checks:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [healthy, unhealthy]
+            preservation_storage:
+              type: string
+              enum: [healthy, unhealthy]
+            notification_service:
+              type: string
+              enum: [healthy, unhealthy]
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Additional error details
+        request_id:
+          type: string
+          description: Unique request identifier for tracking
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden - admin access required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+tags:
+  - name: Legal Holds
+    description: Legal hold management operations
+  - name: Custodians
+    description: Custodian management for legal holds
+  - name: Notifications
+    description: Legal hold notification management
+  - name: eDiscovery
+    description: eDiscovery export operations
+  - name: Search
+    description: Search preserved data
+  - name: Health
+    description: Service health monitoring

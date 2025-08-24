@@ -390,7 +390,7 @@ class LessonRegistryClient {
 
   // Coursework-Lesson Linkback methods (S5-10)
 
-  async searchLessons(params: {
+  async searchLessonsBySubjectAndGrade(params: {
     subject?: string
     gradeBand?: string
     limit?: number

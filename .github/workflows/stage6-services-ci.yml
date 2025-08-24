@@ -1,0 +1,352 @@
+name: Stage-6 Services CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/chat-svc/**'
+      - 'services/sis-bridge-svc/**'
+      - 'services/verification-svc/**'
+      - 'services/residency-svc/**'
+      - 'services/compliance-svc/**'
+      - 'services/legal-hold-svc/**'
+      - 'services/auth-svc/**'
+      - 'services/payment-svc/**'
+      - 'services/lesson-registry-svc/**'
+      - 'docs/api/**'
+      - 'libs/sdk-*/**'
+      - 'pact/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/chat-svc/**'
+      - 'services/sis-bridge-svc/**'
+      - 'services/verification-svc/**'
+      - 'services/residency-svc/**'
+      - 'services/compliance-svc/**'
+      - 'services/legal-hold-svc/**'
+      - 'services/auth-svc/**'
+      - 'services/payment-svc/**'
+      - 'services/lesson-registry-svc/**'
+      - 'docs/api/**'
+      - 'libs/sdk-*/**'
+      - 'pact/**'
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  id-token: write
+
+jobs:
+  service-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - chat-svc
+          - sis-bridge-svc
+          - verification-svc
+          - residency-svc
+          - compliance-svc
+          - legal-hold-svc
+          - auth-svc
+          - payment-svc
+          - lesson-registry-svc
+        include:
+          - service: chat-svc
+            language: python
+            port: 8001
+          - service: sis-bridge-svc
+            language: python
+            port: 8002
+          - service: verification-svc
+            language: python
+            port: 8003
+          - service: residency-svc
+            language: python
+            port: 8004
+          - service: compliance-svc
+            language: python
+            port: 8005
+          - service: legal-hold-svc
+            language: python
+            port: 8006
+          - service: auth-svc
+            language: python
+            port: 8007
+          - service: payment-svc
+            language: python
+            port: 8008
+          - service: lesson-registry-svc
+            language: python
+            port: 8009
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Setup Node (for SDK generation)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.11.0 --activate
+
+      - name: Check if service exists
+        id: service-check
+        run: |
+          if [ -d "services/${{ matrix.service }}" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install Python dependencies
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          elif [ -f pyproject.toml ]; then
+            pip install poetry && poetry install --no-interaction --no-ansi
+          fi
+
+      - name: Lint with Ruff
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          pip install ruff==0.5.7
+          ruff check .
+          ruff format --check .
+
+      - name: Type check with MyPy
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          pip install mypy==1.10.0
+          mypy --strict . || true  # Non-blocking for now
+
+      - name: Run tests
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          pip install pytest pytest-asyncio pytest-cov
+          pytest tests/ -v --cov=app --cov-report=xml
+
+      - name: Security audit with pip-audit
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          pip install pip-audit==2.7.3
+          if [ -f requirements.txt ]; then
+            pip-audit -r requirements.txt --strict
+          elif [ -f pyproject.toml ]; then
+            pip-audit --strict
+          fi
+
+      - name: Build Docker image
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          if [ -f Dockerfile ]; then
+            docker build -t ${{ matrix.service }}:latest .
+          fi
+
+      - name: Install Trivy
+        if: steps.service-check.outputs.exists == 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y wget gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb stable main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install -y trivy
+
+      - name: Trivy filesystem scan
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress .
+
+      - name: Trivy image scan
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          if [ -f Dockerfile ]; then
+            trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress ${{ matrix.service }}:latest
+          fi
+
+      - name: Generate SBOM
+        if: steps.service-check.outputs.exists == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: |
+          if [ -f Dockerfile ]; then
+            trivy image --format spdx-json --output sbom-${{ matrix.service }}.spdx.json ${{ matrix.service }}:latest
+          fi
+
+      - name: Upload SBOM artifact
+        if: steps.service-check.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service }}
+          path: services/${{ matrix.service }}/sbom-${{ matrix.service }}.spdx.json
+          retention-days: 30
+
+  contract-validation:
+    runs-on: ubuntu-latest
+    needs: service-matrix
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.11.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate OpenAPI specs
+        run: |
+          if [ -d "docs/api/rest" ]; then
+            pnpm dlx @stoplight/spectral lint docs/api/rest/*.yaml
+          fi
+
+      - name: Generate SDKs
+        run: |
+          if [ -f "scripts/generate-sdks.ts" ]; then
+            pnpm tsx scripts/generate-sdks.ts
+          fi
+
+      - name: Build SDK packages
+        run: |
+          if [ -d "libs/sdk-web" ]; then
+            pnpm -F libs/sdk-web build
+          fi
+          if [ -d "libs/sdk-py" ]; then
+            cd libs/sdk-py && python -m pip install build && python -m build
+          fi
+
+  pact-testing:
+    runs-on: ubuntu-latest
+    needs: contract-validation
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.11.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Pact consumer tests
+        run: |
+          if [ -d "pact/consumers" ]; then
+            pnpm run pact:consumers
+          fi
+
+      - name: Run Pact provider tests
+        run: |
+          if [ -d "pact/providers" ]; then
+            pnpm run pact:providers
+          fi
+
+      - name: Publish Pact contracts
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [ -d "pact" ]; then
+            pnpm run pact:publish
+          fi
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: [service-matrix, contract-validation]
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.4"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.11.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Gateway routing tests
+        run: |
+          if [ -f "tests/integration/gateway-routing.test.js" ]; then
+            pnpm run test:gateway
+          fi
+
+      - name: Run end-to-end service tests
+        run: |
+          if [ -d "tests/e2e" ]; then
+            pnpm run test:e2e:headless
+          fi
+
+      - name: Test MSW handlers
+        run: |
+          if [ -d "apps/web/src/mocks" ]; then
+            pnpm -F apps/web run test:mocks
+          fi

@@ -1,0 +1,486 @@
+openapi: 3.0.3
+info:
+  title: Tax & VAT Service API
+  description: |
+    Tax calculation and VAT compliance service with international support.
+    
+    ## Features
+    - **Multi-jurisdiction Tax**: Support for US states, EU VAT, Canadian GST/HST
+    - **Real-time Calculation**: Live tax rate lookups and calculations
+    - **Compliance Reporting**: Automated tax filing and compliance reports
+    - **Purchase Order Integration**: Tax calculation for B2B PO workflows
+    - **Audit Trail**: Complete tax calculation audit logs
+  version: 1.0.0
+  contact:
+    name: AIVO Platform Team
+    email: platform@aivo.io
+
+servers:
+  - url: https://api.aivo.io/payments/tax
+    description: Production
+  - url: https://staging-api.aivo.io/payments/tax
+    description: Staging
+
+security:
+  - BearerAuth: []
+
+paths:
+  /calculate:
+    post:
+      summary: Calculate tax for transaction
+      operationId: calculateTax
+      tags: [Tax Calculation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxCalculationRequest'
+      responses:
+        '200':
+          description: Tax calculation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxCalculationResponse'
+
+  /rates:
+    get:
+      summary: Get current tax rates
+      operationId: getTaxRates
+      tags: [Tax Rates]
+      parameters:
+        - name: jurisdiction
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "US-CA"
+        - name: product_type
+          in: query
+          schema:
+            type: string
+            enum: [software, digital_goods, educational_services, physical_goods]
+      responses:
+        '200':
+          description: Current tax rates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxRates'
+
+  /jurisdictions:
+    get:
+      summary: List supported tax jurisdictions
+      operationId: listJurisdictions
+      tags: [Configuration]
+      responses:
+        '200':
+          description: Supported jurisdictions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jurisdictions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaxJurisdiction'
+
+  /transactions/{transaction_id}/tax:
+    get:
+      summary: Get tax details for transaction
+      operationId: getTransactionTax
+      tags: [Transactions]
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction tax details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionTax'
+
+  /reports/filing:
+    get:
+      summary: Generate tax filing report
+      operationId: generateFilingReport
+      tags: [Reporting]
+      parameters:
+        - name: period_start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: period_end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: jurisdiction
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv, pdf]
+            default: json
+      responses:
+        '200':
+          description: Filing report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilingReport'
+
+  /po/calculate:
+    post:
+      summary: Calculate tax for purchase order
+      operationId: calculatePOTax
+      tags: [Purchase Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/POTaxRequest'
+      responses:
+        '200':
+          description: PO tax calculation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/POTaxResponse'
+
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [System]
+      security: []
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  providers:
+                    type: object
+                    additionalProperties:
+                      type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TaxCalculationRequest:
+      type: object
+      required: [amount, customer_address, line_items]
+      properties:
+        amount:
+          type: number
+          format: decimal
+          minimum: 0
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          default: USD
+        customer_address:
+          $ref: '#/components/schemas/Address'
+        business_address:
+          $ref: '#/components/schemas/Address'
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineItem'
+        transaction_date:
+          type: string
+          format: date
+        customer_type:
+          type: string
+          enum: [individual, business, non_profit, government]
+        exemption_certificates:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExemptionCertificate'
+
+    TaxCalculationResponse:
+      type: object
+      required: [subtotal, total_tax, total_amount, breakdown]
+      properties:
+        subtotal:
+          type: number
+          format: decimal
+        total_tax:
+          type: number
+          format: decimal
+        total_amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+        breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaxBreakdown'
+        exemptions_applied:
+          type: array
+          items:
+            type: string
+        calculation_id:
+          type: string
+          format: uuid
+        calculated_at:
+          type: string
+          format: date-time
+
+    TaxBreakdown:
+      type: object
+      required: [jurisdiction, rate, amount]
+      properties:
+        jurisdiction:
+          type: string
+        jurisdiction_type:
+          type: string
+          enum: [state, county, city, district, federal]
+        tax_type:
+          type: string
+          enum: [sales, vat, gst, hst, use, excise]
+        rate:
+          type: number
+          format: decimal
+        amount:
+          type: number
+          format: decimal
+        taxable_amount:
+          type: number
+          format: decimal
+
+    Address:
+      type: object
+      required: [country]
+      properties:
+        street1:
+          type: string
+        street2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+          pattern: '^[A-Z]{2}$'
+
+    LineItem:
+      type: object
+      required: [id, description, amount, quantity]
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+          format: decimal
+        quantity:
+          type: integer
+          minimum: 1
+        product_type:
+          type: string
+          enum: [software, digital_goods, educational_services, physical_goods]
+        tax_code:
+          type: string
+        discount_amount:
+          type: number
+          format: decimal
+
+    ExemptionCertificate:
+      type: object
+      required: [certificate_id, type, jurisdiction]
+      properties:
+        certificate_id:
+          type: string
+        type:
+          type: string
+          enum: [resale, non_profit, government, educational]
+        jurisdiction:
+          type: string
+        expiration_date:
+          type: string
+          format: date
+        document_url:
+          type: string
+          format: uri
+
+    TaxRates:
+      type: object
+      required: [jurisdiction, rates, effective_date]
+      properties:
+        jurisdiction:
+          type: string
+        rates:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              rate:
+                type: number
+                format: decimal
+              minimum_threshold:
+                type: number
+                format: decimal
+        effective_date:
+          type: string
+          format: date
+        next_update:
+          type: string
+          format: date
+
+    TaxJurisdiction:
+      type: object
+      required: [code, name, type, country]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [country, state, province, city, district]
+        country:
+          type: string
+        parent_jurisdiction:
+          type: string
+        supported_taxes:
+          type: array
+          items:
+            type: string
+
+    TransactionTax:
+      type: object
+      required: [transaction_id, calculation_result, applied_at]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        calculation_result:
+          $ref: '#/components/schemas/TaxCalculationResponse'
+        applied_at:
+          type: string
+          format: date-time
+        filing_status:
+          type: string
+          enum: [pending, filed, remitted]
+        filing_reference:
+          type: string
+
+    FilingReport:
+      type: object
+      required: [period, jurisdiction, summary]
+      properties:
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+        jurisdiction:
+          type: string
+        summary:
+          type: object
+          properties:
+            total_sales:
+              type: number
+              format: decimal
+            total_tax_collected:
+              type: number
+              format: decimal
+            transaction_count:
+              type: integer
+            exemptions_granted:
+              type: number
+              format: decimal
+        line_items:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              transaction_id:
+                type: string
+              amount:
+                type: number
+                format: decimal
+              tax_amount:
+                type: number
+                format: decimal
+        generated_at:
+          type: string
+          format: date-time
+
+    POTaxRequest:
+      type: object
+      required: [po_number, vendor_address, ship_to_address, line_items]
+      properties:
+        po_number:
+          type: string
+        vendor_address:
+          $ref: '#/components/schemas/Address'
+        ship_to_address:
+          $ref: '#/components/schemas/Address'
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineItem'
+        delivery_date:
+          type: string
+          format: date
+        payment_terms:
+          type: string
+
+    POTaxResponse:
+      type: object
+      required: [po_number, tax_calculation, compliance_notes]
+      properties:
+        po_number:
+          type: string
+        tax_calculation:
+          $ref: '#/components/schemas/TaxCalculationResponse'
+        compliance_notes:
+          type: array
+          items:
+            type: string
+        reverse_charge_applicable:
+          type: boolean
+        withholding_required:
+          type: boolean

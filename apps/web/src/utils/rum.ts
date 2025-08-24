@@ -4,13 +4,13 @@
  */
 
 import React from 'react'
-import { trace, context, SpanStatusCode, SpanKind } from '@opentelemetry/api'
+import { getCLS, getFID, getFCP, getLCP, getTTFB, Metric } from 'web-vitals'
+import { trace, SpanStatusCode, SpanKind } from '@opentelemetry/api'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { Resource } from '@opentelemetry/resources'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-otlp-http'
-import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction'
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load'

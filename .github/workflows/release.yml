@@ -37,8 +37,24 @@ jobs:
       - name: Detect changed services
         id: changes
         run: |
+          # All Stage-6 services that should be included in releases
+          ALL_STAGE6_SERVICES=(
+            "chat-svc"
+            "sis-bridge-svc" 
+            "verification-svc"
+            "residency-svc"
+            "compliance-svc"
+            "legal-hold-svc"
+            "auth-svc"
+            "payment-svc"
+            "lesson-registry-svc"
+            "analytics-svc"
+            "audit-svc"
+            "privacy-svc"
+          )
+          
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # For manual releases, build all services
+            # For manual releases, build all services with Dockerfiles
             SERVICES=$(find services -name "Dockerfile" -type f | sed 's|services/||' | sed 's|/Dockerfile||' | jq -R -s -c 'split("\n")[:-1]')
           else
             # For tag releases, detect changes since last tag

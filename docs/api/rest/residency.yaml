@@ -1,0 +1,612 @@
+openapi: 3.0.3
+info:
+  title: Residency Verification API
+  description: API for verifying residency and school district eligibility for guardians and learners
+  version: 1.0.0
+  contact:
+    name: AIVO Platform Team
+    email: platform@aivo.io
+
+servers:
+  - url: https://api.aivo.io/residency
+    description: Production server
+  - url: https://staging-api.aivo.io/residency
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /verify:
+    post:
+      summary: Start residency verification process
+      description: Initiate a new residency verification for a guardian or learner
+      operationId: startResidencyVerification
+      tags:
+        - Residency Verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRequest'
+      responses:
+        '201':
+          description: Verification process started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /verify/{verificationId}:
+    get:
+      summary: Get verification status
+      description: Retrieve the current status and details of a residency verification
+      operationId: getVerificationStatus
+      tags:
+        - Residency Verification
+      parameters:
+        - name: verificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier for the verification session
+      responses:
+        '200':
+          description: Verification status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSession'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /verify/{verificationId}/documents:
+    post:
+      summary: Submit residency document
+      description: Upload and submit a residency verification document
+      operationId: submitDocument
+      tags:
+        - Document Submission
+      parameters:
+        - name: verificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                document_type:
+                  type: string
+                  enum: [utility_bill, bank_statement, lease_agreement, mortgage_statement, tax_document, government_correspondence]
+                  description: Type of residency document
+                file:
+                  type: string
+                  format: binary
+                  description: Document file (PDF, JPG, PNG)
+              required:
+                - document_type
+                - file
+      responses:
+        '201':
+          description: Document submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmittedDocument'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /districts/lookup:
+    get:
+      summary: Look up school districts by address
+      description: Find school districts and boundaries for a given address
+      operationId: lookupSchoolDistricts
+      tags:
+        - School Districts
+      parameters:
+        - name: address
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Full address to look up
+          example: "123 Main Street, San Francisco, CA 94102"
+        - name: include_boundaries
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include detailed boundary information
+      responses:
+        '200':
+          description: School districts found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistrictLookupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /districts/{districtCode}/info:
+    get:
+      summary: Get detailed district information
+      description: Retrieve comprehensive information about a specific school district
+      operationId: getDistrictInfo
+      tags:
+        - School Districts
+      parameters:
+        - name: districtCode
+          in: path
+          required: true
+          schema:
+            type: string
+          description: District code (e.g., SFUSD)
+      responses:
+        '200':
+          description: District information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistrictInfo'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Check the health status of the residency verification service
+      operationId: getHealth
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    VerificationRequest:
+      type: object
+      required:
+        - user_id
+        - verification_type
+        - address
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user requesting verification
+        verification_type:
+          type: string
+          enum: [parent_guardian, learner, staff]
+          description: Type of residency verification needed
+        address:
+          $ref: '#/components/schemas/Address'
+        preferred_documents:
+          type: array
+          items:
+            type: string
+            enum: [utility_bill, bank_statement, lease_agreement, mortgage_statement, tax_document]
+          description: Preferred document types for verification
+
+    VerificationSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique verification session ID
+        user_id:
+          type: string
+          format: uuid
+          description: User ID
+        status:
+          type: string
+          enum: [pending_documents, documents_submitted, under_review, approved, rejected, expired]
+          description: Current verification status
+        verification_type:
+          type: string
+          enum: [parent_guardian, learner, staff]
+        required_documents:
+          type: array
+          items:
+            type: string
+            enum: [utility_bill, bank_statement, lease_agreement, mortgage_statement, tax_document, government_correspondence]
+          description: List of required document types
+        submitted_documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmittedDocument'
+        address:
+          $ref: '#/components/schemas/Address'
+        verification_result:
+          $ref: '#/components/schemas/VerificationResult'
+        progress:
+          $ref: '#/components/schemas/VerificationProgress'
+        expires_at:
+          type: string
+          format: date-time
+          description: When the verification session expires
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SubmittedDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        document_type:
+          type: string
+          enum: [utility_bill, bank_statement, lease_agreement, mortgage_statement, tax_document, government_correspondence]
+        filename:
+          type: string
+          description: Original filename
+        status:
+          type: string
+          enum: [processing, verified, rejected, requires_clarification]
+        file_url:
+          type: string
+          format: uri
+          description: Secure URL to access the document
+        extracted_data:
+          $ref: '#/components/schemas/ExtractedDocumentData'
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: AI confidence score for data extraction
+        rejection_reason:
+          type: string
+          description: Reason for rejection if status is rejected
+        submitted_at:
+          type: string
+          format: date-time
+        verified_at:
+          type: string
+          format: date-time
+
+    ExtractedDocumentData:
+      type: object
+      properties:
+        service_address:
+          $ref: '#/components/schemas/Address'
+        service_date:
+          type: string
+          format: date
+          description: Date of service/statement
+        account_holder:
+          type: string
+          description: Name on the account/document
+        utility_company:
+          type: string
+          description: Utility company name (for utility bills)
+        bank_name:
+          type: string
+          description: Bank name (for bank statements)
+        account_number:
+          type: string
+          description: Partial account number
+        document_date:
+          type: string
+          format: date
+
+    Address:
+      type: object
+      required:
+        - street
+        - city
+        - state
+        - zip_code
+      properties:
+        street:
+          type: string
+          description: Street address
+          example: "123 Main Street"
+        unit:
+          type: string
+          description: Unit/apartment number
+          example: "Apt 2B"
+        city:
+          type: string
+          description: City name
+          example: "San Francisco"
+        state:
+          type: string
+          description: State/province code
+          example: "CA"
+        zip_code:
+          type: string
+          description: ZIP or postal code
+          example: "94102"
+        country:
+          type: string
+          description: Country code
+          default: "US"
+          example: "US"
+
+    VerificationResult:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected, pending_review, requires_additional_docs]
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        verified_address:
+          $ref: '#/components/schemas/Address'
+        school_district:
+          $ref: '#/components/schemas/SchoolDistrictInfo'
+        rejection_reasons:
+          type: array
+          items:
+            type: string
+        approved_at:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+          description: When this verification expires
+
+    VerificationProgress:
+      type: object
+      properties:
+        current_step:
+          type: string
+          enum: [document_submission, document_review, address_verification, district_confirmation, completed]
+        total_steps:
+          type: integer
+          example: 4
+        completed_steps:
+          type: integer
+          example: 2
+
+    DistrictLookupResponse:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Normalized address that was looked up
+        school_districts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchoolDistrictInfo'
+        boundary_confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Confidence in boundary determination
+
+    SchoolDistrictInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Full district name
+          example: "San Francisco Unified School District"
+        code:
+          type: string
+          description: District code
+          example: "SFUSD"
+        type:
+          type: string
+          enum: [elementary, high, unified, community_college]
+        grade_levels:
+          type: array
+          items:
+            type: string
+          description: Supported grade levels
+          example: ["K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+        boundaries_confirmed:
+          type: boolean
+          description: Whether address falls within confirmed boundaries
+        enrollment_open:
+          type: boolean
+          description: Whether enrollment is currently open
+        contact_info:
+          $ref: '#/components/schemas/DistrictContact'
+
+    DistrictInfo:
+      allOf:
+        - $ref: '#/components/schemas/SchoolDistrictInfo'
+        - type: object
+          properties:
+            website:
+              type: string
+              format: uri
+            superintendent:
+              type: string
+            total_enrollment:
+              type: integer
+            number_of_schools:
+              type: integer
+            annual_budget:
+              type: number
+            performance_metrics:
+              type: object
+              properties:
+                graduation_rate:
+                  type: number
+                  format: float
+                test_scores:
+                  type: object
+                student_teacher_ratio:
+                  type: number
+                  format: float
+
+    DistrictContact:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: "(415) 241-6000"
+        website:
+          type: string
+          format: uri
+          example: "https://www.sfusd.edu"
+        enrollment_office:
+          type: string
+          description: Address of enrollment office
+        email:
+          type: string
+          format: email
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        checks:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [healthy, unhealthy]
+            document_storage:
+              type: string
+              enum: [healthy, unhealthy]
+            district_api:
+              type: string
+              enum: [healthy, unhealthy]
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Additional error details
+        request_id:
+          type: string
+          description: Unique request identifier for tracking
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "validation_error"
+            message: "Invalid address format"
+            request_id: "req_123456"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "unauthorized"
+            message: "Valid authentication required"
+            request_id: "req_123456"
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "forbidden"
+            message: "Insufficient permissions"
+            request_id: "req_123456"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "not_found"
+            message: "Verification session not found"
+            request_id: "req_123456"
+
+    TooManyRequests:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "rate_limited"
+            message: "Rate limit exceeded. Try again later."
+            request_id: "req_123456"
+
+tags:
+  - name: Residency Verification
+    description: Core residency verification operations
+  - name: Document Submission
+    description: Document upload and management
+  - name: School Districts
+    description: School district lookup and information
+  - name: Health
+    description: Service health monitoring

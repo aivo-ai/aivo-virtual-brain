@@ -16,4 +16,21 @@ export { Textarea } from './Textarea'
 export { Checkbox } from './Checkbox'
 export { Input } from './Input'
 export { Progress } from './Progress'
+export {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './dialog'
+export {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './table'
 export * from './Icons'

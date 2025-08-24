@@ -1,0 +1,788 @@
+openapi: 3.0.3
+info:
+  title: SCIM 2.0 User Provisioning API
+  description: |
+    SCIM 2.0 compliant API for automated user provisioning and deprovisioning.
+    
+    ## Features
+    - **SCIM 2.0 Compliance**: Full RFC 7643/7644 implementation
+    - **SIS Integration**: Automated sync with Student Information Systems
+    - **Bulk Operations**: Efficient bulk user and group management
+    - **Real-time Events**: Webhook notifications for provisioning events
+    - **Audit Trail**: Comprehensive logging of all provisioning operations
+    
+    ## Authentication
+    Uses Bearer token authentication with SCIM-specific permissions.
+  version: 2.0.0
+  contact:
+    name: AIVO Platform Team
+    email: platform@aivo.io
+
+servers:
+  - url: https://api.aivo.io/scim/v2
+    description: Production
+  - url: https://staging-api.aivo.io/scim/v2
+    description: Staging
+
+security:
+  - BearerAuth: []
+
+paths:
+  /Users:
+    get:
+      summary: List users with filtering and pagination
+      operationId: listUsers
+      tags: [Users]
+      parameters:
+        - name: filter
+          in: query
+          description: SCIM filter expression
+          schema:
+            type: string
+          example: 'userName eq "john.doe@school.edu" and active eq true'
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: meta.created
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [ascending, descending]
+            default: ascending
+        - name: startIndex
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: count
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 200
+            default: 20
+        - name: attributes
+          in: query
+          description: Comma-separated list of attributes to return
+          schema:
+            type: string
+        - name: excludedAttributes
+          in: query
+          description: Comma-separated list of attributes to exclude
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+    post:
+      summary: Create new user
+      operationId: createUser
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '409':
+          description: User already exists
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /Users/{id}:
+    get:
+      summary: Get user by ID
+      operationId: getUser
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: attributes
+          in: query
+          schema:
+            type: string
+        - name: excludedAttributes
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User details
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      summary: Replace user
+      operationId: replaceUser
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    patch:
+      summary: Partially update user
+      operationId: patchUser
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/PatchRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    delete:
+      summary: Delete user
+      operationId: deleteUser
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User deleted
+
+  /Groups:
+    get:
+      summary: List groups
+      operationId: listGroups
+      tags: [Groups]
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: displayName
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [ascending, descending]
+            default: ascending
+        - name: startIndex
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: count
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: List of groups
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+    post:
+      summary: Create new group
+      operationId: createGroup
+      tags: [Groups]
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        '201':
+          description: Group created
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Group'
+
+  /Groups/{id}:
+    get:
+      summary: Get group by ID
+      operationId: getGroup
+      tags: [Groups]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Group details
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Group'
+
+    put:
+      summary: Replace group
+      operationId: replaceGroup
+      tags: [Groups]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        '200':
+          description: Group updated
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Group'
+
+    patch:
+      summary: Partially update group
+      operationId: patchGroup
+      tags: [Groups]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/PatchRequest'
+      responses:
+        '200':
+          description: Group updated
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Group'
+
+    delete:
+      summary: Delete group
+      operationId: deleteGroup
+      tags: [Groups]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Group deleted
+
+  /Bulk:
+    post:
+      summary: Perform bulk operations
+      operationId: bulkOperations
+      tags: [Bulk]
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/BulkRequest'
+      responses:
+        '200':
+          description: Bulk operation results
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/BulkResponse'
+
+  /ServiceProviderConfig:
+    get:
+      summary: Get service provider configuration
+      operationId: getServiceProviderConfig
+      tags: [Discovery]
+      security: []
+      responses:
+        '200':
+          description: Service provider configuration
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/ServiceProviderConfig'
+
+  /ResourceTypes:
+    get:
+      summary: Get supported resource types
+      operationId: getResourceTypes
+      tags: [Discovery]
+      security: []
+      responses:
+        '200':
+          description: Supported resource types
+          content:
+            application/scim+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceType'
+
+  /Schemas:
+    get:
+      summary: Get supported schemas
+      operationId: getSchemas
+      tags: [Discovery]
+      security: []
+      responses:
+        '200':
+          description: Supported schemas
+          content:
+            application/scim+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schema'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      required: [userName, schemas]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:schemas:core:2.0:User"]
+        id:
+          type: string
+          readOnly: true
+        externalId:
+          type: string
+        userName:
+          type: string
+        displayName:
+          type: string
+        name:
+          type: object
+          properties:
+            formatted:
+              type: string
+            familyName:
+              type: string
+            givenName:
+              type: string
+            middleName:
+              type: string
+            honorificPrefix:
+              type: string
+            honorificSuffix:
+              type: string
+        emails:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                format: email
+              type:
+                type: string
+                enum: [work, home, other]
+              primary:
+                type: boolean
+        phoneNumbers:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              type:
+                type: string
+                enum: [work, home, mobile, fax, pager, other]
+              primary:
+                type: boolean
+        active:
+          type: boolean
+          default: true
+        password:
+          type: string
+          writeOnly: true
+        groups:
+          type: array
+          readOnly: true
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              $ref:
+                type: string
+              display:
+                type: string
+        roles:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              display:
+                type: string
+              type:
+                type: string
+              primary:
+                type: boolean
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    Group:
+      type: object
+      required: [displayName, schemas]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:schemas:core:2.0:Group"]
+        id:
+          type: string
+          readOnly: true
+        externalId:
+          type: string
+        displayName:
+          type: string
+        members:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              $ref:
+                type: string
+              display:
+                type: string
+              type:
+                type: string
+                enum: [User, Group]
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    Meta:
+      type: object
+      readOnly: true
+      properties:
+        resourceType:
+          type: string
+        created:
+          type: string
+          format: date-time
+        lastModified:
+          type: string
+          format: date-time
+        location:
+          type: string
+          format: uri
+        version:
+          type: string
+
+    ListResponse:
+      type: object
+      required: [schemas, totalResults, Resources]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"]
+        totalResults:
+          type: integer
+          minimum: 0
+        startIndex:
+          type: integer
+          minimum: 1
+        itemsPerPage:
+          type: integer
+          minimum: 0
+        Resources:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/User'
+              - $ref: '#/components/schemas/Group'
+
+    PatchRequest:
+      type: object
+      required: [schemas, Operations]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
+        Operations:
+          type: array
+          items:
+            type: object
+            required: [op]
+            properties:
+              op:
+                type: string
+                enum: [add, remove, replace]
+              path:
+                type: string
+              value:
+                oneOf:
+                  - type: string
+                  - type: object
+                  - type: array
+
+    BulkRequest:
+      type: object
+      required: [schemas, Operations]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"]
+        failOnErrors:
+          type: integer
+          minimum: 0
+        Operations:
+          type: array
+          maxItems: 1000
+          items:
+            type: object
+            required: [method, bulkId]
+            properties:
+              method:
+                type: string
+                enum: [POST, PUT, PATCH, DELETE]
+              bulkId:
+                type: string
+              version:
+                type: string
+              path:
+                type: string
+              data:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+                  - $ref: '#/components/schemas/Group'
+
+    BulkResponse:
+      type: object
+      required: [schemas, Operations]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:BulkResponse"]
+        Operations:
+          type: array
+          items:
+            type: object
+            required: [bulkId]
+            properties:
+              bulkId:
+                type: string
+              method:
+                type: string
+              version:
+                type: string
+              location:
+                type: string
+                format: uri
+              response:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+                  - $ref: '#/components/schemas/Group'
+                  - $ref: '#/components/schemas/Error'
+              status:
+                type: string
+
+    ServiceProviderConfig:
+      type: object
+      required: [schemas]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"]
+        documentationUri:
+          type: string
+          format: uri
+        patch:
+          type: object
+          properties:
+            supported:
+              type: boolean
+        bulk:
+          type: object
+          properties:
+            supported:
+              type: boolean
+            maxOperations:
+              type: integer
+            maxPayloadSize:
+              type: integer
+        filter:
+          type: object
+          properties:
+            supported:
+              type: boolean
+            maxResults:
+              type: integer
+        changePassword:
+          type: object
+          properties:
+            supported:
+              type: boolean
+        sort:
+          type: object
+          properties:
+            supported:
+              type: boolean
+        etag:
+          type: object
+          properties:
+            supported:
+              type: boolean
+        authenticationSchemes:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              name:
+                type: string
+              description:
+                type: string
+              specUri:
+                type: string
+                format: uri
+              documentationUri:
+                type: string
+                format: uri
+
+    ResourceType:
+      type: object
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+        id:
+          type: string
+        name:
+          type: string
+        endpoint:
+          type: string
+        description:
+          type: string
+        schema:
+          type: string
+        schemaExtensions:
+          type: array
+          items:
+            type: object
+
+    Schema:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        attributes:
+          type: array
+          items:
+            type: object
+
+    Error:
+      type: object
+      required: [schemas, detail]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:Error"]
+        detail:
+          type: string
+        status:
+          type: string
+        scimType:
+          type: string
+          enum: [invalidFilter, tooMany, uniqueness, mutability, invalidSyntax, invalidPath, noTarget, invalidValue, invalidVers, sensitive]

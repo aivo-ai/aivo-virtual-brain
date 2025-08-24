@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
+import { Label } from '@/components/ui/Label'
 import {
   Select,
   SelectContent,
@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/Badge'
 import {
   Dialog,
   DialogContent,
@@ -22,17 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  AlertCircle,
   Download,
-  Eye,
   FileText,
   Gavel,
   Lock,
@@ -40,10 +30,7 @@ import {
   Search,
   Shield,
   Users,
-  Archive,
   Clock,
-  CheckCircle,
-  XCircle,
 } from 'lucide-react'
 
 interface LegalHold {
@@ -296,7 +283,7 @@ const LegalHoldsPage: React.FC = () => {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'active':
-        return 'destructive'
+        return 'danger'
       case 'released':
         return 'secondary'
       case 'expired':
@@ -318,7 +305,7 @@ const LegalHoldsPage: React.FC = () => {
       case 'pending':
         return 'outline'
       case 'failed':
-        return 'destructive'
+        return 'danger'
       default:
         return 'outline'
     }
@@ -598,21 +585,21 @@ const LegalHoldsPage: React.FC = () => {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    variant={activeTab === 'holds' ? 'default' : 'outline'}
+                    variant={activeTab === 'holds' ? 'primary' : 'outline'}
                     onClick={() => setActiveTab('holds')}
                   >
                     Details
                   </Button>
                   <Button
                     size="sm"
-                    variant={activeTab === 'exports' ? 'default' : 'outline'}
+                    variant={activeTab === 'exports' ? 'primary' : 'outline'}
                     onClick={() => setActiveTab('exports')}
                   >
                     Exports
                   </Button>
                   <Button
                     size="sm"
-                    variant={activeTab === 'audit' ? 'default' : 'outline'}
+                    variant={activeTab === 'audit' ? 'primary' : 'outline'}
                     onClick={() => setActiveTab('audit')}
                   >
                     Audit
@@ -836,7 +823,7 @@ const LegalHoldsPage: React.FC = () => {
                             <Badge
                               variant={
                                 log.risk_level === 'high'
-                                  ? 'destructive'
+                                  ? 'danger'
                                   : log.risk_level === 'medium'
                                     ? 'secondary'
                                     : 'outline'

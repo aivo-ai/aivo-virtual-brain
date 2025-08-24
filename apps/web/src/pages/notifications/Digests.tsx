@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
-import { Progress } from '@/components/ui/Progress'
+
 import { useToast } from '@/hooks/useToast'
 import { useAuth } from '@/app/providers/AuthProvider'
 

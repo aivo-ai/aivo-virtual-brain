@@ -1,18 +1,18 @@
-import React from 'react';
-import { Plan, formatPrice } from '../../api/paymentsClient';
-import { Card, CardContent } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
-import { CheckCircle, Star, Users, Clock } from '../ui/Icons';
+import React from 'react'
+import { Plan, formatPrice } from '../../api/paymentsClient'
+import { Card, CardContent } from '../ui/Card'
+import { Button } from '../ui/Button'
+import { Badge } from '../ui/Badge'
+import { CheckCircle, Star, Users, Clock } from '../ui/Icons'
 
 export interface PlanCardProps {
-  plan: Plan;
-  isCurrentPlan?: boolean;
-  isLoading?: boolean;
-  onSelect: (planId: string) => void;
-  studentCount?: number;
-  showDiscount?: boolean;
-  className?: string;
+  plan: Plan
+  isCurrentPlan?: boolean
+  isLoading?: boolean
+  onSelect: (planId: string) => void
+  studentCount?: number
+  showDiscount?: boolean
+  className?: string
 }
 
 export const PlanCard: React.FC<PlanCardProps> = ({
@@ -22,21 +22,23 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   onSelect,
   studentCount = 1,
   showDiscount = false,
-  className = ''
+  className = '',
 }) => {
-  const hasDiscount = plan.originalPrice && plan.originalPrice > plan.price;
-  const discountPercent = hasDiscount 
-    ? Math.round(((plan.originalPrice! - plan.price) / plan.originalPrice!) * 100)
-    : 0;
+  const hasDiscount = plan.originalPrice && plan.originalPrice > plan.price
+  const discountPercent = hasDiscount
+    ? Math.round(
+        ((plan.originalPrice! - plan.price) / plan.originalPrice!) * 100
+      )
+    : 0
 
   const handleSelect = () => {
     if (!isCurrentPlan && !isLoading) {
-      onSelect(plan.id);
+      onSelect(plan.id)
     }
-  };
+  }
 
   return (
-    <Card 
+    <Card
       className={`relative transition-all duration-200 hover:shadow-lg ${
         plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''
       } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''} ${className}`}
@@ -67,7 +69,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         <div className="text-center mb-6">
           <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
           <p className="text-gray-600 text-sm mb-4">{plan.description}</p>
-          
+
           {/* Pricing */}
           <div className="mb-4">
             <div className="flex items-center justify-center gap-2 mb-1">
@@ -81,7 +83,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
               </span>
               <span className="text-gray-600">/{plan.interval}</span>
             </div>
-            
+
             {hasDiscount && (
               <div className="flex items-center justify-center gap-2">
                 <Badge className="bg-green-100 text-green-700 text-xs">
@@ -149,13 +151,15 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         {!isCurrentPlan && (
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">
-              {plan.trialDays ? 'No credit card required for trial' : 'Billed monthly, cancel anytime'}
+              {plan.trialDays
+                ? 'No credit card required for trial'
+                : 'Billed monthly, cancel anytime'}
             </p>
           </div>
         )}
       </CardContent>
     </Card>
-  );
-};
+  )
+}
 
-export default PlanCard;
+export default PlanCard
